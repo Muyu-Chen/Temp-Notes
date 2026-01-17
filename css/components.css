@@ -169,6 +169,36 @@ textarea {
   background: rgba(0, 0, 0, 0.05);
 }
 
+.item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.item-menu-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.item:hover .item-menu-btn {
+  opacity: 1;
+}
+
+.item-menu-btn:hover {
+  background: var(--panel2);
+}
+
 .item .meta {
   display: flex;
   align-items: center;
@@ -218,6 +248,44 @@ textarea {
   gap: 6px;
 }
 
+/* Context Menu */
+.item-context-menu {
+  position: fixed;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 4px;
+  min-width: 120px;
+  z-index: 1000;
+  animation: menuFadeIn 0.12s ease;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.item-context-menu .menu-item {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.item-context-menu .menu-item:hover {
+  background: var(--panel2);
+}
+
 /* Toast notification */
 .toast {
   position: fixed;
@@ -243,4 +311,163 @@ textarea {
 .toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(-4px);
+}
+
+/* ========================================
+   Modal 对话框样式
+   ======================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: modalSlideIn 0.2s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 620;
+  color: var(--text);
+  letter-spacing: 0.3px;
+}
+
+.modal-message {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.modal-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-label {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--sans);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.modal-input:focus {
+  border-color: var(--accent);
+  background: var(--panel2);
+}
+
+.modal-input::placeholder {
+  color: var(--muted);
+}
+
+[data-theme="light"] .modal-input {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .modal-input:focus {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.04s ease, background 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.modal-btn:hover {
+  background: var(--panel2);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.modal-btn:active {
+  transform: translateY(1px);
+}
+
+.modal-btn-ok {
+  border-color: rgba(122, 162, 255, 0.4);
+  background: rgba(122, 162, 255, 0.15);
+}
+
+.modal-btn-ok:hover {
+  background: rgba(122, 162, 255, 0.2);
+}
+
+.modal-btn-cancel {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="light"] .modal-btn-cancel {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .modal-btn-ok {
+  border-color: rgba(47, 107, 255, 0.3);
+  background: rgba(47, 107, 255, 0.12);
+}
+
+[data-theme="light"] .modal-btn-ok:hover {
+  background: rgba(47, 107, 255, 0.18);
 }

@@ -250,3 +250,54 @@ export const mergeItems = (existing, imported) => {
   const newItems = imported.filter((x) => !existingSigs.has(sig(x)));
   return [...newItems, ...existing].sort((a, b) => b.updatedAt - a.updatedAt);
 };
+
+/**
+ * 保存加密提示和加密数据
+ */
+export const saveEncryptionData = async (hint, encryptedData) => {
+  try {
+    await writeSetting("encryption_hint", hint);
+    await writeSetting("encryption_data", encryptedData);
+  } catch (err) {
+    console.error("Failed to save encryption data:", err);
+  }
+};
+
+/**
+ * 加载加密提示和加密数据
+ */
+export const loadEncryptionData = async () => {
+  try {
+    const hint = await readSetting("encryption_hint");
+    const encryptedData = await readSetting("encryption_data");
+    
+    if (hint && encryptedData) {
+      return { hint, encryptedData };
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to load encryption data:", err);
+    return null;
+  }
+};
+
+/**
+ * 清除加密数据
+ */
+export const clearEncryptionData = async () => {
+  try {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_SETTINGS, "readwrite");
+      const store = transaction.objectStore(STORE_SETTINGS);
+      
+      store.delete("encryption_hint");
+      store.delete("encryption_data");
+      
+      transaction.onerror = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
+    });
+  } catch (err) {
+    console.error("Failed to clear encryption data:", err);
+  }
+};

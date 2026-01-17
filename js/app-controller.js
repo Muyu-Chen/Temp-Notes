@@ -11,7 +11,12 @@ import {
     mergeItems,
     exportData,
     saveTheme,
+    loadEncryptionData,
+    saveEncryptionData,
+    clearEncryptionData,
 } from "./storage.js";
+import { encryptContent, decryptContent, verifyPassword } from "./crypto.js";
+import { Modal } from "./modal.js";
 import { firstLine, now, uid, storageBytes, isMac } from "./utils.js";
 
 export class AppController {
@@ -21,6 +26,7 @@ export class AppController {
         this.items = [];
         this.saveTimer = null;
         this.currentLoadedItemId = null; // 追踪当前加载的条目ID
+        this.modal = new Modal(); // 模态框实例
     }
 
     init() {
@@ -30,6 +36,7 @@ export class AppController {
                 const draft = await loadDraft();
                 this.dom.setDraftValue(draft);
 
+                // 加载存档条目
                 this.items = await loadItems();
 
                 this.dom.setAutosaveState("已保存");
@@ -68,6 +75,12 @@ export class AppController {
     loadToDraft(id) {
         const it = this.items.find((x) => x.id === id);
         if (!it) return;
+
+        // 如果条目已加密，不允许加载
+        if (it.encrypted) {
+            this.ui.showToast("该条目已加密，请先解密");
+            return;
+        }
 
         this.dom.setDraftValue(it.content);
         saveDraft(it.content); // 异步但不等待
@@ -239,6 +252,127 @@ export class AppController {
         if (ctrl && e.key.toLowerCase() === "l") {
             e.preventDefault();
             this.clearDraft();
+        }
+    }
+
+    /**
+     * 加密指定条目
+     */
+    async encryptItem(id) {
+        const item = this.items.find((x) => x.id === id);
+        if (!item) return;
+
+        if (item.encrypted) {
+            this.ui.showToast("该条目已加密");
+            return;
+        }
+
+        // 显示输入框，让用户输入密码和提示
+        const result = await this.modal.show({
+            title: "加密条目",
+            message: "设置密码保护此条目",
+            inputs: [
+                { type: "password", label: "输入密码", placeholder: "密码", required: true },
+                { type: "text", label: "密码提示", placeholder: "例如：我的生日", required: true }
+            ],
+            okText: "加密",
+            cancelText: "取消",
+        });
+
+        if (!result.ok) {
+            return;
+        }
+
+        const [password, hint] = result.values;
+
+        if (!password.trim() || !hint.trim()) {
+            this.ui.showToast("密码和提示均不能为空");
+            return;
+        }
+
+        try {
+            // 加密内容（包含 ID 便于验证）
+            const encrypted = await encryptContent(item.id, item.content, password);
+            
+            // 更新条目为加密状态
+            const itemIndex = this.items.findIndex((x) => x.id === id);
+            if (itemIndex !== -1) {
+                this.items[itemIndex] = {
+                    ...this.items[itemIndex],
+                    content: encrypted,
+                    encrypted: true,
+                    encryptionHint: hint,
+                    updatedAt: now(),
+                };
+                
+                await saveItems(this.items);
+                this.ui.showToast("条目已加密");
+                this.render();
+            }
+        } catch (err) {
+            console.error("加密失败:", err);
+            this.ui.showToast("加密失败");
+        }
+    }
+
+    /**
+     * 解密指定条目
+     */
+    async decryptItem(id) {
+        const item = this.items.find((x) => x.id === id);
+        if (!item) return;
+
+        if (!item.encrypted) {
+            this.ui.showToast("该条目未加密");
+            return;
+        }
+
+        const result = await this.modal.show({
+            title: "解密条目",
+            message: `提示：${item.encryptionHint || "无提示"}`,
+            inputs: [
+                { type: "password", label: "输入密码", placeholder: "密码", required: true }
+            ],
+            okText: "解密",
+            cancelText: "取消",
+        });
+
+        if (!result.ok) {
+            return;
+        }
+
+        const password = result.values[0];
+
+        try {
+            // 尝试解密
+            const decrypted = await decryptContent(item.content, password);
+            const [decryptedId, content] = decrypted.split("|", 2);
+            
+            // 验证密码正确性
+            const isValid = await verifyPassword(item.id, item.content, password);
+            if (!isValid) {
+                this.ui.showToast("密码错误");
+                return;
+            }
+            
+            // 更新条目为未加密状态
+            const itemIndex = this.items.findIndex((x) => x.id === id);
+            if (itemIndex !== -1) {
+                this.items[itemIndex] = {
+                    ...this.items[itemIndex],
+                    content: content,
+                    encrypted: false,
+                    encryptionHint: undefined,
+                    updatedAt: now(),
+                };
+                
+                await saveItems(this.items);
+                this.ui.showToast("解密成功");
+                this.render();
+            }
+        } catch (err) {
+            console.error("解密失败:", err);
+            this.ui.showToast("解密失败，密码可能错误");
         }
     }
 }

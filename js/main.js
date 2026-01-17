@@ -64,6 +64,14 @@ async function initApp() {
     appController.deleteItem(id);
   };
 
+  uiController.onItemEncryptClick = (id) => {
+    appController.encryptItem(id);
+  };
+
+  uiController.onItemDecryptClick = (id) => {
+    appController.decryptItem(id);
+  };
+
   // 监听全局快捷键
   document.addEventListener("keydown", (e) => {
     appController.onKeyDown(e);
