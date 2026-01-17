@@ -1,0 +1,37 @@
+/* ========================================
+   主题系统
+   ======================================== */
+
+:root {
+  /* Dark theme (default) */
+  --bg: #0b0f17;
+  --panel: rgba(255, 255, 255, 0.12);
+  --panel2: rgba(255, 255, 255, 0.16);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.65);
+  --line: rgba(255, 255, 255, 0.18);
+  --accent: #7aa2ff;
+  --danger: #ff6b6b;
+  --ok: #41d1a6;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --radius: 14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei",
+    "PingFang SC", "Hiragino Sans GB", system-ui, Roboto, Helvetica, Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Light mode */
+[data-theme="light"] {
+  --bg: #ffffff;
+  --panel: rgba(0, 0, 0, 0.08);
+  --panel2: rgba(0, 0, 0, 0.12);
+  --text: rgba(0, 0, 0, 0.88);
+  --muted: rgba(0, 0, 0, 0.62);
+  --line: rgba(0, 0, 0, 0.15);
+  --accent: #2f6bff;
+  --danger: #d64545;
+  --ok: #0f8a68;
+  --shadow: 0 12px 26px rgba(0, 0, 0, 0.1);
+}

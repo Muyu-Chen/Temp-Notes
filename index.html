@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>临时笔记（LocalStorage 第二桌面）</title>
+
+    <!-- 主题系统 -->
+    <link rel="stylesheet" href="./css/theme.css" />
+    <!-- 基础样式 -->
+    <link rel="stylesheet" href="./css/base.css" />
+    <!-- 布局组件 -->
+    <link rel="stylesheet" href="./css/layout.css" />
+    <!-- UI组件 -->
+    <link rel="stylesheet" href="./css/components.css" />
+  </head>
+
+  <body>
+    <div class="app" id="app">
+      <header>
+        <div class="title">
+          <h1>临时笔记（LocalStorage 第二桌面）</h1>
+          <div class="sub">
+            <span class="pill"
+              >自动保存：<span id="autosaveState">就绪</span></span
+            >
+            <span class="pill">草稿字数：<span id="wc">0</span></span>
+            <span class="pill">存档条目：<span id="countItems">0</span></span>
+            <span class="pill">占用估算：<span id="usage">0 KB</span></span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button
+            class="primary"
+            id="btnArchive"
+            title="把当前草稿保存为一个条目（不清空草稿）"
+          >
+            存档为条目 <span class="kbd">Ctrl</span>+<span class="kbd">S</span>
+          </button>
+          <button id="btnCopy" title="复制草稿到剪贴板">复制草稿</button>
+          <button
+            id="btnClearDraft"
+            class="danger"
+            title="清空草稿（不可恢复）"
+          >
+            清空草稿 <span class="kbd">Ctrl</span>+<span class="kbd">L</span>
+          </button>
+          <button id="btnExport" title="导出所有数据为 JSON">导出</button>
+          <button id="btnImport" title="从 JSON 导入数据（可追加）">导入</button>
+          <button id="btnTheme" title="切换明/暗色">主题</button>
+        </div>
+      </header>
+
+      <div class="main">
+        <!-- Draft -->
+        <section class="panel">
+          <div class="panel-head">
+            <div class="label">
+              <span>草稿区（自动保存）</span>
+              <span class="muted small">打开即用；刷新/重开仍在</span>
+            </div>
+            <div class="right">
+              <span class="muted small"
+                >快捷键：<span class="kbd">Ctrl</span>+<span class="kbd">S</span>
+                存档，<span class="kbd">Ctrl</span>+<span class="kbd">K</span>
+                搜索，<span class="kbd">Ctrl</span>+<span class="kbd">L</span>
+                清空</span
+              >
+            </div>
+          </div>
+          <textarea
+            id="draft"
+            spellcheck="false"
+            placeholder="把这里当作你的“第二桌面”。随手粘贴、临时记录、快速中转…&#10;&#10;提示：需要留档就点“存档为条目”。"
+          ></textarea>
+        </section>
+
+        <!-- Archive -->
+        <section class="panel">
+          <div class="panel-head" style="gap: 8px; flex-wrap: wrap">
+            <div class="label" style="flex: 1; min-width: 200px">
+              <span>存档条目</span>
+              <span class="muted small">点击条目可加载到草稿区</span>
+            </div>
+            <div class="right" style="flex: 1; min-width: 220px">
+              <input
+                id="search"
+                class="search"
+                placeholder="搜索条目（Ctrl+K）"
+              />
+            </div>
+            <div class="right">
+              <button
+                id="btnClearArchive"
+                class="danger"
+                title="删除所有存档条目（不影响草稿）"
+              >
+                清空存档
+              </button>
+            </div>
+          </div>
+
+          <div class="list" id="list"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- 应用主入口 -->
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>

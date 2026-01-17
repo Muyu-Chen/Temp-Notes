@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>临时笔记（LocalStorage 第二桌面）</title>
+  <style>
+    :root{
+      --bg: #0b0f17;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.09);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.65);
+      --line: rgba(255,255,255,.12);
+      --accent: #7aa2ff;
+      --danger: #ff6b6b;
+      --ok: #41d1a6;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    /* Light mode */
+    [data-theme="light"]{
+      --bg: #f6f7fb;
+      --panel: rgba(0,0,0,.05);
+      --panel2: rgba(0,0,0,.08);
+      --text: rgba(0,0,0,.86);
+      --muted: rgba(0,0,0,.58);
+      --line: rgba(0,0,0,.10);
+      --accent: #2f6bff;
+      --danger: #d64545;
+      --ok: #0f8a68;
+      --shadow: 0 12px 26px rgba(0,0,0,.10);
+    }
+
+    *{ box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      font-family: var(--sans);
+      background: radial-gradient(1200px 700px at 20% 5%, rgba(122,162,255,.18), transparent 55%),
+                  radial-gradient(900px 600px at 85% 20%, rgba(65,209,166,.12), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+    }
+
+    .app{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 18px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+    }
+
+    header{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--panel), transparent);
+      box-shadow: var(--shadow);
+    }
+    header .title{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 220px;
+    }
+    header h1{
+      font-size: 16px;
+      margin: 0;
+      letter-spacing: .2px;
+      font-weight: 650;
+    }
+    header .sub{
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .pill{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--muted);
+    }
+
+    .actions{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    button, .btn{
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 9px 10px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: transform .04s ease, background .15s ease, border-color .15s ease;
+      user-select: none;
+    }
+    button:hover, .btn:hover{ background: var(--panel2); border-color: rgba(255,255,255,.18); }
+    [data-theme="light"] button:hover, [data-theme="light"] .btn:hover{ border-color: rgba(0,0,0,.16); }
+    button:active{ transform: translateY(1px); }
+    button.primary{
+      border-color: rgba(122,162,255,.40);
+      background: rgba(122,162,255,.15);
+    }
+    button.primary:hover{ background: rgba(122,162,255,.20); }
+    button.danger{
+      border-color: rgba(255,107,107,.42);
+      background: rgba(255,107,107,.14);
+    }
+    button.danger:hover{ background: rgba(255,107,107,.20); }
+
+    .main{
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 1.45fr .85fr;
+      gap: 14px;
+    }
+
+    .panel{
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--panel), transparent);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .panel-head{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0,0,0,.05);
+    }
+    [data-theme="light"] .panel-head{ background: rgba(0,0,0,.03); }
+
+    .panel-head .label{
+      font-size: 12.5px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .panel-head .right{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    textarea{
+      width: 100%;
+      height: 100%;
+      border: 0;
+      outline: none;
+      resize: none;
+      padding: 14px 14px 18px;
+      background: transparent;
+      color: var(--text);
+      font-size: 13.5px;
+      line-height: 1.55;
+      font-family: var(--mono);
+      min-height: 220px;
+    }
+
+    .muted{ color: var(--muted); }
+    .small{ font-size: 12px; }
+    .mono{ font-family: var(--mono); }
+
+    .list{
+      overflow: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .search{
+      width: 100%;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      outline: none;
+      font-size: 12.5px;
+    }
+    [data-theme="light"] .search{ background: rgba(0,0,0,.03); }
+
+    .item{
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      padding: 10px 10px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .item:hover{ background: rgba(255,255,255,.06); }
+    [data-theme="light"] .item{ background: rgba(0,0,0,.03); }
+    [data-theme="light"] .item:hover{ background: rgba(0,0,0,.05); }
+
+    .item .meta{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .item .titleline{
+      font-size: 12.8px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 620;
+    }
+    .item .preview{
+      font-size: 12.3px;
+      color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+    .item .row{
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .tag{
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.72);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.12);
+      padding: 10px 12px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      font-size: 12.5px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      max-width: min(720px, calc(100% - 30px));
+      text-align: center;
+      line-height: 1.35;
+      z-index: 999;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    .kbd{
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    @media (max-width: 960px){
+      .main{ grid-template-columns: 1fr; }
+      header{ align-items: flex-start; }
+      header .title{ min-width: unset; }
+      .actions{ justify-content: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="title">
+        <h1>临时笔记（LocalStorage 第二桌面）</h1>
+        <div class="sub">
+          <span class="pill">自动保存：<span id="autosaveState">就绪</span></span>
+          <span class="pill">草稿字数：<span id="wc">0</span></span>
+          <span class="pill">存档条目：<span id="countItems">0</span></span>
+          <span class="pill">占用估算：<span id="usage">0 KB</span></span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="btnArchive" title="把当前草稿保存为一个条目（不清空草稿）">存档为条目 <span class="kbd">Ctrl</span>+<span class="kbd">S</span></button>
+        <button id="btnCopy" title="复制草稿到剪贴板">复制草稿</button>
+        <button id="btnClearDraft" class="danger" title="清空草稿（不可恢复）">清空草稿 <span class="kbd">Ctrl</span>+<span class="kbd">L</span></button>
+        <button id="btnExport" title="导出所有数据为 JSON">导出</button>
+        <button id="btnImport" title="从 JSON 导入数据（可追加）">导入</button>
+        <button id="btnTheme" title="切换明/暗色">主题</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <!-- Draft -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="label">
+            <span>草稿区（自动保存）</span>
+            <span class="muted small">打开即用；刷新/重开仍在</span>
+          </div>
+          <div class="right">
+            <span class="muted small">快捷键：<span class="kbd">Ctrl</span>+<span class="kbd">S</span> 存档，<span class="kbd">Ctrl</span>+<span class="kbd">K</span> 搜索，<span class="kbd">Ctrl</span>+<span class="kbd">L</span> 清空</span>
+          </div>
+        </div>
+        <textarea id="draft" spellcheck="false" placeholder="把这里当作你的“第二桌面”。随手粘贴、临时记录、快速中转…&#10;&#10;提示：需要留档就点“存档为条目”。"></textarea>
+      </section>
+
+      <!-- Archive -->
+      <section class="panel">
+        <div class="panel-head" style="gap: 8px; flex-wrap: wrap;">
+          <div class="label" style="flex: 1; min-width: 200px;">
+            <span>存档条目</span>
+            <span class="muted small">点击条目可加载到草稿区</span>
+          </div>
+          <div class="right" style="flex: 1; min-width: 220px;">
+            <input id="search" class="search" placeholder="搜索条目（Ctrl+K）" />
+          </div>
+          <div class="right">
+            <button id="btnClearArchive" class="danger" title="删除所有存档条目（不影响草稿）">清空存档</button>
+          </div>
+        </div>
+
+        <div class="list" id="list"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (() => {
+      // -------- Keys --------
+      const KEY_DRAFT = "tempnotes:draft:v1";
+      const KEY_ITEMS = "tempnotes:items:v1";
+      const KEY_THEME = "tempnotes:theme:v1";
+
+      // -------- DOM --------
+      const elDraft = document.getElementById("draft");
+      const elList = document.getElementById("list");
+      const elSearch = document.getElementById("search");
+      const elAutosaveState = document.getElementById("autosaveState");
+      const elWc = document.getElementById("wc");
+      const elCountItems = document.getElementById("countItems");
+      const elUsage = document.getElementById("usage");
+      const elToast = document.getElementById("toast");
+
+      const btnArchive = document.getElementById("btnArchive");
+      const btnCopy = document.getElementById("btnCopy");
+      const btnClearDraft = document.getElementById("btnClearDraft");
+      const btnClearArchive = document.getElementById("btnClearArchive");
+      const btnExport = document.getElementById("btnExport");
+      const btnImport = document.getElementById("btnImport");
+      const btnTheme = document.getElementById("btnTheme");
+
+      // -------- State --------
+      let items = [];
+      let saveTimer = null;
+      let toastTimer = null;
+
+      // -------- Utils --------
+      const now = () => Date.now();
+      const pad2 = (n) => String(n).padStart(2, "0");
+      const fmt = (ts) => {
+        const d = new Date(ts);
+        return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+      };
+      const uid = () => Math.random().toString(16).slice(2) + "-" + Math.random().toString(16).slice(2);
+      const safeJsonParse = (s, fallback) => {
+        try { return JSON.parse(s); } catch { return fallback; }
+      };
+      const clamp = (s, n) => (s.length <= n ? s : (s.slice(0, n) + "…"));
+      const firstLine = (s) => {
+        const t = (s || "").trim();
+        if (!t) return "（空条目）";
+        return t.split(/\r?\n/)[0].trim() || "（空条目）";
+      };
+      const wordCount = (s) => {
+        const t = (s || "").trim();
+        if (!t) return 0;
+        // 中文按字符粗略计，英文按词计；这里用一个实用的近似
+        const chinese = (t.match(/[\u4e00-\u9fff]/g) || []).length;
+        const latinWords = (t.replace(/[\u4e00-\u9fff]/g, " ").match(/[A-Za-z0-9_]+/g) || []).length;
+        const other = t.replace(/[\u4e00-\u9fffA-Za-z0-9_\s]/g, "").length;
+        return chinese + latinWords + other;
+      };
+      const storageBytes = () => {
+        // localStorage 占用估算（UTF-16 粗略换算 2 bytes/char）
+        let total = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          const v = localStorage.getItem(k) || "";
+          total += (k.length + v.length) * 2;
+        }
+        return total;
+      };
+      const humanBytes = (b) => {
+        if (b < 1024) return `${b} B`;
+        if (b < 1024*1024) return `${Math.round(b/1024)} KB`;
+        return `${(b/1024/1024).toFixed(2)} MB`;
+      };
+
+      function toast(msg){
+        elToast.textContent = msg;
+        elToast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => elToast.classList.remove("show"), 1800);
+      }
+
+      function setAutosaveState(text){
+        elAutosaveState.textContent = text;
+      }
+
+      function loadTheme(){
+        const t = localStorage.getItem(KEY_THEME) || "dark";
+        document.documentElement.setAttribute("data-theme", t);
+      }
+      function toggleTheme(){
+        const cur = document.documentElement.getAttribute("data-theme") || "dark";
+        const nxt = (cur === "dark") ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", nxt);
+        localStorage.setItem(KEY_THEME, nxt);
+        toast(`主题已切换为：${nxt === "dark" ? "暗色" : "亮色"}`);
+      }
+
+      function loadData(){
+        const draft = localStorage.getItem(KEY_DRAFT) || "";
+        elDraft.value = draft;
+
+        const rawItems = localStorage.getItem(KEY_ITEMS);
+        items = Array.isArray(safeJsonParse(rawItems, [])) ? safeJsonParse(rawItems, []) : [];
+        // 基础修复
+        items = items
+          .filter(x => x && typeof x === "object")
+          .map(x => ({
+            id: x.id || uid(),
+            content: String(x.content ?? ""),
+            createdAt: Number(x.createdAt || now()),
+            updatedAt: Number(x.updatedAt || x.createdAt || now()),
+          }))
+          .sort((a,b) => b.updatedAt - a.updatedAt);
+      }
+
+      function persistItems(){
+        localStorage.setItem(KEY_ITEMS, JSON.stringify(items));
+      }
+
+      function scheduleDraftSave(){
+        setAutosaveState("保存中…");
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          try{
+            localStorage.setItem(KEY_DRAFT, elDraft.value);
+            setAutosaveState("已保存");
+            updateMeta();
+          }catch(e){
+            setAutosaveState("保存失败");
+            toast("保存失败：localStorage 可能已满或被禁用");
+            console.error(e);
+          }
+        }, 250);
+      }
+
+      function updateMeta(){
+        elWc.textContent = String(wordCount(elDraft.value));
+        elCountItems.textContent = String(items.length);
+        elUsage.textContent = humanBytes(storageBytes());
+      }
+
+      function render(){
+        const q = (elSearch.value || "").trim().toLowerCase();
+        const filtered = !q ? items : items.filter(it => it.content.toLowerCase().includes(q));
+
+        elList.innerHTML = "";
+        if (filtered.length === 0){
+          const empty = document.createElement("div");
+          empty.className = "muted small";
+          empty.style.padding = "8px 6px";
+          empty.textContent = q ? "未找到匹配条目。" : "暂无存档条目。把草稿存档后会出现在这里。";
+          elList.appendChild(empty);
+          updateMeta();
+          return;
+        }
+
+        for (const it of filtered){
+          const card = document.createElement("div");
+          card.className = "item";
+          card.title = "点击加载到草稿区";
+
+          const title = document.createElement("div");
+          title.className = "titleline";
+          title.textContent = firstLine(it.content);
+
+          const meta = document.createElement("div");
+          meta.className = "meta";
+          meta.innerHTML = `<span>更新：${fmt(it.updatedAt)}</span><span class="tag">字数 ${wordCount(it.content)}</span>`;
+
+          const preview = document.createElement("div");
+          preview.className = "preview";
+          preview.textContent = clamp(it.content.trim() || "（空）", 240);
+
+          const row = document.createElement("div");
+          row.className = "row";
+
+          const btnLoad = document.createElement("button");
+          btnLoad.textContent = "加载到草稿";
+          btnLoad.onclick = (e) => {
+            e.stopPropagation();
+            loadToDraft(it.id);
+          };
+
+          const btnCopyItem = document.createElement("button");
+          btnCopyItem.textContent = "复制";
+          btnCopyItem.onclick = async (e) => {
+            e.stopPropagation();
+            await copyText(it.content);
+          };
+
+          const btnDel = document.createElement("button");
+          btnDel.className = "danger";
+          btnDel.textContent = "删除";
+          btnDel.onclick = (e) => {
+            e.stopPropagation();
+            deleteItem(it.id);
+          };
+
+          row.append(btnLoad, btnCopyItem, btnDel);
+
+          card.append(title, meta, preview, row);
+          card.onclick = () => loadToDraft(it.id);
+
+          elList.appendChild(card);
+        }
+
+        updateMeta();
+      }
+
+      function loadToDraft(id){
+        const it = items.find(x => x.id === id);
+        if (!it) return;
+        elDraft.value = it.content;
+        localStorage.setItem(KEY_DRAFT, elDraft.value);
+        setAutosaveState("已保存");
+        updateMeta();
+        toast("已加载到草稿区");
+        elDraft.focus();
+      }
+
+      async function copyText(text){
+        try{
+          await navigator.clipboard.writeText(text);
+          toast("已复制到剪贴板");
+        }catch{
+          // fallback
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          toast("已复制到剪贴板");
+        }
+      }
+
+      function archiveDraft(){
+        const content = elDraft.value;
+        if (!content.trim()){
+          toast("草稿为空：无需存档");
+          return;
+        }
+        const it = { id: uid(), content, createdAt: now(), updatedAt: now() };
+        items.unshift(it);
+        persistItems();
+        render();
+        toast("已存档为条目（草稿未清空）");
+      }
+
+      function deleteItem(id){
+        const it = items.find(x => x.id === id);
+        if (!it) return;
+        const ok = confirm(`确认删除该条目？\n\n标题：${firstLine(it.content)}`);
+        if (!ok) return;
+        items = items.filter(x => x.id !== id);
+        persistItems();
+        render();
+        toast("已删除条目");
+      }
+
+      function clearDraft(){
+        const ok = confirm("确认清空草稿？此操作不可恢复。");
+        if (!ok) return;
+        elDraft.value = "";
+        localStorage.setItem(KEY_DRAFT, "");
+        setAutosaveState("已保存");
+        updateMeta();
+        toast("草稿已清空");
+        elDraft.focus();
+      }
+
+      function clearArchive(){
+        const ok = confirm("确认删除所有存档条目？此操作不可恢复。");
+        if (!ok) return;
+        items = [];
+        persistItems();
+        render();
+        toast("存档已清空");
+      }
+
+      function exportAll(){
+        const payload = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          draft: elDraft.value,
+          items
+        };
+        const json = JSON.stringify(payload, null, 2);
+
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `tempnotes-export-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        toast("已导出 JSON");
+      }
+
+      function importAll(){
+        // 使用文件选择器导入
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json,.json";
+        input.onchange = async () => {
+          const file = input.files && input.files[0];
+          if (!file) return;
+          const text = await file.text();
+          const data = safeJsonParse(text, null);
+          if (!data || typeof data !== "object"){
+            toast("导入失败：JSON 格式不正确");
+            return;
+          }
+
+          const importedDraft = typeof data.draft === "string" ? data.draft : "";
+          const importedItems = Array.isArray(data.items) ? data.items : [];
+
+          // 追加导入：基于 content + createdAt 做粗略去重
+          const sig = (x) => `${String(x.createdAt||"")}|${String(x.content||"")}`;
+          const existing = new Set(items.map(sig));
+          const add = importedItems
+            .filter(x => x && typeof x === "object")
+            .map(x => ({
+              id: x.id || uid(),
+              content: String(x.content ?? ""),
+              createdAt: Number(x.createdAt || now()),
+              updatedAt: Number(x.updatedAt || x.createdAt || now()),
+            }))
+            .filter(x => x.content.length > 0)
+            .filter(x => !existing.has(sig(x)));
+
+          items = [...add, ...items].sort((a,b) => b.updatedAt - a.updatedAt);
+
+          // 是否覆盖草稿：给更安全的体验（默认不覆盖）
+          const overwrite = confirm("是否用导入文件中的 draft 覆盖当前草稿？\n\n选择“取消”将保留当前草稿，仅导入条目。");
+          if (overwrite){
+            elDraft.value = importedDraft;
+            localStorage.setItem(KEY_DRAFT, elDraft.value);
+            setAutosaveState("已保存");
+          }
+
+          persistItems();
+          render();
+          toast(`导入完成：新增 ${add.length} 条`);
+        };
+        input.click();
+      }
+
+      // -------- Events --------
+      elDraft.addEventListener("input", () => {
+        scheduleDraftSave();
+        updateMeta();
+      });
+
+      elSearch.addEventListener("input", render);
+
+      btnArchive.addEventListener("click", archiveDraft);
+      btnCopy.addEventListener("click", () => copyText(elDraft.value || ""));
+      btnClearDraft.addEventListener("click", clearDraft);
+      btnClearArchive.addEventListener("click", clearArchive);
+      btnExport.addEventListener("click", exportAll);
+      btnImport.addEventListener("click", importAll);
+      btnTheme.addEventListener("click", toggleTheme);
+
+      document.addEventListener("keydown", (e) => {
+        const isMac = navigator.platform.toLowerCase().includes("mac");
+        const ctrl = isMac ? e.metaKey : e.ctrlKey;
+
+        if (ctrl && e.key.toLowerCase() === "s") {
+          e.preventDefault();
+          archiveDraft();
+        }
+        if (ctrl && e.key.toLowerCase() === "k") {
+          e.preventDefault();
+          elSearch.focus();
+          elSearch.select();
+        }
+        if (ctrl && e.key.toLowerCase() === "l") {
+          e.preventDefault();
+          clearDraft();
+        }
+      });
+
+      // -------- Init --------
+      try{
+        loadTheme();
+        loadData();
+        setAutosaveState("已保存");
+        updateMeta();
+        render();
+        // 初次进入聚焦草稿
+        elDraft.focus();
+      }catch(e){
+        console.error(e);
+        toast("初始化失败：可能是 localStorage 被禁用");
+      }
+    })();
+  </script>
+</body>
+</html>

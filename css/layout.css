@@ -1,0 +1,126 @@
+/* ========================================
+   布局组件
+   ======================================== */
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 18px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+}
+
+/* Header */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel), transparent);
+  box-shadow: var(--shadow);
+}
+
+header .title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+}
+
+header h1 {
+  font-size: 19px;
+  line-height: 1.4;
+  margin: 0;
+  letter-spacing: 0.2px;
+  font-weight: 650;
+}
+
+header .sub {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Main content area */
+.main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.45fr 0.85fr;
+  gap: 14px;
+}
+
+/* Panel */
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--panel), transparent);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .panel-head {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.panel-head .label {
+  font-size: 12.5px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-head .right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+
+  header {
+    align-items: flex-start;
+  }
+
+  header .title {
+    min-width: unset;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+}

@@ -1,0 +1,38 @@
+/* ========================================
+   基础样式
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 20px;
+  background: radial-gradient(1200px 700px at 20% 5%, rgba(122, 162, 255, 0.18), transparent 55%),
+    radial-gradient(900px 600px at 85% 20%, rgba(65, 209, 166, 0.12), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Utility classes */
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.mono {
+  font-family: var(--mono);
+}

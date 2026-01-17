@@ -1,0 +1,246 @@
+/* ========================================
+   UI 组件样式
+   ======================================== */
+
+/* Button styles */
+button,
+.btn {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  padding: 9px 10px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: transform 0.04s ease, background 0.15s ease,
+    border-color 0.15s ease;
+  user-select: none;
+}
+
+button:hover,
+.btn:hover {
+  background: var(--panel2);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="light"] button:hover,
+[data-theme="light"] .btn:hover {
+  border-color: rgba(0, 0, 0, 0.16);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button.primary {
+  border-color: rgba(122, 162, 255, 0.4);
+  background: rgba(122, 162, 255, 0.15);
+}
+
+button.primary:hover {
+  background: rgba(122, 162, 255, 0.2);
+}
+
+button.danger {
+  border-color: rgba(255, 107, 107, 0.42);
+  background: rgba(255, 107, 107, 0.14);
+}
+
+button.danger:hover {
+  background: rgba(255, 107, 107, 0.2);
+}
+
+/* Textarea */
+textarea {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  resize: none;
+  padding: 14px 14px 18px;
+  background: transparent;
+  color: var(--text);
+  font-size: 17.5px;
+  line-height: 1.55;
+  font-family: "Microsoft YaHei", "PingFang SC", var(--mono); 
+  min-height: 220px;
+}
+
+/* Search input */
+.search {
+  width: 100%;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  outline: none;
+  font-size: 12.5px;
+}
+
+[data-theme="light"] .search {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--panel);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(65, 65, 65, 0.4);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-color: var(--muted) var(--panel);
+  scrollbar-width: thin;
+}
+
+/* Pill badge */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+}
+
+/* Keyboard shortcut indicator */
+.kbd {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+/* List container */
+.list {
+  overflow: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Item card */
+.item {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 10px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .item {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.item .meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.item .titleline {
+  font-size: 12.8px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 620;
+}
+
+.item .preview {
+  font-size: 12.3px;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.item .row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Tag */
+.tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  font-size: 12.5px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  max-width: min(720px, calc(100% - 30px));
+  text-align: center;
+  line-height: 1.35;
+  z-index: 999;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
