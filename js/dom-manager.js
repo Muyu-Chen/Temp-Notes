@@ -17,8 +17,6 @@ export class DOMManager {
     this.btnCopy = document.getElementById("btnCopy");
     this.btnClearDraft = document.getElementById("btnClearDraft");
     this.btnMore = document.getElementById("btnMore");
-    this.btnExport = document.getElementById("btnExport");
-    this.btnImport = document.getElementById("btnImport");
     this.btnTheme = document.getElementById("btnTheme");
 
     // 更多功能面板相关的DOM元素
@@ -27,8 +25,10 @@ export class DOMManager {
     this.moreModalClose = document.getElementById("moreModalClose");
     this.sidebarRecycle = document.getElementById("sidebarRecycle");
     this.sidebarImportExport = document.getElementById("sidebarImportExport");
+    this.sidebarSettings = document.getElementById("sidebarSettings");
     this.recyclePanel = document.getElementById("recyclePanel");
     this.importExportPanel = document.getElementById("importExportPanel");
+    this.settingsPanel = document.getElementById("settingsPanel");
 
     // 回收站相关的DOM元素
     this.recycleList = document.getElementById("recycleList");
@@ -38,6 +38,10 @@ export class DOMManager {
     // 导入/导出相关的DOM元素
     this.exportBtn = document.getElementById("exportBtn");
     this.importBtn = document.getElementById("importBtn");
+
+    // 设置相关的DOM元素
+    this.fontSizeSlider = document.getElementById("fontSizeSlider");
+    this.fontSizeValue = document.getElementById("fontSizeValue");
   }
 
   setAutosaveState(text) {

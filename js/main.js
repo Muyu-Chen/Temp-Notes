@@ -64,6 +64,10 @@ async function initApp() {
     appController.switchPanel("importExport");
   });
 
+  domManager.sidebarSettings.addEventListener("click", () => {
+    appController.switchPanel("settings");
+  });
+
   // 回收站按钮
   domManager.recycleClearAll.addEventListener("click", () => {
     appController.clearRecycleBin();
@@ -78,14 +82,6 @@ async function initApp() {
     appController.deleteFromRecycle(index);
   };
 
-  domManager.btnExport.addEventListener("click", () => {
-    appController.exportAll();
-  });
-
-  domManager.btnImport.addEventListener("click", () => {
-    appController.importAll();
-  });
-
   // 面板内导入导出按钮
   domManager.exportBtn.addEventListener("click", () => {
     appController.exportAll();
@@ -97,6 +93,11 @@ async function initApp() {
 
   domManager.btnTheme.addEventListener("click", () => {
     appController.onThemeToggle();
+  });
+
+  // 字体大小滑块
+  domManager.fontSizeSlider.addEventListener("input", (e) => {
+    appController.setFontSize(e.target.value);
   });
 
   // 设置UI控制器的事件回调

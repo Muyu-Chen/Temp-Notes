@@ -46,8 +46,6 @@
           >
             清空草稿 <span class="kbd">Ctrl</span>+<span class="kbd">L</span>
           </button>
-          <button id="btnExport" title="导出所有数据为 JSON">导出</button>
-          <button id="btnImport" title="从 JSON 导入数据（可追加）">导入</button>
           <button id="btnTheme" title="切换明/暗色">主题</button>
         </div>
       </header>
@@ -129,6 +127,10 @@
               <span class="sidebar-icon">📤</span>
               <span class="sidebar-label">导入/导出</span>
             </button>
+            <button class="sidebar-item" id="sidebarSettings" data-panel="settings">
+              <span class="sidebar-icon">⚙️</span>
+              <span class="sidebar-label">设置</span>
+            </button>
           </div>
         </div>
 
@@ -164,6 +166,27 @@
                   <div class="btn-title">从 JSON 导入</div>
                   <div class="btn-desc">从 JSON 文件导入数据</div>
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 设置面板 -->
+          <div class="modal-panel" id="settingsPanel">
+            <div class="panel-header">
+              <h2 class="panel-title">设置</h2>
+            </div>
+            <div class="panel-body">
+              <div class="settings-group">
+                <div class="settings-item">
+                  <div class="settings-label">
+                    <span class="label-name">字体大小</span>
+                    <span class="label-desc">调整文本显示大小</span>
+                  </div>
+                  <div class="font-size-controls">
+                    <input type="range" id="fontSizeSlider" min="12" max="20" value="16" class="font-slider">
+                    <span id="fontSizeValue" class="font-size-value">16px</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -35,6 +35,10 @@ export class AppController {
     init() {
         return (async () => {
             try {
+                // 初始化字体大小
+                const fontSize = this.getFontSize();
+                document.documentElement.style.setProperty("--font-size", fontSize + "px");
+
                 // 设置回收站管理器的事件回调
                 this.recycleManager.onItemRestore = (index) => this.restoreFromRecycle(index);
                 this.recycleManager.onItemDelete = (index) => this.deleteFromRecycle(index);
@@ -183,10 +187,12 @@ export class AppController {
         // 隐藏所有面板
         this.dom.recyclePanel.classList.remove("active");
         this.dom.importExportPanel.classList.remove("active");
+        this.dom.settingsPanel.classList.remove("active");
         
         // 移除所有侧边栏项的高亮
         this.dom.sidebarRecycle.classList.remove("active");
         this.dom.sidebarImportExport.classList.remove("active");
+        this.dom.sidebarSettings.classList.remove("active");
 
         // 显示选中的面板和高亮对应的菜单
         if (panelName === "recycle") {
@@ -197,6 +203,47 @@ export class AppController {
         } else if (panelName === "importExport") {
             this.dom.importExportPanel.classList.add("active");
             this.dom.sidebarImportExport.classList.add("active");
+        } else if (panelName === "settings") {
+            this.dom.settingsPanel.classList.add("active");
+            this.dom.sidebarSettings.classList.add("active");
+            this.loadSettingsUI();
+        }
+    }
+
+    /**
+     * 加载设置UI的当前值
+     */
+    loadSettingsUI() {
+        const fontSize = this.getFontSize();
+        this.dom.fontSizeSlider.value = fontSize;
+        this.dom.fontSizeValue.textContent = fontSize + "px";
+    }
+
+    /**
+     * 获取当前字体大小
+     */
+    getFontSize() {
+        try {
+            const size = localStorage.getItem("font_size");
+            return size ? parseInt(size) : 16;
+        } catch {
+            return 16;
+        }
+    }
+
+    /**
+     * 设置字体大小
+     */
+    setFontSize(size) {
+        try {
+            size = parseInt(size);
+            if (size >= 12 && size <= 20) {
+                localStorage.setItem("font_size", size);
+                document.documentElement.style.setProperty("--font-size", size + "px");
+                this.dom.fontSizeValue.textContent = size + "px";
+            }
+        } catch (err) {
+            console.error("Failed to set font size:", err);
         }
     }
 
