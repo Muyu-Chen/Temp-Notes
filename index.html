@@ -72,7 +72,7 @@
           <textarea
             id="draft"
             spellcheck="false"
-            placeholder="把这里当作你的“第二桌面”。随手粘贴、临时记录、快速中转…&#10;&#10;提示：需要留档就点“存档为条目”。"
+            placeholder="把这里当作你的“第二桌面”。随手粘贴、临时记录、快速中转…&#10;&#10;提示：需要留档就点“存档为条目”或Ctrl+S。"
           ></textarea>
         </section>
 
@@ -92,11 +92,10 @@
             </div>
             <div class="right">
               <button
-                id="btnClearArchive"
-                class="danger"
-                title="删除所有存档条目（不影响草稿）"
+                id="btnMore"
+                title="打开更多功能"
               >
-                清空存档
+                更多
               </button>
             </div>
           </div>
@@ -107,6 +106,70 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- 更多功能面板（仿ChatGPT设置面板） -->
+    <div class="modal-overlay" id="moreModalOverlay" style="display: none;"></div>
+    <div class="more-modal" id="moreModal" style="display: none;">
+      <!-- 顶部Header -->
+      <header class="modal-header">
+        <div class="header-title">更多功能</div>
+        <button class="modal-close-btn" id="moreModalClose" aria-label="关闭">✕</button>
+      </header>
+
+      <!-- 主容器：左侧导航 + 右侧内容 -->
+      <div class="modal-body">
+        <!-- 左侧导航栏 -->
+        <div class="modal-sidebar">
+          <div class="sidebar-menu">
+            <button class="sidebar-item active" id="sidebarRecycle" data-panel="recycle">
+              <span class="sidebar-icon">🗑️</span>
+              <span class="sidebar-label">回收站</span>
+            </button>
+            <button class="sidebar-item" id="sidebarImportExport" data-panel="importExport">
+              <span class="sidebar-icon">📤</span>
+              <span class="sidebar-label">导入/导出</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 右侧内容区 -->
+        <div class="modal-content">
+          <!-- 回收站面板 -->
+          <div class="modal-panel active" id="recyclePanel">
+            <div class="panel-header">
+              <h2 class="panel-title">回收站</h2>
+            </div>
+            <div class="panel-body">
+              <div class="recycle-list" id="recycleList"></div>
+              <div class="recycle-actions" id="recycleActions" style="display: none;">
+                <button class="btn-danger" id="recycleClearAll">清空所有</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 导入/导出面板 -->
+          <div class="modal-panel" id="importExportPanel">
+            <div class="panel-header">
+              <h2 class="panel-title">导入/导出</h2>
+            </div>
+            <div class="panel-body">
+              <div class="import-export-grid">
+                <button class="import-export-btn" id="exportBtn">
+                  <div class="btn-icon">📥</div>
+                  <div class="btn-title">导出为 JSON</div>
+                  <div class="btn-desc">将所有数据导出为 JSON 文件</div>
+                </button>
+                <button class="import-export-btn" id="importBtn">
+                  <div class="btn-icon">📤</div>
+                  <div class="btn-title">从 JSON 导入</div>
+                  <div class="btn-desc">从 JSON 文件导入数据</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 应用主入口 -->
     <script type="module" src="./js/main.js"></script>

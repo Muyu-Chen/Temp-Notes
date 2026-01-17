@@ -14,6 +14,9 @@ async function initApp() {
   const uiController = new UIController(domManager);
   const appController = new AppController(uiController, domManager);
 
+  // 初始化回收站（从IndexedDB加载数据）
+  await appController.recycleManager.init();
+
   // 加载并设置主题
   const theme = await loadTheme();
   uiController.updateTheme(theme);
@@ -39,15 +42,56 @@ async function initApp() {
     appController.clearDraft();
   });
 
-  domManager.btnClearArchive.addEventListener("click", () => {
-    appController.clearArchive();
+  domManager.btnMore.addEventListener("click", () => {
+    appController.openMorePanel();
   });
+
+  // 更多功能面板相关的事件
+  domManager.moreModalClose.addEventListener("click", () => {
+    appController.closeMorePanel();
+  });
+
+  domManager.moreModalOverlay.addEventListener("click", () => {
+    appController.closeMorePanel();
+  });
+
+  // 侧边栏菜单项
+  domManager.sidebarRecycle.addEventListener("click", () => {
+    appController.switchPanel("recycle");
+  });
+
+  domManager.sidebarImportExport.addEventListener("click", () => {
+    appController.switchPanel("importExport");
+  });
+
+  // 回收站按钮
+  domManager.recycleClearAll.addEventListener("click", () => {
+    appController.clearRecycleBin();
+  });
+
+  // 设置回收站相关的事件回调
+  uiController.onRecycleItemRestore = (index) => {
+    appController.restoreFromRecycle(index);
+  };
+
+  uiController.onRecycleItemDelete = (index) => {
+    appController.deleteFromRecycle(index);
+  };
 
   domManager.btnExport.addEventListener("click", () => {
     appController.exportAll();
   });
 
   domManager.btnImport.addEventListener("click", () => {
+    appController.importAll();
+  });
+
+  // 面板内导入导出按钮
+  domManager.exportBtn.addEventListener("click", () => {
+    appController.exportAll();
+  });
+
+  domManager.importBtn.addEventListener("click", () => {
     appController.importAll();
   });
 
@@ -61,7 +105,7 @@ async function initApp() {
   };
 
   uiController.onItemDeleteClick = (id) => {
-    appController.deleteItem(id);
+    appController.deleteItem(id); // 异步，无需等待
   };
 
   uiController.onItemEncryptClick = (id) => {

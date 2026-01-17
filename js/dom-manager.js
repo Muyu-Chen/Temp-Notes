@@ -16,10 +16,28 @@ export class DOMManager {
     this.btnArchive = document.getElementById("btnArchive");
     this.btnCopy = document.getElementById("btnCopy");
     this.btnClearDraft = document.getElementById("btnClearDraft");
-    this.btnClearArchive = document.getElementById("btnClearArchive");
+    this.btnMore = document.getElementById("btnMore");
     this.btnExport = document.getElementById("btnExport");
     this.btnImport = document.getElementById("btnImport");
     this.btnTheme = document.getElementById("btnTheme");
+
+    // 更多功能面板相关的DOM元素
+    this.moreModalOverlay = document.getElementById("moreModalOverlay");
+    this.moreModal = document.getElementById("moreModal");
+    this.moreModalClose = document.getElementById("moreModalClose");
+    this.sidebarRecycle = document.getElementById("sidebarRecycle");
+    this.sidebarImportExport = document.getElementById("sidebarImportExport");
+    this.recyclePanel = document.getElementById("recyclePanel");
+    this.importExportPanel = document.getElementById("importExportPanel");
+
+    // 回收站相关的DOM元素
+    this.recycleList = document.getElementById("recycleList");
+    this.recycleActions = document.getElementById("recycleActions");
+    this.recycleClearAll = document.getElementById("recycleClearAll");
+
+    // 导入/导出相关的DOM元素
+    this.exportBtn = document.getElementById("exportBtn");
+    this.importBtn = document.getElementById("importBtn");
   }
 
   setAutosaveState(text) {

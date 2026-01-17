@@ -257,4 +257,6 @@ export class UIController {
   onItemDeleteClick(id) {}
   onItemEncryptClick(id) {}
   onItemDecryptClick(id) {}
+  onRecycleItemRestore(index) {}
+  onRecycleItemDelete(index) {}
 }

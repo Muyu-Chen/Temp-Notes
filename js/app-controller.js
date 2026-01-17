@@ -18,6 +18,7 @@ import {
 import { encryptContent, decryptContent, verifyPassword } from "./crypto.js";
 import { Modal } from "./modal.js";
 import { firstLine, now, uid, storageBytes, isMac } from "./utils.js";
+import { RecycleManager } from "./recycle-manager.js";
 
 export class AppController {
     constructor(uiController, domManager) {
@@ -27,11 +28,17 @@ export class AppController {
         this.saveTimer = null;
         this.currentLoadedItemId = null; // 追踪当前加载的条目ID
         this.modal = new Modal(); // 模态框实例
+        this.recycleManager = new RecycleManager(domManager, uiController); // 回收站管理器
+        this.moreViewActive = false; // 更多功能界面是否激活
     }
 
     init() {
         return (async () => {
             try {
+                // 设置回收站管理器的事件回调
+                this.recycleManager.onItemRestore = (index) => this.restoreFromRecycle(index);
+                this.recycleManager.onItemDelete = (index) => this.deleteFromRecycle(index);
+
                 // 加载初始数据
                 const draft = await loadDraft();
                 this.dom.setDraftValue(draft);
@@ -123,17 +130,17 @@ export class AppController {
         this.render();
     }
 
-    deleteItem(id) {
+    async deleteItem(id) {
         const it = this.items.find((x) => x.id === id);
         if (!it) return;
 
-        const ok = confirm(`确认删除该条目？\n\n标题：${firstLine(it.content)}`);
-        if (!ok) return;
+        // 无需二次确认，直接放入回收站
+        await this.recycleManager.addToRecycle(it);
 
         this.items = this.items.filter((x) => x.id !== id);
         saveItems(this.items); // 异步但不等待
         this.render();
-        this.ui.showToast("已删除条目");
+        this.ui.showToast("已删除条目（可在回收站恢复）");
     }
 
     clearDraft() {
@@ -149,14 +156,152 @@ export class AppController {
         this.dom.focusDraft();
     }
 
-    clearArchive() {
-        const ok = confirm("确认删除所有存档条目？此操作不可恢复。");
-        if (!ok) return;
+    /**
+     * 打开更多功能面板
+     */
+    openMorePanel() {
+        this.moreViewActive = true;
+        this.dom.moreModalOverlay.style.display = "block";
+        this.dom.moreModal.style.display = "flex";
+        // 默认显示回收站
+        this.switchPanel("recycle");
+    }
 
-        this.items = [];
-        saveItems(this.items); // 异步但不等待
-        this.render();
-        this.ui.showToast("存档已清空");
+    /**
+     * 关闭更多功能面板
+     */
+    closeMorePanel() {
+        this.moreViewActive = false;
+        this.dom.moreModalOverlay.style.display = "none";
+        this.dom.moreModal.style.display = "none";
+    }
+
+    /**
+     * 切换面板
+     */
+    switchPanel(panelName) {
+        // 隐藏所有面板
+        this.dom.recyclePanel.classList.remove("active");
+        this.dom.importExportPanel.classList.remove("active");
+        
+        // 移除所有侧边栏项的高亮
+        this.dom.sidebarRecycle.classList.remove("active");
+        this.dom.sidebarImportExport.classList.remove("active");
+
+        // 显示选中的面板和高亮对应的菜单
+        if (panelName === "recycle") {
+            this.dom.recyclePanel.classList.add("active");
+            this.dom.sidebarRecycle.classList.add("active");
+            const items = this.recycleManager.getRecycleItems();
+            this.recycleManager.renderRecycleList(items);
+        } else if (panelName === "importExport") {
+            this.dom.importExportPanel.classList.add("active");
+            this.dom.sidebarImportExport.classList.add("active");
+        }
+    }
+
+    /**
+     * 打开回收站
+     */
+    openRecycleBin() {
+        this.switchPanel("recycle");
+    }
+
+    /**
+     * 返回更多功能主菜单
+     */
+    backToMoreMenu() {
+        this.dom.recycleContent.style.display = "none";
+    }
+
+    /**
+     * 恢复回收站中的条目
+     */
+    async restoreFromRecycle(index) {
+        const items = this.recycleManager.getRecycleItems();
+        if (index < 0 || index >= items.length) return;
+
+        const item = items[index];
+        const title = `恢复条目？`;
+        const msg = `标题：${firstLine(item.content)}`;
+        
+        const result = await this.modal.show({
+            title: title,
+            message: msg,
+            okText: "确认恢复",
+            cancelText: "取消",
+        });
+
+        if (!result.ok) return;
+
+        const restoredItem = await this.recycleManager.restoreItem(index);
+        if (restoredItem) {
+            // 移除 deletedAt 属性
+            delete restoredItem.deletedAt;
+            this.items.unshift(restoredItem);
+            saveItems(this.items);
+            this.render();
+            this.ui.showToast("条目已恢复");
+            
+            // 刷新回收站列表
+            const updatedItems = this.recycleManager.getRecycleItems();
+            this.recycleManager.renderRecycleList(updatedItems);
+        }
+    }
+
+    /**
+     * 永久删除回收站中的条目
+     */
+    async deleteFromRecycle(index) {
+        const items = this.recycleManager.getRecycleItems();
+        if (index < 0 || index >= items.length) return;
+
+        const item = items[index];
+        const title = `永久删除条目？`;
+        const msg = `此操作不可恢复。\n\n标题：${firstLine(item.content)}`;
+        
+        const result = await this.modal.show({
+            title: title,
+            message: msg,
+            okText: "永久删除",
+            cancelText: "取消",
+        });
+
+        if (!result.ok) return;
+
+        await this.recycleManager.deleteFromRecycle(index);
+        this.ui.showToast("条目已永久删除");
+
+        // 刷新回收站列表
+        const updatedItems = this.recycleManager.getRecycleItems();
+        this.recycleManager.renderRecycleList(updatedItems);
+    }
+
+    /**
+     * 清空回收站
+     */
+    async clearRecycleBin() {
+        const items = this.recycleManager.getRecycleItems();
+        if (items.length === 0) {
+            this.ui.showToast("回收站已为空");
+            return;
+        }
+
+        const result = await this.modal.show({
+            title: "清空回收站",
+            message: `将永久删除所有 ${items.length} 个已删除的条目，此操作不可恢复。`,
+            okText: "清空",
+            cancelText: "取消",
+        });
+
+        if (!result.ok) return;
+
+        await this.recycleManager.clearRecycle();
+        this.ui.showToast("回收站已清空");
+
+        // 刷新回收站列表
+        const updatedItems = this.recycleManager.getRecycleItems();
+        this.recycleManager.renderRecycleList(updatedItems);
     }
 
     exportAll() {

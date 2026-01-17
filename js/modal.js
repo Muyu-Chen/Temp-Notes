@@ -24,10 +24,10 @@ export class Modal {
 
     // 创建 modal 容器
     const modal = document.createElement("div");
-    modal.className = "modal-overlay";
+    modal.className = "modal-overlay-dialog";
 
     const content = document.createElement("div");
-    content.className = "modal-content";
+    content.className = "modal-dialog";
 
     // 标题
     const titleEl = document.createElement("div");

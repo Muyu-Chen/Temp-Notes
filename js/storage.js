@@ -6,9 +6,10 @@ import { STORAGE_KEYS, DEFAULT_THEME } from "./constants.js";
 import { uid, now, safeJsonParse, wordCount } from "./utils.js";
 
 const DB_NAME = "tempnotes_db";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_SETTINGS = "settings";
 const STORE_ITEMS = "items";
+const STORE_RECYCLE = "recycle"; // 回收站存储
 
 let dbInstance = null;
 
@@ -34,6 +35,12 @@ const initDB = () => {
       if (!db.objectStoreNames.contains(STORE_ITEMS)) {
         const itemStore = db.createObjectStore(STORE_ITEMS, { keyPath: "id" });
         itemStore.createIndex("updatedAt", "updatedAt", { unique: false });
+      }
+      
+      // 创建 recycle 存储（v2 新增），以 id 为主键
+      if (!db.objectStoreNames.contains(STORE_RECYCLE)) {
+        const recycleStore = db.createObjectStore(STORE_RECYCLE, { keyPath: "id" });
+        recycleStore.createIndex("deletedAt", "deletedAt", { unique: false });
       }
     };
   });
@@ -299,5 +306,78 @@ export const clearEncryptionData = async () => {
     });
   } catch (err) {
     console.error("Failed to clear encryption data:", err);
+  }
+};
+
+/**
+ * 加载回收站条目
+ */
+export const loadRecycleItems = async () => {
+  try {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_RECYCLE, "readonly");
+      const store = transaction.objectStore(STORE_RECYCLE);
+      const index = store.index("deletedAt");
+      const request = index.getAll();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const items = request.result || [];
+        
+        // 按 deletedAt 倒序排列（最新删除的在前）
+        const sorted = items
+          .filter((x) => x && typeof x === "object")
+          .map((x) => ({
+            id: x.id || uid(),
+            content: String(x.content ?? ""),
+            createdAt: Number(x.createdAt || now()),
+            updatedAt: Number(x.updatedAt || x.createdAt || now()),
+            deletedAt: Number(x.deletedAt || now()),
+          }))
+          .sort((a, b) => b.deletedAt - a.deletedAt);
+        
+        resolve(sorted);
+      };
+    });
+  } catch (err) {
+    console.error("Failed to load recycle items:", err);
+    return [];
+  }
+};
+
+/**
+ * 保存回收站条目
+ */
+export const saveRecycleItems = async (items) => {
+  try {
+    const db = await getDB();
+    const transaction = db.transaction(STORE_RECYCLE, "readwrite");
+    const store = transaction.objectStore(STORE_RECYCLE);
+    
+    // 清空所有条目
+    await new Promise((resolve, reject) => {
+      const clearRequest = store.clear();
+      clearRequest.onerror = () => reject(clearRequest.error);
+      clearRequest.onsuccess = () => resolve();
+    });
+    
+    // 批量添加新条目
+    return new Promise((resolve, reject) => {
+      items.forEach((item) => {
+        store.add({
+          id: item.id,
+          content: item.content,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          deletedAt: item.deletedAt,
+        });
+      });
+      
+      transaction.onerror = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
+    });
+  } catch (err) {
+    console.error("Failed to save recycle items:", err);
   }
 };
