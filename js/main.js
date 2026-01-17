@@ -8,14 +8,14 @@ import { AppController } from "./app-controller.js";
 import { loadTheme } from "./storage.js";
 
 // 初始化应用
-function initApp() {
+async function initApp() {
   // 创建控制器实例
   const domManager = new DOMManager();
   const uiController = new UIController(domManager);
   const appController = new AppController(uiController, domManager);
 
   // 加载并设置主题
-  const theme = loadTheme();
+  const theme = await loadTheme();
   uiController.updateTheme(theme);
 
   // 绑定事件监听器
@@ -70,7 +70,7 @@ function initApp() {
   });
 
   // 初始化应用
-  appController.init();
+  await appController.init();
 }
 
 // 当DOM加载完成后启动应用
