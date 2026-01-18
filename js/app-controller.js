@@ -249,6 +249,9 @@ export class AppController {
         const fontSize = this.getFontSize();
         this.dom.fontSizeSlider.value = fontSize;
         this.dom.fontSizeValue.textContent = fontSize + "px";
+
+        const llmSettings = this.getLLMSettings();
+        this.dom.setLLMSettings(llmSettings);
     }
 
     /**
@@ -260,6 +263,33 @@ export class AppController {
             return size ? parseInt(size) : 16;
         } catch {
             return 16;
+        }
+    }
+
+    /**
+     * 获取 LLM 设置
+     */
+    getLLMSettings() {
+        try {
+            const baseUrl = localStorage.getItem("llm_base_url") || "";
+            const apiKey = localStorage.getItem("llm_api_key") || "";
+            const model = localStorage.getItem("llm_model") || "";
+            return { baseUrl, apiKey, model };
+        } catch {
+            return { baseUrl: "", apiKey: "", model: "" };
+        }
+    }
+
+    /**
+     * 保存 LLM 设置
+     */
+    saveLLMSettings(baseUrl, apiKey, model) {
+        try {
+            localStorage.setItem("llm_base_url", baseUrl);
+            localStorage.setItem("llm_api_key", apiKey);
+            localStorage.setItem("llm_model", model);
+        } catch (err) {
+            console.error("Failed to save LLM settings:", err);
         }
     }
 
@@ -277,6 +307,85 @@ export class AppController {
         } catch (err) {
             console.error("Failed to set font size:", err);
         }
+    }
+
+    /**
+     * 回收站搜索
+     */
+    onRecycleSearch() {
+        const searchQuery = this.dom.getRecycleSearchValue();
+        const items = this.recycleManager.getRecycleItems();
+        this.recycleManager.renderRecycleList(items, searchQuery);
+    }
+
+    /**
+     * 清除所有内容（包括草稿、条目、回收站、设置）
+     */
+    async clearAllData() {
+        const result = await this.modal.show({
+            title: "清除所有内容",
+            message: "此操作将永久删除所有草稿、条目、回收站和设置数据，无法恢复。\n\n请确认是否继续。",
+            okText: "继续清除",
+            cancelText: "取消",
+        });
+
+        if (!result.ok) return;
+
+        // 二级确认
+        const confirmResult = await this.modal.show({
+            title: "最后确认",
+            message: "确定要清除所有数据吗？此操作不可逆。",
+            okText: "确认清除",
+            cancelText: "取消",
+        });
+
+        if (!confirmResult.ok) return;
+
+        try {
+            // 清除 IndexedDB
+            const db = await this.getDB();
+            const transaction = db.transaction(["settings", "items", "recycle"], "readwrite");
+            
+            ["settings", "items", "recycle"].forEach(storeName => {
+                transaction.objectStore(storeName).clear();
+            });
+
+            await new Promise((resolve, reject) => {
+                transaction.oncomplete = resolve;
+                transaction.onerror = () => reject(transaction.error);
+            });
+
+            // 清除 localStorage
+            localStorage.clear();
+
+            // 清除内存数据
+            this.items = [];
+            this.currentLoadedItemId = null;
+            this.recycleManager.deletedItems = [];
+
+            // 重置UI
+            this.dom.setDraftValue("");
+            this.dom.setAutosaveState("已保存");
+            this.ui.updateMeta("", [], 0, 0);
+            this.render();
+
+            this.ui.showToast("所有数据已清除");
+            this.closeMorePanel();
+        } catch (err) {
+            console.error("清除数据失败:", err);
+            this.ui.showToast("清除数据失败");
+        }
+    }
+
+    /**
+     * 获取 IndexedDB 连接（简化版）
+     */
+    async getDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open("tempnotes_db", 2);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
     }
 
     /**

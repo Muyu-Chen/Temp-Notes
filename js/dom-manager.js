@@ -35,6 +35,7 @@ export class DOMManager {
     this.recycleList = document.getElementById("recycleList");
     this.recycleActions = document.getElementById("recycleActions");
     this.recycleClearAll = document.getElementById("recycleClearAll");
+    this.recycleSearch = document.getElementById("recycleSearch");
 
     // 导入/导出相关的DOM元素
     this.exportBtn = document.getElementById("exportBtn");
@@ -43,6 +44,10 @@ export class DOMManager {
     // 设置相关的DOM元素
     this.fontSizeSlider = document.getElementById("fontSizeSlider");
     this.fontSizeValue = document.getElementById("fontSizeValue");
+    this.llmBaseUrl = document.getElementById("llmBaseUrl");
+    this.llmApiKey = document.getElementById("llmApiKey");
+    this.llmModel = document.getElementById("llmModel");
+    this.btnClearAllData = document.getElementById("btnClearAllData");
   }
 
   setAutosaveState(text) {
@@ -90,11 +95,29 @@ export class DOMManager {
     this.search.select();
   }
 
+  getRecycleSearchValue() {
+    return (this.recycleSearch.value || "").trim().toLowerCase();
+  }
+
   clearListContent() {
     this.list.innerHTML = "";
   }
 
   appendListItem(element) {
     this.list.appendChild(element);
+  }
+
+  getLLMSettings() {
+    return {
+      baseUrl: this.llmBaseUrl.value || "",
+      apiKey: this.llmApiKey.value || "",
+      model: this.llmModel.value || "",
+    };
+  }
+
+  setLLMSettings(settings) {
+    if (settings.baseUrl) this.llmBaseUrl.value = settings.baseUrl;
+    if (settings.apiKey) this.llmApiKey.value = settings.apiKey;
+    if (settings.model) this.llmModel.value = settings.model;
   }
 }

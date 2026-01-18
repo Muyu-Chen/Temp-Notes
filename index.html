@@ -144,6 +144,7 @@
           <div class="modal-panel active" id="recyclePanel">
             <div class="panel-header">
               <h2 class="panel-title">回收站</h2>
+              <input type="text" id="recycleSearch" class="search" placeholder="搜索已删除的条目..." style="width: 100%; margin-top: 8px;">
             </div>
             <div class="panel-body">
               <div class="recycle-list" id="recycleList"></div>
@@ -190,6 +191,33 @@
                     <input type="range" id="fontSizeSlider" min="12" max="20" value="16" class="font-slider">
                     <span id="fontSizeValue" class="font-size-value">16px</span>
                   </div>
+                </div>
+                <div class="settings-item" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                  <div class="settings-label">
+                    <span class="label-name">大模型配置</span>
+                    <span class="label-desc">配置 LLM 配合使用</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                    <div>
+                      <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px;">Base URL</label>
+                      <input type="text" id="llmBaseUrl" class="settings-input" placeholder="例如: https://api.openai.com/v1" style="width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px;">API Key</label>
+                      <input type="password" id="llmApiKey" class="settings-input" placeholder="例如: sk-..." style="width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px;">Model</label>
+                      <input type="text" id="llmModel" class="settings-input" placeholder="例如: gpt-4 或 claude-3-opus" style="width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+                    </div>
+                  </div>
+                </div>
+                <div class="settings-item" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                  <div class="settings-label">
+                    <span class="label-name">清除所有内容</span>
+                    <span class="label-desc">永久删除所有草稿、条目和回收站数据，无法恢复</span>
+                  </div>
+                  <button id="btnClearAllData" class="danger" style="width: 100%; margin-top: 8px;">清除所有内容</button>
                 </div>
               </div>
             </div>

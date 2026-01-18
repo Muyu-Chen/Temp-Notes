@@ -100,6 +100,24 @@ async function initApp() {
     appController.setFontSize(e.target.value);
   });
 
+  // 回收站搜索
+  domManager.recycleSearch.addEventListener("input", () => {
+    appController.onRecycleSearch();
+  });
+
+  // LLM 配置自动保存
+  [domManager.llmBaseUrl, domManager.llmApiKey, domManager.llmModel].forEach(input => {
+    input.addEventListener("input", () => {
+      const settings = domManager.getLLMSettings();
+      appController.saveLLMSettings(settings.baseUrl, settings.apiKey, settings.model);
+    });
+  });
+
+  // 清除所有内容按钮
+  domManager.btnClearAllData.addEventListener("click", () => {
+    appController.clearAllData();
+  });
+
   // 设置UI控制器的事件回调
   uiController.onItemLoadClick = (id) => {
     appController.loadToDraft(id);

@@ -87,14 +87,21 @@ export class RecycleManager {
   /**
    * 渲染回收站列表
    */
-  renderRecycleList(items) {
+  renderRecycleList(items, searchQuery = "") {
+    const filtered = !searchQuery
+      ? items
+      : items.filter((it) => {
+          const title = this.firstLine(it.content);
+          return title.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+
     this.dom.recycleList.innerHTML = "";
 
-    if (items.length === 0) {
+    if (filtered.length === 0) {
       const empty = document.createElement("div");
       empty.className = "muted small";
       empty.style.padding = "8px 6px";
-      empty.textContent = "回收站为空";
+      empty.textContent = searchQuery ? "没有找到匹配的已删除条目。" : "回收站为空";
       this.dom.recycleList.appendChild(empty);
       this.dom.recycleActions.style.display = "none";
       return;
@@ -102,7 +109,8 @@ export class RecycleManager {
 
     this.dom.recycleActions.style.display = "block";
 
-    items.forEach((item, index) => {
+    filtered.forEach((item, filteredIndex) => {
+      const actualIndex = items.indexOf(item);
       const card = document.createElement("div");
       card.className = "recycle-item";
 
@@ -112,6 +120,10 @@ export class RecycleManager {
       const title = document.createElement("div");
       title.className = "recycle-item-title";
       title.textContent = this.firstLine(item.content);
+      title.style.maxWidth = "calc(100% - 80px)";
+      title.style.whiteSpace = "nowrap";
+      title.style.overflow = "hidden";
+      title.style.textOverflow = "ellipsis";
 
       const deleteTime = document.createElement("div");
       deleteTime.className = "recycle-item-time";
@@ -131,14 +143,14 @@ export class RecycleManager {
       btnRestore.className = "primary";
       btnRestore.textContent = "恢复";
       btnRestore.onclick = () => {
-        this.onItemRestore(index);
+        this.onItemRestore(actualIndex);
       };
 
       const btnDelete = document.createElement("button");
       btnDelete.className = "danger";
       btnDelete.textContent = "永久删除";
       btnDelete.onclick = () => {
-        this.onItemDelete(index);
+        this.onItemDelete(actualIndex);
       };
 
       actions.appendChild(btnRestore);
