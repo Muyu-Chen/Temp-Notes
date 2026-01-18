@@ -80,6 +80,25 @@ export const storageBytes = () => {
 };
 
 /**
+ * 估算 IndexedDB 持久化数据的字节数（基于当前内存数据）
+ */
+export const estimateStorageBytes = (draft, items, recycleItems, settings = {}) => {
+  try {
+    const payload = {
+      draft: draft || "",
+      items: Array.isArray(items) ? items : [],
+      recycle: Array.isArray(recycleItems) ? recycleItems : [],
+      settings: settings || {},
+    };
+    const json = JSON.stringify(payload) || "";
+    return json.length * 2; // 按 UTF-16 估算
+  } catch (err) {
+    console.error("Failed to estimate storage size:", err);
+    return 0;
+  }
+};
+
+/**
  * 将字节数转换为可读格式
  */
 export const humanBytes = (b) => {

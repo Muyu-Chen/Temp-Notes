@@ -17,7 +17,7 @@ import {
 } from "./storage.js";
 import { encryptContent, decryptContent, verifyPassword } from "./crypto.js";
 import { Modal } from "./modal.js";
-import { firstLine, now, uid, storageBytes, isMac } from "./utils.js";
+import { firstLine, now, uid, estimateStorageBytes, isMac } from "./utils.js";
 import { RecycleManager } from "./recycle-manager.js";
 
 export class AppController {
@@ -30,6 +30,12 @@ export class AppController {
         this.modal = new Modal(); // 模态框实例
         this.recycleManager = new RecycleManager(domManager, uiController); // 回收站管理器
         this.moreViewActive = false; // 更多功能界面是否激活
+    }
+
+    getStorageUsageBytes(draftValue = this.dom.getDraftValue()) {
+        const recycleItems = this.recycleManager.getRecycleItems();
+        const settings = { theme: this.ui.getTheme(), fontSize: this.getFontSize() };
+        return estimateStorageBytes(draftValue, this.items, recycleItems, settings);
     }
 
     init() {
@@ -51,7 +57,7 @@ export class AppController {
                 this.items = await loadItems();
 
                 this.dom.setAutosaveState("已保存");
-                this.ui.updateMeta(this.dom.getDraftValue(), this.items, storageBytes());
+                this.ui.updateMeta(draft, this.items, this.getStorageUsageBytes(draft));
                 this.render();
                 this.dom.focusDraft();
             } catch (e) {
@@ -62,14 +68,15 @@ export class AppController {
     }
 
     scheduleDraftSave() {
-        this.dom.setAutosaveState("正在保存...");
+        this.dom.setAutosaveState("保存中");
         clearTimeout(this.saveTimer);
         this.saveTimer = setTimeout(
             async () => {
                 try {
-                    await saveDraft(this.dom.getDraftValue());
+                    const draft = this.dom.getDraftValue();
+                    await saveDraft(draft);
                     this.dom.setAutosaveState("已保存");
-                    this.ui.updateMeta(this.dom.getDraftValue(), this.items, storageBytes());
+                    this.ui.updateMeta(draft, this.items, this.getStorageUsageBytes(draft));
                 } catch (e) {
                     this.dom.setAutosaveState("保存失败");
                     this.ui.showToast("保存失败：IndexedDB 可能已满或被禁用");
@@ -80,7 +87,8 @@ export class AppController {
 
     render() {
         this.ui.renderItemsList(this.items, this.items);
-        this.ui.updateMeta(this.dom.getDraftValue(), this.items, storageBytes());
+        const draft = this.dom.getDraftValue();
+        this.ui.updateMeta(draft, this.items, this.getStorageUsageBytes(draft));
     }
 
     loadToDraft(id) {
@@ -97,7 +105,7 @@ export class AppController {
         saveDraft(it.content); // 异步但不等待
         this.currentLoadedItemId = id; // 记录加载的条目ID
         this.dom.setAutosaveState("已保存");
-        this.ui.updateMeta(this.dom.getDraftValue(), this.items, storageBytes());
+        this.ui.updateMeta(it.content, this.items, this.getStorageUsageBytes(it.content));
         this.ui.showToast("已加载到草稿区");
         this.dom.focusDraft();
     }
@@ -155,7 +163,7 @@ export class AppController {
         saveDraft(""); // 异步但不等待
         this.currentLoadedItemId = null; // 清除加载的条目ID
         this.dom.setAutosaveState("已保存");
-        this.ui.updateMeta(this.dom.getDraftValue(), this.items, storageBytes());
+        this.ui.updateMeta("", this.items, this.getStorageUsageBytes(""));
         this.ui.showToast("草稿已清空");
         this.dom.focusDraft();
     }
@@ -422,7 +430,7 @@ export class AppController {
         }
 
         this.scheduleDraftSave();
-        this.ui.updateMeta(draft, this.items, storageBytes());
+        this.ui.updateMeta(draft, this.items, this.getStorageUsageBytes(draft));
     }
 
     onSearchInput() {
