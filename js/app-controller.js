@@ -355,7 +355,7 @@ export class AppController {
                 transaction.onerror = () => reject(transaction.error);
             });
 
-            // 清除 localStorage
+            // 清除 localStorage 中所有数据
             localStorage.clear();
 
             // 清除内存数据
@@ -367,6 +367,12 @@ export class AppController {
             this.dom.setDraftValue("");
             this.dom.setAutosaveState("已保存");
             this.ui.updateMeta("", [], 0, 0);
+            
+            // 重置所有设置输入框
+            this.dom.fontSizeSlider.value = "16";
+            this.dom.fontSizeValue.textContent = "16px";
+            this.dom.setLLMSettings({ baseUrl: "", apiKey: "", model: "" });
+            
             this.render();
 
             this.ui.showToast("所有数据已清除");
