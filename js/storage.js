@@ -158,6 +158,8 @@ export const loadItems = async () => {
             content: String(x.content ?? ""),
             createdAt: Number(x.createdAt || now()),
             updatedAt: Number(x.updatedAt || x.createdAt || now()),
+            encrypted: Boolean(x.encrypted),
+            encryptionHint: x.encryptionHint ? String(x.encryptionHint) : undefined,
           }))
           .sort((a, b) => b.updatedAt - a.updatedAt);
         
@@ -194,6 +196,8 @@ export const saveItems = async (items) => {
           content: item.content,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
+          encrypted: item.encrypted === true,
+          encryptionHint: item.encryptionHint,
         });
       });
       
@@ -235,6 +239,8 @@ export const normalizeImportedData = (data) => {
       content: String(x.content ?? ""),
       createdAt: Number(x.createdAt || now()),
       updatedAt: Number(x.updatedAt || x.createdAt || now()),
+      encrypted: Boolean(x.encrypted),
+      encryptionHint: x.encryptionHint ? String(x.encryptionHint) : undefined,
     }))
     .filter((x) => x.content.length > 0);
 
@@ -334,6 +340,8 @@ export const loadRecycleItems = async () => {
             createdAt: Number(x.createdAt || now()),
             updatedAt: Number(x.updatedAt || x.createdAt || now()),
             deletedAt: Number(x.deletedAt || now()),
+            encrypted: Boolean(x.encrypted),
+            encryptionHint: x.encryptionHint ? String(x.encryptionHint) : undefined,
           }))
           .sort((a, b) => b.deletedAt - a.deletedAt);
         
@@ -371,6 +379,8 @@ export const saveRecycleItems = async (items) => {
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
           deletedAt: item.deletedAt,
+          encrypted: item.encrypted === true,
+          encryptionHint: item.encryptionHint,
         });
       });
       

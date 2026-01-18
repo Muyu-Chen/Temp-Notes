@@ -542,6 +542,10 @@ export class AppController {
                 };
                 
                 await saveItems(this.items);
+                // 加密后立刻切断与加载条目的关联，防止后续保存覆盖加密内容
+                if (this.currentLoadedItemId === id) {
+                    this.currentLoadedItemId = null;
+                }
                 this.ui.showToast("条目已加密");
                 this.render();
             }
