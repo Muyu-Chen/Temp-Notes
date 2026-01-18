@@ -377,6 +377,8 @@ export class AppController {
 
             this.ui.showToast("所有数据已清除");
             this.closeMorePanel();
+            // 刷新界面
+            location.reload();
         } catch (err) {
             console.error("清除数据失败:", err);
             this.ui.showToast("清除数据失败");
@@ -643,7 +645,7 @@ export class AppController {
 
         try {
             // 加密内容（包含 ID 便于验证）
-            const encrypted = await encryptContent(item.id, item.content, password);
+            const encrypted = encryptContent(item.id, item.content, password);
             
             // 更新条目为加密状态
             const itemIndex = this.items.findIndex((x) => x.id === id);
@@ -700,11 +702,11 @@ export class AppController {
 
         try {
             // 尝试解密
-            const decrypted = await decryptContent(item.content, password);
+            const decrypted = decryptContent(item.content, password);
             const [decryptedId, content] = decrypted.split("|", 2);
             
             // 验证密码正确性
-            const isValid = await verifyPassword(item.id, item.content, password);
+            const isValid = verifyPassword(item.id, item.content, password);
             if (!isValid) {
                 this.ui.showToast("密码错误");
                 return;
