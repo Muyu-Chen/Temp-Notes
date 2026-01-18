@@ -414,8 +414,15 @@ export class AppController {
 
     // Event handlers
     onDraftInput() {
+        const draft = this.dom.getDraftValue();
+
+        // 草稿被清空后，切断与已有条目的关联，后续保存必定新建ID
+        if (!draft.trim()) {
+            this.currentLoadedItemId = null;
+        }
+
         this.scheduleDraftSave();
-        this.ui.updateMeta(this.dom.getDraftValue(), this.items, storageBytes());
+        this.ui.updateMeta(draft, this.items, storageBytes());
     }
 
     onSearchInput() {
