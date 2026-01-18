@@ -11,6 +11,7 @@ export class DOMManager {
     this.wc = document.getElementById("wc");
     this.countItems = document.getElementById("countItems");
     this.usage = document.getElementById("usage");
+    this.draftUsage = document.getElementById("draftUsage");
     this.toast = document.getElementById("toast");
 
     this.btnArchive = document.getElementById("btnArchive");
@@ -58,6 +59,10 @@ export class DOMManager {
 
   updateUsage(bytes) {
     this.usage.textContent = bytes;
+  }
+
+  updateDraftUsage(bytes) {
+    this.draftUsage.textContent = bytes;
   }
 
   getDraftValue() {

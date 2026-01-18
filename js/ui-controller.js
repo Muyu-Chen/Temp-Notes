@@ -27,14 +27,16 @@ export class UIController {
     return document.documentElement.getAttribute("data-theme") || "dark";
   }
 
-  updateMeta(draftValue, items, storageBytes) {
+  updateMeta(draftValue, items, draftUsageBytes, totalUsageBytes) {
     const wc = wordCount(draftValue);
     const itemCount = items.length;
-    const usage = humanBytes(storageBytes);
+    const draftUsage = humanBytes(draftUsageBytes || 0);
+    const totalUsage = humanBytes(totalUsageBytes || 0);
 
     this.dom.updateWordCount(wc);
     this.dom.updateItemCount(itemCount);
-    this.dom.updateUsage(usage);
+    this.dom.updateDraftUsage(draftUsage);
+    this.dom.updateUsage(totalUsage);
   }
 
   renderItemsList(items, items_allItems) {
@@ -102,7 +104,7 @@ export class UIController {
       meta.className = "meta";
       
       if (isEncrypted) {
-        meta.innerHTML = `<span>更新：${this.formatTime(it.updatedAt)}</span><span class="tag">🔒 加密</span>`;
+        meta.innerHTML = `<span>更新：${this.formatTime(it.updatedAt)}</span><span class="tag">已加密</span>`;
       } else {
         meta.innerHTML = `<span>更新：${this.formatTime(it.updatedAt)}</span><span class="tag">字数 ${wordCount(it.content)}</span>`;
       }
@@ -111,7 +113,7 @@ export class UIController {
       preview.className = "preview";
       
       if (isEncrypted) {
-        preview.innerHTML = `<span style="color: var(--muted); font-style: italic;">提示：${it.encryptionHint || "无提示"}</span>`;
+        preview.innerHTML = `<div class="muted small">加密条目，解密后才能预览/加载</div><div class="muted" style="font-style: italic;">提示：${it.encryptionHint || "无提示"}</div>`;
       } else {
         preview.textContent = clamp(it.content.trim() || "（空）", 240);
       }

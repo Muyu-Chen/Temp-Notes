@@ -25,8 +25,7 @@
               >自动保存：<span id="autosaveState">就绪</span></span
             >
             <span class="pill">草稿字数：<span id="wc">0</span></span>
-            <span class="pill">存档条目：<span id="countItems">0</span></span>
-            <span class="pill">占用估算：<span id="usage">0 KB</span></span>
+            <span class="pill">草稿占用：<span id="draftUsage">0 KB</span></span>
           </div>
         </div>
 
@@ -78,8 +77,13 @@
         <section class="panel">
           <div class="panel-head" style="gap: 8px; flex-wrap: wrap">
             <div class="label" style="flex: 1; min-width: 200px">
-              <span>存档条目</span>
+            <!--<span>存档条目</span>
               <span class="muted small">点击条目可加载到草稿区</span>
+                -->
+              <div class="muted small" style="display:flex; gap:12px; flex-wrap:wrap; margin-top:1px;">
+                <span>存档条目：<span id="countItems">0</span></span>
+                <span>总占用估算：<span id="usage">0 KB</span></span>
+              </div>
             </div>
             <div class="right" style="flex: 1; min-width: 220px">
               <input
