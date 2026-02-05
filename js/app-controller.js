@@ -355,8 +355,12 @@ export class AppController {
                 transaction.onerror = () => reject(transaction.error);
             });
 
-            // 清除 localStorage 中所有数据
-            localStorage.clear();
+            // 清除 localStorage 中当前页面用过的键
+            localStorage.removeItem("font_size");
+            localStorage.removeItem("llm_base_url");
+            localStorage.removeItem("llm_api_key");
+            localStorage.removeItem("llm_model");
+            localStorage.removeItem("draft");
 
             // 清除内存数据
             this.items = [];
