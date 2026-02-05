@@ -624,11 +624,15 @@ export class AppController {
             return;
         }
 
+        // 提取内容第一行作为默认标题
+        const firstLine = item.content.split("\n")[0].trim() || "私人笔记";
+
         // 显示输入框，让用户输入密码和提示
         const result = await this.modal.show({
             title: "加密条目",
             message: "设置密码保护此条目",
             inputs: [
+                { type: "text", label: "条目标题", placeholder: "例如：私人笔记", value: firstLine, required: true },
                 { type: "password", label: "输入密码", placeholder: "密码", required: true },
                 { type: "text", label: "密码提示", placeholder: "例如：我的生日", required: true }
             ],
@@ -640,10 +644,10 @@ export class AppController {
             return;
         }
 
-        const [password, hint] = result.values;
+        const [encryptedTitle, password, hint] = result.values;
 
-        if (!password.trim() || !hint.trim()) {
-            this.ui.showToast("密码和提示均不能为空");
+        if (!encryptedTitle.trim() || !password.trim() || !hint.trim()) {
+            this.ui.showToast("标题、密码和提示均不能为空");
             return;
         }
 
@@ -658,6 +662,7 @@ export class AppController {
                     ...this.items[itemIndex],
                     content: encrypted,
                     encrypted: true,
+                    encryptedTitle: encryptedTitle.trim(),
                     encryptionHint: hint,
                     updatedAt: now(),
                 };
@@ -723,6 +728,7 @@ export class AppController {
                     ...this.items[itemIndex],
                     content: content,
                     encrypted: false,
+                    encryptedTitle: undefined,
                     encryptionHint: undefined,
                     updatedAt: now(),
                 };
