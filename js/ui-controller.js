@@ -83,7 +83,7 @@ export class UIController {
       title.className = "titleline";
       
       if (isEncrypted) {
-        title.innerHTML = `🔒 <span style="color: var(--muted)">已加密的内容</span>`;
+        title.innerHTML = `🔒 <span>${it.encryptedTitle || "已加密的内容"}</span>`;
       } else {
         title.textContent = firstLine(it.content);
       }

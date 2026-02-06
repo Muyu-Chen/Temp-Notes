@@ -59,6 +59,7 @@ export class Modal {
       input.className = "modal-input";
       input.type = inputSpec.type || "text";
       input.placeholder = inputSpec.placeholder || "";
+      input.value = inputSpec.value || "";
       input.required = inputSpec.required !== false;
       group.appendChild(input);
       inputsContainer.appendChild(group);

@@ -119,7 +119,16 @@ export class RecycleManager {
 
       const title = document.createElement("div");
       title.className = "recycle-item-title";
-      title.textContent = this.firstLine(item.content);
+      
+      // 如果是加密条目，显示加密标题
+      if (item.encrypted && item.encryptedTitle) {
+        title.textContent = `🔒 ${item.encryptedTitle}`;
+      } else if (item.encrypted) {
+        title.textContent = `🔒 已加密的内容`;
+      } else {
+        title.textContent = this.firstLine(item.content);
+      }
+      
       title.style.maxWidth = "calc(100% - 80px)";
       title.style.whiteSpace = "nowrap";
       title.style.overflow = "hidden";
@@ -134,7 +143,7 @@ export class RecycleManager {
 
       const preview = document.createElement("div");
       preview.className = "recycle-item-preview";
-      preview.textContent = this.clamp(item.content.trim() || "（空）", 240);
+      preview.textContent = this.clamp(item.content.trim() || "（空）", 100);
 
       const actions = document.createElement("div");
       actions.className = "recycle-item-actions";
