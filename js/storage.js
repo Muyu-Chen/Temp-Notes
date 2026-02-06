@@ -86,6 +86,7 @@ const writeSetting = async (key, value) => {
   });
 };
 
+
 /**
  * 读取主题设置
  */
@@ -131,6 +132,41 @@ export const saveDraft = async (content) => {
     await writeSetting(STORAGE_KEYS.DRAFT, content);
   } catch (err) {
     console.error("Failed to save draft:", err);
+  }
+};
+
+/**
+ * 读取草稿关联的条目ID
+ */
+export const loadDraftItemId = async () => {
+  try {
+    const id = await readSetting(STORAGE_KEYS.DRAFT_ITEM_ID);
+    return id || null;
+  } catch (err) {
+    console.error("Failed to load draft item id:", err);
+    return null;
+  }
+};
+
+/**
+ * 保存草稿关联的条目ID
+ */
+export const saveDraftItemId = async (id) => {
+  try {
+    await writeSetting(STORAGE_KEYS.DRAFT_ITEM_ID, id || null);
+  } catch (err) {
+    console.error("Failed to save draft item id:", err);
+  }
+};
+
+/**
+ * 清除草稿关联的条目ID
+ */
+export const clearDraftItemId = async () => {
+  try {
+    await writeSetting(STORAGE_KEYS.DRAFT_ITEM_ID, null);
+  } catch (err) {
+    console.error("Failed to clear draft item id:", err);
   }
 };
 

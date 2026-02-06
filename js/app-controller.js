@@ -5,6 +5,9 @@
 import {
     loadDraft,
     saveDraft,
+    loadDraftItemId,
+    saveDraftItemId,
+    clearDraftItemId,
     loadItems,
     saveItems,
     normalizeImportedData,
@@ -55,10 +58,24 @@ export class AppController {
 
                 // 加载初始数据
                 const draft = await loadDraft();
+                const draftItemId = await loadDraftItemId();
                 this.dom.setDraftValue(draft);
 
                 // 加载存档条目
                 this.items = await loadItems();
+
+                // 恢复草稿关联的条目ID（若无效则清空）
+                this.currentLoadedItemId = draftItemId || null;
+                if (!draft.trim()) {
+                    this.currentLoadedItemId = null;
+                    clearDraftItemId();
+                } else if (this.currentLoadedItemId) {
+                    const linked = this.items.find((x) => x.id === this.currentLoadedItemId);
+                    if (!linked || linked.encrypted) {
+                        this.currentLoadedItemId = null;
+                        clearDraftItemId();
+                    }
+                }
 
                 this.dom.setAutosaveState("已保存");
                 this.ui.updateMeta(
@@ -123,6 +140,7 @@ export class AppController {
         this.dom.setDraftValue(it.content);
         saveDraft(it.content); // 异步但不等待
         this.currentLoadedItemId = id; // 记录加载的条目ID
+        saveDraftItemId(id); // 异步但不等待
         this.dom.setAutosaveState("已保存");
         this.ui.updateMeta(
             it.content,
@@ -151,6 +169,7 @@ export class AppController {
                     updatedAt: now()
                 };
                 this.ui.showToast("已更新条目");
+                saveDraftItemId(this.currentLoadedItemId); // 异步但不等待
                 saveItems(this.items); // 异步但不等待
                 this.render();
                 return;
@@ -161,6 +180,7 @@ export class AppController {
         const it = { id: uid(), content, createdAt: now(), updatedAt: now() };
         this.items.unshift(it);
         this.currentLoadedItemId = it.id; // 记录新创建条目的ID，后续编辑会更新此条目
+        saveDraftItemId(it.id); // 异步但不等待
         this.ui.showToast("已存档为新条目");
         saveItems(this.items); // 异步但不等待
         this.render();
@@ -174,6 +194,10 @@ export class AppController {
         await this.recycleManager.addToRecycle(it);
 
         this.items = this.items.filter((x) => x.id !== id);
+        if (this.currentLoadedItemId === id) {
+            this.currentLoadedItemId = null;
+            clearDraftItemId();
+        }
         saveItems(this.items); // 异步但不等待
         this.render();
         this.ui.showToast("已删除条目（可在回收站恢复）");
@@ -186,9 +210,35 @@ export class AppController {
         this.dom.setDraftValue("");
         saveDraft(""); // 异步但不等待
         this.currentLoadedItemId = null; // 清除加载的条目ID
+        clearDraftItemId();
         this.dom.setAutosaveState("已保存");
         this.ui.updateMeta("", this.items, 0, this.getStorageUsageBytes(""));
         this.ui.showToast("草稿已清空");
+        this.dom.focusDraft();
+    }
+
+    /**
+     * 新建草稿
+     */
+    async newDraft() {
+        const result = await this.modal.show({
+            title: "新建草稿",
+            message: "是否把当前草稿保存/更新到条目中？",
+            okText: "保存",
+            cancelText: "不保存",
+        });
+
+        if (result.ok) {
+            this.archiveDraft();
+        }
+
+        this.dom.setDraftValue("");
+        saveDraft(""); // 异步但不等待
+        this.currentLoadedItemId = null;
+        clearDraftItemId();
+        this.dom.setAutosaveState("已保存");
+        this.ui.updateMeta("", this.items, 0, this.getStorageUsageBytes(""));
+        this.ui.showToast(result.ok ? "已保存并新建草稿" : "已丢弃更改并新建草稿");
         this.dom.focusDraft();
     }
 
@@ -553,6 +603,8 @@ export class AppController {
                 this.dom.setDraftValue(importedDraft);
                 saveDraft(importedDraft); // 异步但不等待
                 this.dom.setAutosaveState("已保存");
+                this.currentLoadedItemId = null;
+                clearDraftItemId();
             }
 
             saveItems(this.items); // 异步但不等待
@@ -572,6 +624,7 @@ export class AppController {
         // 草稿被清空后，切断与已有条目的关联，后续保存必定新建ID
         if (!draft.trim()) {
             this.currentLoadedItemId = null;
+            clearDraftItemId();
         }
 
         this.scheduleDraftSave();
@@ -671,6 +724,7 @@ export class AppController {
                 // 加密后立刻切断与加载条目的关联，防止后续保存覆盖加密内容
                 if (this.currentLoadedItemId === id) {
                     this.currentLoadedItemId = null;
+                        clearDraftItemId(); // 清除草稿关联条目ID
                 }
                 this.ui.showToast("条目已加密");
                 this.render();
