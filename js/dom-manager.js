@@ -15,6 +15,7 @@ export class DOMManager {
     this.toast = document.getElementById("toast");
 
     this.btnArchive = document.getElementById("btnArchive");
+    this.btnNew = document.getElementById("btnNew");
     this.btnCopy = document.getElementById("btnCopy");
     this.btnClearDraft = document.getElementById("btnClearDraft");
     this.btnMore = document.getElementById("btnMore");

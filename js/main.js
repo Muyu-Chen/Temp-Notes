@@ -34,6 +34,10 @@ async function initApp() {
     appController.archiveDraft();
   });
 
+  domManager.btnNew.addEventListener("click", () => {
+    appController.newDraft();
+  });
+
   domManager.btnCopy.addEventListener("click", () => {
     uiController.copyText(domManager.getDraftValue() || "");
   });
