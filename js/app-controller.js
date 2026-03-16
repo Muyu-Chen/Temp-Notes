@@ -683,11 +683,11 @@ export class AppController {
         // 显示输入框，让用户输入密码和提示
         const result = await this.modal.show({
             title: "加密条目",
-            message: "设置密码保护此条目",
+            message: "设置密码保护此条目（密码留空则使用默认密码）",
             inputs: [
                 { type: "text", label: "条目标题", placeholder: "例如：私人笔记", value: firstLine, required: true },
-                { type: "password", label: "输入密码", placeholder: "密码", required: true },
-                { type: "text", label: "密码提示", placeholder: "例如：我的生日", required: true }
+                { type: "password", label: "输入密码", placeholder: "留空使用默认密码", required: false },
+                { type: "text", label: "密码提示", placeholder: "例如：我的生日", required: false, value: item.encryptionHint || "" }
             ],
             okText: "加密",
             cancelText: "取消",
@@ -697,12 +697,15 @@ export class AppController {
             return;
         }
 
-        const [encryptedTitle, password, hint] = result.values;
+        const [encryptedTitle, rawPassword, hint] = result.values;
 
-        if (!encryptedTitle.trim() || !password.trim() || !hint.trim()) {
-            this.ui.showToast("标题、密码和提示均不能为空");
+        if (!encryptedTitle.trim()) {
+            this.ui.showToast("标题不能为空");
             return;
         }
+
+        const useDefaultPassword = !rawPassword.trim();
+        const password = useDefaultPassword ? "password" : rawPassword.trim();
 
         try {
             // 加密内容（包含 ID 便于验证）
@@ -716,7 +719,8 @@ export class AppController {
                     content: encrypted,
                     encrypted: true,
                     encryptedTitle: encryptedTitle.trim(),
-                    encryptionHint: hint,
+                    encryptionHint: hint.trim() || undefined,
+                    defaultPassword: useDefaultPassword || undefined,
                     updatedAt: now(),
                 };
                 
@@ -726,7 +730,7 @@ export class AppController {
                     this.currentLoadedItemId = null;
                         clearDraftItemId(); // 清除草稿关联条目ID
                 }
-                this.ui.showToast("条目已加密");
+                this.ui.showToast(useDefaultPassword ? "条目已加密（使用默认密码）" : "条目已加密");
                 this.render();
             }
         } catch (err) {
@@ -747,21 +751,28 @@ export class AppController {
             return;
         }
 
-        const result = await this.modal.show({
-            title: "解密条目",
-            message: `提示：${item.encryptionHint || "无提示"}`,
-            inputs: [
-                { type: "password", label: "输入密码", placeholder: "密码", required: true }
-            ],
-            okText: "解密",
-            cancelText: "取消",
-        });
+        let password;
 
-        if (!result.ok) {
-            return;
+        if (item.defaultPassword) {
+            // 使用默认密码自动解密，无需弹窗
+            password = "password";
+        } else {
+            const result = await this.modal.show({
+                title: "解密条目",
+                message: `提示：${item.encryptionHint || "无提示"}`,
+                inputs: [
+                    { type: "password", label: "输入密码", placeholder: "密码", required: true }
+                ],
+                okText: "解密",
+                cancelText: "取消",
+            });
+
+            if (!result.ok) {
+                return;
+            }
+
+            password = result.values[0];
         }
-
-        const password = result.values[0];
 
         try {
             // 尝试解密
@@ -783,7 +794,8 @@ export class AppController {
                     content: content,
                     encrypted: false,
                     encryptedTitle: undefined,
-                    encryptionHint: undefined,
+                    encryptionHint: item.encryptionHint, // 保留提示，下次加密时自动填充
+                    defaultPassword: undefined,
                     updatedAt: now(),
                 };
                 
