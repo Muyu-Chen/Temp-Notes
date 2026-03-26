@@ -10,8 +10,8 @@
 
 | 网址 | 说明 |
 |------|------|
-| [muyyy.link/draft](https://muyyy.link/draft) | 部署地址 1 |
-| [imagingmodel.com/draft](https://imagingmodel.com/draft/) | 部署地址 2 |
+| [muyyy.link/draft](https://muyyy.link/draft) | 部署地址 1，目前版本与GitHub同步 |
+| [imagingmodel.com/draft](https://imagingmodel.com/draft/) | 部署地址 2，版本略低于GitHub版本，更稳定 |
 
 > **为什么数据不互通？** 由于浏览器的同源策略（Same-Origin Policy），不同域名的网页无法访问彼此的本地存储。每个域名的笔记完全隔离，不相互污染。
 
