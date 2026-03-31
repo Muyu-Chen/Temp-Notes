@@ -5,6 +5,7 @@
 import { DOMManager } from "./dom-manager.js";
 import { UIController } from "./ui-controller.js";
 import { AppController } from "./app-controller.js";
+import { initializeAppState } from "./initialize.js";
 import { loadTheme } from "./storage.js";
 
 // 初始化应用
@@ -13,6 +14,8 @@ async function initApp() {
   const domManager = new DOMManager();
   const uiController = new UIController(domManager);
   const appController = new AppController(uiController, domManager);
+
+  await initializeAppState();
 
   // 初始化回收站（从IndexedDB加载数据）
   await appController.recycleManager.init();
@@ -137,6 +140,10 @@ async function initApp() {
 
   uiController.onItemDecryptClick = (id) => {
     appController.decryptItem(id);
+  };
+
+  uiController.onItemTitleEdit = (id, title) => {
+    appController.renameItemTitle(id, title);
   };
 
   // 监听全局快捷键

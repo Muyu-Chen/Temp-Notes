@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   DRAFT_ITEM_ID: "tempnotes:draft-item-id:v1",
   ITEMS: "tempnotes:items:v1",
   THEME: "tempnotes:theme:v1",
+  FIRST_OPEN: "firstOpen",
 };
 
 export const THEMES = {
