@@ -40,6 +40,25 @@ header h1 {
   font-weight: 650;
 }
 
+.title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.title-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.title-link:hover {
+  color: var(--text);
+  border-bottom-color: currentColor;
+}
+
 header .sub {
   font-size: 12px;
   color: var(--muted);
