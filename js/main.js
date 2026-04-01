@@ -15,6 +15,7 @@ async function initApp() {
   const uiController = new UIController(domManager);
   const appController = new AppController(uiController, domManager);
 
+
   await initializeAppState();
 
   // 初始化回收站（从IndexedDB加载数据）

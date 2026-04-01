@@ -194,8 +194,11 @@ export const loadItems = async () => {
             content: String(x.content ?? ""),
             createdAt: Number(x.createdAt || now()),
             updatedAt: Number(x.updatedAt || x.createdAt || now()),
+            title: x.title ? String(x.title) : undefined,
             encrypted: Boolean(x.encrypted),
+            encryptedTitle: x.encryptedTitle ? String(x.encryptedTitle) : undefined,
             encryptionHint: x.encryptionHint ? String(x.encryptionHint) : undefined,
+            defaultPassword: Boolean(x.defaultPassword),
           }))
           .sort((a, b) => b.updatedAt - a.updatedAt);
         
@@ -232,8 +235,11 @@ export const saveItems = async (items) => {
           content: item.content,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
+          title: item.title,
           encrypted: item.encrypted === true,
+          encryptedTitle: item.encryptedTitle,
           encryptionHint: item.encryptionHint,
+          defaultPassword: item.defaultPassword === true,
         });
       });
       
@@ -275,8 +281,11 @@ export const normalizeImportedData = (data) => {
       content: String(x.content ?? ""),
       createdAt: Number(x.createdAt || now()),
       updatedAt: Number(x.updatedAt || x.createdAt || now()),
+      title: x.title ? String(x.title) : undefined,
       encrypted: Boolean(x.encrypted),
+      encryptedTitle: x.encryptedTitle ? String(x.encryptedTitle) : undefined,
       encryptionHint: x.encryptionHint ? String(x.encryptionHint) : undefined,
+      defaultPassword: Boolean(x.defaultPassword),
     }))
     .filter((x) => x.content.length > 0);
 
@@ -376,8 +385,11 @@ export const loadRecycleItems = async () => {
             createdAt: Number(x.createdAt || now()),
             updatedAt: Number(x.updatedAt || x.createdAt || now()),
             deletedAt: Number(x.deletedAt || now()),
+            title: x.title ? String(x.title) : undefined,
             encrypted: Boolean(x.encrypted),
+            encryptedTitle: x.encryptedTitle ? String(x.encryptedTitle) : undefined,
             encryptionHint: x.encryptionHint ? String(x.encryptionHint) : undefined,
+            defaultPassword: Boolean(x.defaultPassword),
           }))
           .sort((a, b) => b.deletedAt - a.deletedAt);
         
@@ -415,8 +427,11 @@ export const saveRecycleItems = async (items) => {
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
           deletedAt: item.deletedAt,
+          title: item.title,
           encrypted: item.encrypted === true,
+          encryptedTitle: item.encryptedTitle,
           encryptionHint: item.encryptionHint,
+          defaultPassword: item.defaultPassword === true,
         });
       });
       

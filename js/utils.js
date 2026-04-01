@@ -54,6 +54,28 @@ export const firstLine = (s) => {
 };
 
 /**
+ * 清洗标题输入
+ */
+export const cleanTitle = (title) => {
+  const value = typeof title === "string" ? title.trim() : "";
+  return value || undefined;
+};
+
+/**
+ * 获取条目的展示标题
+ */
+export const resolveItemTitle = (item) => {
+  const customTitle = cleanTitle(item?.title);
+  if (customTitle) return customTitle;
+
+  if (item?.encrypted) {
+    return cleanTitle(item?.encryptedTitle) || "已加密的内容";
+  }
+
+  return firstLine(item?.content || "");
+};
+
+/**
  * 计算字数（支持中英混合）
  */
 export const wordCount = (s) => {

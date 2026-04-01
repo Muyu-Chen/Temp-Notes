@@ -2,7 +2,7 @@
  * UI操作模块
  */
 
-import { humanBytes, clamp, firstLine, wordCount } from "./utils.js";
+import { humanBytes, clamp, resolveItemTitle, wordCount } from "./utils.js";
 
 export class UIController {
   constructor(domManager) {
@@ -44,11 +44,11 @@ export class UIController {
     const filtered = !searchQuery
       ? items
       : items.filter((it) => {
-          // 对于加密的条目，只搜索标题
+          const titleMatch = resolveItemTitle(it).toLowerCase().includes(searchQuery);
           if (it.encrypted) {
-            return false; // 加密的条目不参与搜索
+            return titleMatch;
           }
-          return it.content.toLowerCase().includes(searchQuery);
+          return titleMatch || it.content.toLowerCase().includes(searchQuery);
         });
 
     this.dom.clearListContent();
@@ -81,12 +81,20 @@ export class UIController {
 
       const title = document.createElement("div");
       title.className = "titleline";
-      
-      if (isEncrypted) {
-        title.innerHTML = `🔒 <span>${it.encryptedTitle || "已加密的内容"}</span>`;
-      } else {
-        title.textContent = firstLine(it.content);
-      }
+      title.textContent = isEncrypted ? `🔒 ${resolveItemTitle(it)}` : resolveItemTitle(it);
+      title.title = "点击修改标题";
+      title.tabIndex = 0;
+      title.onclick = (e) => {
+        e.stopPropagation();
+        this.startTitleEdit(title, it);
+      };
+      title.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          this.startTitleEdit(title, it);
+        }
+      };
 
       // 三个点菜单按钮
       const menuBtn = document.createElement("button");
@@ -176,6 +184,62 @@ export class UIController {
     }
   }
 
+  startTitleEdit(titleElement, item) {
+    if (titleElement.querySelector("input")) {
+      return;
+    }
+
+    const originalDisplay = titleElement.textContent;
+    const input = document.createElement("input");
+    input.className = "titleline-input";
+    input.type = "text";
+    input.value = resolveItemTitle(item);
+    input.placeholder = "输入标题，留空则使用第一行";
+    input.setAttribute("aria-label", "条目标题");
+
+    titleElement.classList.add("editing");
+    titleElement.replaceChildren(input);
+
+    let handled = false;
+    const restore = () => {
+      titleElement.classList.remove("editing");
+      titleElement.textContent = originalDisplay;
+    };
+
+    const commit = () => {
+      if (handled) return;
+      handled = true;
+      restore();
+      this.onItemTitleEdit(item.id, input.value);
+    };
+
+    const cancel = () => {
+      if (handled) return;
+      handled = true;
+      restore();
+    };
+
+    input.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        cancel();
+      }
+    });
+    input.addEventListener("blur", commit);
+
+    requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  }
+
   /**
    * 显示条目菜单
    */
@@ -259,6 +323,7 @@ export class UIController {
   onItemDeleteClick(id) {}
   onItemEncryptClick(id) {}
   onItemDecryptClick(id) {}
+  onItemTitleEdit(id, title) {}
   onRecycleItemRestore(index) {}
   onRecycleItemDelete(index) {}
 }
