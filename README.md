@@ -1,260 +1,272 @@
-# 临时笔记 - 完全离线的隐私草稿应用 📝
+# TEMP NOTES - A FULLY OFFLINE PRIVATE DRAFT APP 📝
 
-一个**100% 完全离线运行**的临时笔记应用，支持快速草稿、条目存档、数据导入导出。所有数据存储在本地浏览器，**零网络请求，零隐私泄露**。  
-在需要快速记录想法、灵感或待办事项时，临时笔记提供了一个快捷、安全的环境，让你随时捕捉和管理你的笔记内容，而不需要打开臃肿的笔记应用。  
-在临时需要粘贴文本、保存临时信息的时候，临时笔记是一个轻量级的工具，可以快速打开并使用，帮助你高效地管理临时信息。  
+这是一个 100% 完全离线运行的临时笔记应用，支持快速草稿、条目存档、导入导出。所有数据仅保存在本地浏览器，零网络请求、零隐私泄露。
 
-> 你的笔记，你的数据，始终在你的手中：快捷的JSON导入导出功能，确保你可以随时备份、迁移或恢复你的数据，无论何时何地。  
+THIS IS A 100% FULLY OFFLINE TEMPORARY NOTE APP FOR QUICK DRAFTS, ENTRY ARCHIVING, AND IMPORT/EXPORT. ALL DATA STAYS IN YOUR LOCAL BROWSER WITH ZERO NETWORK REQUESTS AND ZERO PRIVACY LEAKAGE.
 
-## 🌐 在线体验
+- REPOSITORY: [HTTPS://GITHUB.COM/MUYU-CHEN/TEMP-NOTES](https://github.com/Muyu-Chen/Temp-Notes)
+- 中文 README: [READ THE CHINESE VERSION](https://github.com/Muyu-Chen/Temp-Notes/blob/main/README-CHINESE.md)
 
-**完全相同的两个独立部署**（浏览器同源策略隔离，数据不互通）：
+> YOUR NOTES, YOUR DATA, ALWAYS UNDER YOUR CONTROL. JSON IMPORT/EXPORT MAKES BACKUP, MIGRATION, AND RECOVERY SIMPLE ANYTIME.
 
-| 网址 | 说明 |
+## 🌐 ONLINE DEMO
+
+TWO INDEPENDENT DEPLOYMENTS WITH THE SAME CORE APP (ISOLATED BY BROWSER SAME-ORIGIN POLICY, DATA DOES NOT INTEROPERATE):
+
+| URL | DESCRIPTION |
 |------|------|
-| [muyyy.link/draft](https://muyyy.link/draft) | 部署地址 1，目前版本与GitHub同步 |
-| [imagingmodel.com/draft](https://imagingmodel.com/draft/) | 部署地址 2，版本略低于GitHub版本，更稳定 |
+| [MUYYY.LINK/DRAFT](https://muyyy.link/draft) | DEPLOYMENT 1, CURRENTLY CLOSE TO THE GITHUB VERSION |
+| [IMAGINGMODEL.COM/DRAFT](https://imagingmodel.com/draft/) | DEPLOYMENT 2, SLIGHTLY BEHIND GITHUB BUT MORE STABLE |
 
-> **为什么数据不互通？** 由于浏览器的同源策略（Same-Origin Policy），不同域名的网页无法访问彼此的本地存储。每个域名的笔记完全隔离，不相互污染。
+> WHY IS DATA NOT SHARED? DUE TO THE SAME-ORIGIN POLICY, PAGES FROM DIFFERENT DOMAINS CANNOT ACCESS EACH OTHER'S LOCAL STORAGE. NOTES ARE STRICTLY ISOLATED PER DOMAIN.
 
-## 如何部署？
-使用git clone克隆仓库后，直接打开 `./index.html` 即可使用，无需任何服务器配置。  
-`git clone https://github.com/Muyu-Chen/Temp-Notes.git`.   
-可以直接在服务器上git clone，也可以在本地git clone后直接本地打开，也可以将整个文件夹上传到任意静态文件服务器（如GitHub Pages、Netlify等）进行部署。本项目完全静态，无需后端支持。    
+## HOW TO DEPLOY
 
-## 隐私保证
+CLONE THE REPOSITORY AND OPEN `./INDEX.HTML` DIRECTLY. NO SERVER CONFIGURATION IS REQUIRED.
 
-- **完全离线运行**：100% 在浏览器本地执行，零网络连接
-- **源代码开放**：所有 JavaScript 文件开源，**无任何隐藏的网络请求**
-- **本地存储**：所有笔记内容仅保存在本地浏览器 LocalStorage/IndexedDB
-- **永不上传**：任何情况下都不会上传您的数据
-- **无追踪**：无分析工具、无 Cookie、无隐藏连接
-- **tips**：设置中提供了“llm api”配置选项，但该功能目前处于设计阶段，尚未实现任何网络请求。在后续开发中准备接入第三方 LLM API（如 OpenAI），但base_url、api_key等配置项仅供用户输入和存储，**不会被任何代码上传**，完全由用户自主管理，且llm功能默认关闭。
+`GIT CLONE HTTPS://GITHUB.COM/MUYU-CHEN/TEMP-NOTES.GIT`
 
-### 隐私保证细节
+YOU CAN RUN IT LOCALLY AFTER CLONING, CLONE DIRECTLY ON A SERVER, OR UPLOAD THE ENTIRE FOLDER TO ANY STATIC HOSTING PLATFORM (SUCH AS GITHUB PAGES OR NETLIFY). THIS PROJECT IS FULLY STATIC AND NEEDS NO BACKEND.
 
-我们的 JavaScript 文件中：
-- **没有** `fetch()` 网络请求
-- **没有** `XMLHttpRequest` 
-- **没有** `WebSocket` 连接
-- **没有** 任何外部资源加载，可完全离线使用，llm功能也可以设置为本地base_url。
-- **只有** 本地 LocalStorage/IndexedDB 操作
+## PRIVACY GUARANTEE
 
-所有代码开源透明，欢迎审计！
+- FULLY OFFLINE: 100% LOCAL BROWSER EXECUTION, ZERO NETWORK CONNECTION
+- OPEN SOURCE: ALL JAVASCRIPT FILES ARE OPEN, WITH NO HIDDEN NETWORK REQUESTS
+- LOCAL STORAGE ONLY: NOTES ARE STORED IN LOCALSTORAGE/INDEXEDDB
+- NEVER UPLOADED: YOUR DATA IS NEVER SENT ANYWHERE
+- NO TRACKING: NO ANALYTICS, NO COOKIES, NO HIDDEN CONNECTIONS
+- TIPS: THERE IS AN `LLM API` CONFIGURATION OPTION IN SETTINGS, BUT THIS FEATURE IS CURRENTLY IN DESIGN ONLY AND MAKES NO NETWORK REQUESTS. FUTURE PLANS MAY SUPPORT THIRD-PARTY LLM APIS (SUCH AS OPENAI), WHILE `BASE_URL`/`API_KEY` ARE USER-PROVIDED AND USER-STORED ONLY. LLM FEATURES ARE DISABLED BY DEFAULT.
 
-## 项目结构
+### PRIVACY DETAILS
 
-```
-临时笔记/
-├── src/
-│   └── index.html          # 应用主页面（已分离CSS、JS）
-├── css/                    # 样式文件目录
-│   ├── theme.css          # 主题系统（颜色变量定义）
-│   ├── base.css           # 基础样式（全局重置、Utility类）
-│   ├── layout.css         # 布局组件（app、header、main、panel等）
-│   └── components.css     # UI组件（button、textarea、card等）
-├── js/                     # JavaScript 模块目录
-│   ├── main.js            # 应用入口和事件绑定
-│   ├── constants.js       # 常量定义（存储键、主题等）
-│   ├── utils.js           # 工具函数库（时间、格式化、计算等）
-│   ├── storage.js         # 数据存储管理（LocalStorage操作）
-│   ├── dom-manager.js     # DOM元素选择器和管理
-│   ├── ui-controller.js   # UI控制器（渲染、显示、交互反馈）
-│   └── app-controller.js  # 应用业务逻辑（核心功能实现）
-|   ├── modal.js           # 通用弹窗组件
-|   └── initialize.js      # 应用初始化逻辑
-├── index.html             # 原始单文件版本（保留备份）
-└── README.md              # 项目文档
-```
+IN THE JAVASCRIPT CODEBASE:
 
-## 架构设计
+- NO `FETCH()` REQUESTS
+- NO `XMLHTTPREQUEST`
+- NO `WEBSOCKET` CONNECTIONS
+- NO EXTERNAL RESOURCE DEPENDENCIES REQUIRED FOR OFFLINE USAGE
+- ONLY LOCAL LOCALSTORAGE/INDEXEDDB OPERATIONS
 
-### 分层架构
+ALL CODE IS OPEN AND AUDITABLE.
 
-1. **表现层（Presentation）**
-   - `ui-controller.js`: UI渲染和状态展示
-   - `css/*`: 所有样式文件
+## PROJECT STRUCTURE
 
-2. **业务逻辑层（Business Logic）**
-   - `app-controller.js`: 核心业务流程
-   - `constants.js`: 业务常量
-
-3. **数据访问层（Data Access）**
-   - `storage.js`: LocalStorage操作
-   - `dom-manager.js`: DOM操作
-
-4. **工具层（Utilities）**
-   - `utils.js`: 通用工具函数
-
-### 模块职责
-
-| 模块 | 职责 | 导出内容 |
-|------|------|---------|
-| `constants.js` | 常量定义 | STORAGE_KEYS, THEMES, DEFAULT_THEME |
-| `utils.js` | 工具函数 | 时间格式化、字数统计、字节转换等 |
-| `storage.js` | 存储管理 | Load/Save数据、导入导出处理 |
-| `dom-manager.js` | DOM管理 | DOMManager类，提供DOM操作接口 |
-| `ui-controller.js` | UI控制 | UIController类，渲染和反馈 |
-| `app-controller.js` | 业务逻辑 | AppController类，核心功能实现 |
-| `main.js` | 应用启动 | 初始化和事件绑定 |
-| `modal.js` | 弹窗组件 | Modal类，通用弹窗功能 |
-｜`initialize.js` | 初始化逻辑 | initializeAppState函数，应用状态初始化 |
-
-## CSS 结构
-
-### theme.css
-- CSS变量定义（--bg, --text, --accent等）
-- Dark/Light主题切换
-
-### base.css
-- 全局重置（box-sizing, margin, font等）
-- Utility类（.muted, .small, .mono）
-
-### layout.css
-- 主要容器（.app, header, .main, .panel）
-- 响应式设计（媒体查询）
-
-### components.css
-- UI组件样式（button、textarea、input、card等）
-- 交互反馈（hover、active状态）
-
-## 快速开始
-
-### 快捷键
-- `Ctrl+S`: 存档当前草稿
-- `Ctrl+K`: 搜索存档条目
-- `Ctrl+L`: 清空草稿
-
-## 数据流
-
-```
-用户输入
-   ↓
-DOMManager 捕获
-   ↓
-AppController 业务处理
-   ↓
-Storage 持久化 + UIController 渲染
-   ↓
-用户看到反馈
+```text
+TEMP-NOTES/
+├── CSS/                    # STYLE DIRECTORY
+│   ├── THEME.CSS           # THEME SYSTEM (COLOR VARIABLES)
+│   ├── BASE.CSS            # BASE STYLES (RESETS, UTILITIES)
+│   ├── LAYOUT.CSS          # LAYOUT STRUCTURE
+│   └── COMPONENTS.CSS      # UI COMPONENT STYLES
+├── JS/                     # JAVASCRIPT MODULES
+│   ├── MAIN.JS             # APP ENTRY + EVENT BINDING
+│   ├── CONSTANTS.JS        # CONSTANT DEFINITIONS
+│   ├── UTILS.JS            # UTILITY FUNCTIONS
+│   ├── STORAGE.JS          # STORAGE MANAGEMENT
+│   ├── DOM-MANAGER.JS      # DOM ACCESS WRAPPER
+│   ├── UI-CONTROLLER.JS    # UI RENDERING + FEEDBACK
+│   ├── APP-CONTROLLER.JS   # CORE BUSINESS LOGIC
+│   ├── MODAL.JS            # COMMON MODAL COMPONENT
+│   └── INITIALIZE.JS       # APP STATE INITIALIZATION
+├── INDEX.HTML              # APP ENTRY PAGE
+├── README.MD               # ENGLISH DOCUMENTATION
+└── README-CHINESE.MD       # CHINESE DOCUMENTATION
 ```
 
-## 📝 主要功能
+## ARCHITECTURE
 
-- 🖊️ 第一次启动自动弹出使用说明
-- ✍️ 自动保存草稿
-- 📦 条目存档管理
-- 🔍 全文搜索条目
-- 📊 实时字数/存储统计
-- 🌓 深色/浅色主题切换
-- 💾 导出为 JSON
-- 📥 从 JSON 导入（支持合并去重）
-- ⌨️ 丰富的快捷键支持
+### LAYERED DESIGN
 
-## 🔧 扩展指南
+1. PRESENTATION LAYER
+   - `UI-CONTROLLER.JS`: UI RENDERING AND STATE DISPLAY
+   - `CSS/*`: ALL STYLE FILES
 
-### TODO - 已完成
-- [x] 改为 IndexedDB 存储：提供更大的存储空间，并确保所有客户端（不同浏览器、不同设备）都能正常使用（不是同步，只是为了确保所有用户都能正常使用功能）。  
-- [x] 增加对称加密：为数据提供密码保护功能，确保数据的隐私性和安全性。用户可以设置密码来加密/解密数据。
-- [x] 草稿区与存档条目合并：如果新保存的草稿与之前才保存的条目开头一致，则自动更新为同一条记录，而不是创建新条目。如果打开的草稿修改后保存，需要覆盖保存。
-- [x] 中文字体优化：将默认字体调整为其他清晰可读的字体，避免使用宋体（例如改为微软雅黑、苹方等）。
-- [x] 滑动条美化：优化滚动条的样式，使其更加现代且易于使用（例如增加自定义样式，改善视觉效果）。
-- [x] 字体大小在设置功能中可以调整
-- [x] 更多功能入口：将“清空”改为“更多”入口，点击后弹出包含“回收站”和“导入/导出”功能的界面。
-- [x] 更多点击后会弹出一个界面，左侧包括“回收站” “导入/导出” 这两个功能，点开回收站后，其中可以一条一条删除，这里可以二次确认，自己做弹窗，还有清空所有的按钮，同样二次确认。
-- [x] 删除逻辑：删除条目时不再需要二次确认，而是将其放入“回收站”。回收站可以随时查看和恢复条目。
-- [x] 回收站管理：在回收站中，用户可以逐条删除条目，需要二次确认删除操作。还可以清空所有内容，需要二次确认。
-- [x] 导入与导出功能：提供数据导入/导出的功能，允许用户将数据迁移或备份成 JSON 格式。导入时需要考虑数据去重和格式兼容。
-- [x] 清空切断链路：只要草稿在任意时刻变为空（清空），则视为一次“重新开始”。从“草稿为空”之后开始输入的内容，只要用户点击保存，就必须新建一条记录（新 id），不允许覆盖/合并到之前保存的记录。  
-- [x] 加密的默认密码为“password”，若用户加密时密码为空，则使用默认密码。解密时对于默认密码的笔记，直接自动解密。该修改确保用户只是为了不被别人一眼看见而加密，而非为了真正的安全保护，因此不强制用户设置密码。此修改不会降低数据的安全性，用户仍然可以选择设置更强的密码来保护他们的数据。  
-- [x] 解密后仍然保留密码提示，如果用户需要再次加密，可以直接使用之前的密码提示，无需重新输入。但密码仍需要重新输入。未来会增加记住密码的功能，用户可以选择是否记住密码以便下次自动填充。
-- [x] 页面主标题右侧增加 GitHub 小字链接，直接跳转到仓库地址。
-- [x] 条目标题支持点击修改，不再只能在加密时填写。
-- [x] 加密弹窗会自动读取并填入当前已有标题，避免重复输入。
-- [x] 条目标题清空后自动回退为正文第一行，保持默认标题逻辑。
-- [x] 新增 `initialize.js` 初始化逻辑：补充 `firstOpen` 标记，并在缺少该字段时向草稿区注入使用说明。
+2. BUSINESS LOGIC LAYER
+   - `APP-CONTROLLER.JS`: CORE BUSINESS FLOWS
+   - `CONSTANTS.JS`: BUSINESS CONSTANTS
 
-### TODO - 待开发
-- [ ] 新增解密后记住密码功能：用户可以选择在解密后记住密码，以便下次自动填充，提升用户体验。
-- [ ] 自动清理过期条目：增加一个定时器，定期检查存档条目的创建时间，并自动删除超过一定期限（例如30天）的条目，以保持存储空间的清洁和高效。
-- [ ] 在上一条的基础上，回收站同步新增定时器删除，类似于手机相册中的“最近删除”功能，用户可以在回收站中看到被删除的条目，并且这些条目会在一定时间后（例如30天）自动永久删除。
-- [ ] 支持保存图片：增加图片上传和保存功能，允许用户将图片作为笔记的一部分存储。可以考虑将图片与笔记一起存储，或者以文件形式保存到特定位置。
-- [ ] 新增同步功能，由于该功能需要连接互联网，暂时设计为独立开关，默认关闭。用户需自行配置自定义服务器的 POST 地址与 GET 地址，以实现数据同步，并尽量将合规风险控制在用户自主管理范围内。  
-- [ ] 新增服务端组件。服务端将采用独立的 Python 轻量脚本实现，支持基础的文件/数据接收与读取接口，并配置 CORS 允许跨域访问，以配合同步功能使用。  
+3. DATA ACCESS LAYER
+   - `STORAGE.JS`: LOCALSTORAGE/INDEXEDDB OPERATIONS
+   - `DOM-MANAGER.JS`: DOM OPERATIONS
 
+4. UTILITIES LAYER
+   - `UTILS.JS`: COMMON HELPER FUNCTIONS
 
-### 添加新功能
+### MODULE RESPONSIBILITIES
 
-1. **添加新的UI组件**
-   - 在 `css/components.css` 中编写样式
-   - 在 `ui-controller.js` 中编写渲染逻辑
+| MODULE | RESPONSIBILITY | EXPORTS |
+|------|------|------|
+| `CONSTANTS.JS` | CONSTANT DEFINITIONS | `STORAGE_KEYS`, `THEMES`, `DEFAULT_THEME` |
+| `UTILS.JS` | HELPER FUNCTIONS | TIME FORMAT, WORD COUNT, BYTE CONVERSION, ETC. |
+| `STORAGE.JS` | STORAGE MANAGEMENT | LOAD/SAVE, IMPORT/EXPORT HANDLING |
+| `DOM-MANAGER.JS` | DOM MANAGEMENT | `DOMMANAGER` CLASS |
+| `UI-CONTROLLER.JS` | UI CONTROL | `UICONTROLLER` CLASS |
+| `APP-CONTROLLER.JS` | BUSINESS LOGIC | `APPCONTROLLER` CLASS |
+| `MAIN.JS` | APP BOOTSTRAP | INITIALIZATION + EVENT BINDING |
+| `MODAL.JS` | MODAL UI | `MODAL` CLASS |
+| `INITIALIZE.JS` | INITIALIZATION LOGIC | `INITIALIZEAPPSTATE` FUNCTION |
 
-2. **添加新的业务功能**
-   - 在 `app-controller.js` 中实现业务方法
-   - 在 `main.js` 中绑定事件
+## CSS STRUCTURE
 
-3. **添加新的数据存储**
-   - 在 `storage.js` 中添加 Load/Save 方法
-   - 在 `constants.js` 中定义存储键
+### THEME.CSS
 
-4. **添加新的工具函数**
-   - 在 `utils.js` 中实现，并导出
+- CSS VARIABLE DEFINITIONS (`--BG`, `--TEXT`, `--ACCENT`, ETC.)
+- DARK/LIGHT THEME SWITCHING
 
-### 添加新的CSS主题
+### BASE.CSS
+
+- GLOBAL RESET (`BOX-SIZING`, `MARGIN`, FONT, ETC.)
+- UTILITY CLASSES (`.MUTED`, `.SMALL`, `.MONO`)
+
+### LAYOUT.CSS
+
+- MAIN CONTAINERS (`.APP`, `HEADER`, `.MAIN`, `.PANEL`)
+- RESPONSIVE DESIGN (MEDIA QUERIES)
+
+### COMPONENTS.CSS
+
+- UI COMPONENTS (`BUTTON`, `TEXTAREA`, `INPUT`, `CARD`, ETC.)
+- INTERACTION STATES (`HOVER`, `ACTIVE`)
+
+## QUICK START
+
+### KEYBOARD SHORTCUTS
+
+- `CTRL+S`: SAVE CURRENT DRAFT
+- `CTRL+K`: SEARCH ARCHIVED ENTRIES
+- `CTRL+L`: CLEAR DRAFT
+
+## DATA FLOW
+
+```text
+USER INPUT
+   ↓
+CAPTURED BY DOMMANAGER
+   ↓
+PROCESSED BY APPCONTROLLER
+   ↓
+PERSISTED BY STORAGE + RENDERED BY UICONTROLLER
+   ↓
+USER RECEIVES FEEDBACK
+```
+
+## 📝 MAIN FEATURES
+
+- 🖊️ FIRST-RUN USAGE GUIDE POPUP
+- ✍️ AUTO-SAVE DRAFTS
+- 📦 ENTRY ARCHIVE MANAGEMENT
+- 🔍 FULL-TEXT SEARCH
+- 📊 REAL-TIME WORD/STORAGE STATS
+- 🌓 DARK/LIGHT THEME SWITCHING
+- 💾 EXPORT TO JSON
+- 📥 IMPORT FROM JSON (MERGE + DEDUP SUPPORTED)
+- ⌨️ RICH KEYBOARD SHORTCUTS
+
+## 🔧 EXTENSION GUIDE
+
+### TODO - COMPLETED
+
+- [X] SWITCHED TO INDEXEDDB FOR LARGER STORAGE CAPACITY AND BROADER CLIENT COMPATIBILITY.
+- [X] ADDED SYMMETRIC ENCRYPTION TO PROTECT DATA WITH A PASSWORD.
+- [X] MERGED DRAFT-TO-ENTRY SAVE LOGIC TO UPDATE MATCHED ENTRIES INSTEAD OF DUPLICATING.
+- [X] OPTIMIZED CHINESE FONT STACK FOR BETTER READABILITY.
+- [X] BEAUTIFIED SCROLLBAR STYLE.
+- [X] ADDED FONT SIZE SETTINGS.
+- [X] REPLACED CLEAR ENTRY WITH A MORE PANEL CONTAINING RECYCLE BIN + IMPORT/EXPORT.
+- [X] BUILT RECYCLE BIN UI WITH SINGLE DELETE, BULK CLEAR, AND CONFIRMATION DIALOGS.
+- [X] CHANGED DELETE FLOW TO MOVE ENTRIES INTO RECYCLE BIN FIRST.
+- [X] IMPLEMENTED RECYCLE BIN MANAGEMENT WITH DOUBLE CONFIRMATION FOR DESTRUCTIVE ACTIONS.
+- [X] ADDED JSON IMPORT/EXPORT WITH DEDUPLICATION AND FORMAT COMPATIBILITY.
+- [X] IMPLEMENTED A HARD BREAK LOGIC: IF DRAFT BECOMES EMPTY, NEXT SAVE MUST CREATE A NEW ENTRY ID.
+- [X] SET DEFAULT ENCRYPTION PASSWORD TO `PASSWORD` WHEN INPUT IS EMPTY; DEFAULT-PASSWORD NOTES CAN AUTO-DECRYPT.
+- [X] RETAINED PASSWORD HINT AFTER DECRYPTION FOR QUICK RE-ENCRYPTION.
+- [X] ADDED A SMALL GITHUB LINK NEXT TO THE MAIN TITLE.
+- [X] ENABLED CLICK-TO-EDIT ENTRY TITLES OUTSIDE ENCRYPTION FLOW.
+- [X] AUTO-FILLED ENCRYPTION MODAL TITLE FROM CURRENT ENTRY TITLE.
+- [X] FALLBACK TO FIRST LINE OF BODY WHEN TITLE IS EMPTY.
+- [X] INTRODUCED `INITIALIZE.JS` TO IMPROVE FIRST-OPEN BOOTSTRAP BEHAVIOR.
+
+### TODO - PLANNED
+
+- [ ] REMEMBER PASSWORD AFTER DECRYPTION FOR OPTIONAL AUTO-FILL NEXT TIME.
+- [ ] AUTO-CLEAN EXPIRED ARCHIVE ENTRIES (E.G., OLDER THAN 30 DAYS).
+- [ ] ADD RECYCLE BIN AUTO-EXPIRY (SIMILAR TO RECENTLY DELETED IN PHOTO APPS).
+- [ ] SUPPORT IMAGE ATTACHMENT AND STORAGE.
+- [ ] ADD OPTIONAL SYNC FEATURE WITH USER-CONFIGURED SERVER `POST`/`GET` ENDPOINTS (DEFAULT OFF).
+- [ ] ADD A LIGHTWEIGHT PYTHON SERVER COMPONENT WITH BASIC DATA RECEIVE/READ APIS + CORS SUPPORT.
+
+### ADDING NEW FEATURES
+
+1. ADD A NEW UI COMPONENT
+   - WRITE STYLES IN `CSS/COMPONENTS.CSS`
+   - ADD RENDERING LOGIC IN `UI-CONTROLLER.JS`
+
+2. ADD A NEW BUSINESS FEATURE
+   - IMPLEMENT METHODS IN `APP-CONTROLLER.JS`
+   - BIND EVENTS IN `MAIN.JS`
+
+3. ADD NEW STORAGE DATA
+   - ADD LOAD/SAVE METHODS IN `STORAGE.JS`
+   - DEFINE NEW STORAGE KEYS IN `CONSTANTS.JS`
+
+4. ADD NEW UTILITY HELPERS
+   - IMPLEMENT + EXPORT IN `UTILS.JS`
+
+### ADDING A NEW CSS THEME
+
 ```css
-/* css/theme.css 中添加新主题 */
+/* ADD A NEW THEME IN CSS/THEME.CSS */
 [data-theme="custom"] {
   --bg: #your-color;
   --text: #your-color;
-  /* ... 其他变量 ... */
+  /* ... other variables ... */
 }
 ```
 
-## 💡 最佳实践
+## 💡 BEST PRACTICES
 
-1. **模块独立性**: 每个JS模块只负责一个职责
-2. **参数校验**: 所有公开API都进行输入校验
-3. **错误处理**: 使用try-catch保护关键操作
-4. **性能**: 防抖保存草稿（250ms延迟）
-5. **可访问性**: 保留语义化HTML结构
+1. MODULE INDEPENDENCE: EACH JS MODULE HANDLES A SINGLE RESPONSIBILITY.
+2. INPUT VALIDATION: VALIDATE ALL PUBLIC API INPUTS.
+3. ERROR HANDLING: USE TRY-CATCH AROUND CRITICAL OPERATIONS.
+4. PERFORMANCE: DEBOUNCED DRAFT SAVE (250MS).
+5. ACCESSIBILITY: KEEP SEMANTIC HTML STRUCTURE.
 
-## 🐛 已知限制
+## 🐛 KNOWN LIMITATIONS
 
-- LocalStorage 大小限制（通常5-10MB）
-- 不支持离线同步
-- 单标签页使用（多标签页可能冲突）
+- BROWSER STORAGE SIZE LIMITS (TYPICALLY 5-10MB)
+- NO OFFLINE SYNC
+- SINGLE-TAB USAGE RECOMMENDED (MULTI-TAB MAY CONFLICT)
 
-## 📦 浏览器兼容性
+## 📦 BROWSER COMPATIBILITY
 
-- Chrome/Edge 85+
-- Firefox 78+
-- Safari 14+
-- 需要ES6 Module支持
+- CHROME/EDGE 85+
+- FIREFOX 78+
+- SAFARI 14+
+- ES6 MODULE SUPPORT REQUIRED
 
-## 📄 许可证
+## 📄 LICENSE
 
-**AGPL-3.0 (GNU Affero General Public License v3.0)**
+**AGPL-3.0 (GNU AFFERO GENERAL PUBLIC LICENSE V3.0)**
 
-- 任何修改必须开源
-- 商业使用时必须开源所有代码
-- 网络服务使用也受约束  
+- ALL MODIFICATIONS MUST BE OPEN SOURCED.
+- COMMERCIAL USAGE MUST OPEN SOURCE THE FULL CODE.
+- NETWORK SERVICE USAGE IS ALSO COVERED.
 
-详见 [LICENSE](LICENSE) 文件。
+SEE THE [LICENSE](LICENSE) FILE FOR DETAILS.
 
-## 🤝 商业化需求
+## 🤝 COMMERCIAL LICENSING
 
-如果您有商业化需求或需要其他许可证协议，欢迎访问：
+IF YOU NEED COMMERCIAL LICENSING OR A DIFFERENT LICENSE AGREEMENT, PLEASE VISIT:
 
-**https://imagingmodel.com/**
+**HTTPS://IMAGINGMODEL.COM/**
 
-联系我们了解更多信息、获取商业许可证或讨论合作方案。
+CONTACT US TO DISCUSS COMMERCIAL LICENSE OPTIONS OR COOPERATION.
 
 ---
 
-**开发者**: MuYYY @ 成都英赛特科技有限公司  
-**最新版本**: 1.1.0
-**许可证**: AGPL-3.0  
-**AI使用**: 本项目使用了AI辅助开发，部分代码由AI生成，但均经过人工审核和修改；README文档由AI生成，经过人工编辑完善。注意，`./doc`目录下的文档由AI生成，帮助AI理解项目的半临时文件，未经人工修改，仅供参考。  
+**DEVELOPER**: MUYYY @ CHENGDU INSAIT TECHNOLOGY CO., LTD.
+**LATEST VERSION**: 1.1.0
+**LICENSE**: AGPL-3.0
+**AI USAGE**: THIS PROJECT WAS BUILT WITH AI ASSISTANCE. SOME CODE WAS AI-GENERATED, THEN REVIEWED AND EDITED MANUALLY. THE DOCUMENTS IN `./DOC` WERE GENERATED TO HELP AI UNDERSTAND THE PROJECT AND SHOULD BE TREATED AS REFERENCE MATERIAL.
 
-
-## 欢迎大家在 GitHub 上提出问题、提出需求和提交PR！
+## WELCOME TO OPEN ISSUES, FEATURE REQUESTS, AND PRS ON GITHUB!
