@@ -1,221 +1,221 @@
-# TEMP NOTES - A FULLY OFFLINE PRIVATE DRAFT APP 📝
+# Temp Notes - A Fully Offline Private Draft App 📝
 
 这是一个 100% 完全离线运行的临时笔记应用，支持快速草稿、条目存档、导入导出。所有数据仅保存在本地浏览器，零网络请求、零隐私泄露。
 
-THIS IS A 100% FULLY OFFLINE TEMPORARY NOTE APP FOR QUICK DRAFTS, ENTRY ARCHIVING, AND IMPORT/EXPORT. ALL DATA STAYS IN YOUR LOCAL BROWSER WITH ZERO NETWORK REQUESTS AND ZERO PRIVACY LEAKAGE.
+This is a 100% fully offline temporary note app for quick drafts, entry archiving, and import/export. All data stays in your local browser with zero network requests and zero privacy leakage.
 
-- REPOSITORY: [HTTPS://GITHUB.COM/MUYU-CHEN/TEMP-NOTES](https://github.com/Muyu-Chen/Temp-Notes)
-- 中文 README: [READ THE CHINESE VERSION](https://github.com/Muyu-Chen/Temp-Notes/blob/main/README-CHINESE.md)
+- Repository: [https://github.com/Muyu-Chen/Temp-Notes](https://github.com/Muyu-Chen/Temp-Notes)
+- 中文 README: [Read the Chinese version](https://github.com/Muyu-Chen/Temp-Notes/blob/master/README-CHINESE.md)
 
-> YOUR NOTES, YOUR DATA, ALWAYS UNDER YOUR CONTROL. JSON IMPORT/EXPORT MAKES BACKUP, MIGRATION, AND RECOVERY SIMPLE ANYTIME.
+> Your notes, your data, always under your control. JSON import/export makes backup, migration, and recovery simple anytime.
 
-## 🌐 ONLINE DEMO
+## 🌐 Online Demo
 
-TWO INDEPENDENT DEPLOYMENTS WITH THE SAME CORE APP (ISOLATED BY BROWSER SAME-ORIGIN POLICY, DATA DOES NOT INTEROPERATE):
+Two independent deployments with the same core app (isolated by browser same-origin policy, data does not interoperate):
 
-| URL | DESCRIPTION |
+| URL | Description |
 |------|------|
-| [MUYYY.LINK/DRAFT](https://muyyy.link/draft) | DEPLOYMENT 1, CURRENTLY CLOSE TO THE GITHUB VERSION |
-| [IMAGINGMODEL.COM/DRAFT](https://imagingmodel.com/draft/) | DEPLOYMENT 2, SLIGHTLY BEHIND GITHUB BUT MORE STABLE |
+| [muyyy.link/draft](https://muyyy.link/draft) | Deployment 1, currently close to the GitHub version |
+| [imagingmodel.com/draft](https://imagingmodel.com/draft/) | Deployment 2, slightly behind GitHub but more stable |
 
-> WHY IS DATA NOT SHARED? DUE TO THE SAME-ORIGIN POLICY, PAGES FROM DIFFERENT DOMAINS CANNOT ACCESS EACH OTHER'S LOCAL STORAGE. NOTES ARE STRICTLY ISOLATED PER DOMAIN.
+> Why is data not shared? Due to the same-origin policy, pages from different domains cannot access each other's local storage. Notes are strictly isolated per domain.
 
-## HOW TO DEPLOY
+## How to Deploy
 
-CLONE THE REPOSITORY AND OPEN `./INDEX.HTML` DIRECTLY. NO SERVER CONFIGURATION IS REQUIRED.
+Clone the repository and open `./index.html` directly. No server configuration is required.
 
-`GIT CLONE HTTPS://GITHUB.COM/MUYU-CHEN/TEMP-NOTES.GIT`
+`git clone https://github.com/Muyu-Chen/Temp-Notes.git`
 
-YOU CAN RUN IT LOCALLY AFTER CLONING, CLONE DIRECTLY ON A SERVER, OR UPLOAD THE ENTIRE FOLDER TO ANY STATIC HOSTING PLATFORM (SUCH AS GITHUB PAGES OR NETLIFY). THIS PROJECT IS FULLY STATIC AND NEEDS NO BACKEND.
+You can run it locally after cloning, clone directly on a server, or upload the entire folder to any static hosting platform (such as GitHub Pages or Netlify). This project is fully static and needs no backend.
 
-## PRIVACY GUARANTEE
+## Privacy Guarantee
 
-- FULLY OFFLINE: 100% LOCAL BROWSER EXECUTION, ZERO NETWORK CONNECTION
-- OPEN SOURCE: ALL JAVASCRIPT FILES ARE OPEN, WITH NO HIDDEN NETWORK REQUESTS
-- LOCAL STORAGE ONLY: NOTES ARE STORED IN LOCALSTORAGE/INDEXEDDB
-- NEVER UPLOADED: YOUR DATA IS NEVER SENT ANYWHERE
-- NO TRACKING: NO ANALYTICS, NO COOKIES, NO HIDDEN CONNECTIONS
-- TIPS: THERE IS AN `LLM API` CONFIGURATION OPTION IN SETTINGS, BUT THIS FEATURE IS CURRENTLY IN DESIGN ONLY AND MAKES NO NETWORK REQUESTS. FUTURE PLANS MAY SUPPORT THIRD-PARTY LLM APIS (SUCH AS OPENAI), WHILE `BASE_URL`/`API_KEY` ARE USER-PROVIDED AND USER-STORED ONLY. LLM FEATURES ARE DISABLED BY DEFAULT.
+- Fully offline: 100% local browser execution, zero network connection
+- Open source: all JavaScript files are open, with no hidden network requests
+- Local storage only: notes are stored in LocalStorage/IndexedDB
+- Never uploaded: your data is never sent anywhere
+- No tracking: no analytics, no cookies, no hidden connections
+- Tips: there is an `llm api` configuration option in settings, but this feature is currently in design only and makes no network requests. Future plans may support third-party LLM APIs (such as OpenAI), while `base_url`/`api_key` are user-provided and user-stored only. LLM features are disabled by default.
 
-### PRIVACY DETAILS
+### Privacy Details
 
-IN THE JAVASCRIPT CODEBASE:
+In the JavaScript codebase:
 
-- NO `FETCH()` REQUESTS
-- NO `XMLHTTPREQUEST`
-- NO `WEBSOCKET` CONNECTIONS
-- NO EXTERNAL RESOURCE DEPENDENCIES REQUIRED FOR OFFLINE USAGE
-- ONLY LOCAL LOCALSTORAGE/INDEXEDDB OPERATIONS
+- No `fetch()` requests
+- No `XMLHttpRequest`
+- No `WebSocket` connections
+- No external resource dependencies required for offline usage
+- Only local LocalStorage/IndexedDB operations
 
-ALL CODE IS OPEN AND AUDITABLE.
+All code is open and auditable.
 
-## PROJECT STRUCTURE
+## Project Structure
 
 ```text
-TEMP-NOTES/
-├── CSS/                    # STYLE DIRECTORY
-│   ├── THEME.CSS           # THEME SYSTEM (COLOR VARIABLES)
-│   ├── BASE.CSS            # BASE STYLES (RESETS, UTILITIES)
-│   ├── LAYOUT.CSS          # LAYOUT STRUCTURE
-│   └── COMPONENTS.CSS      # UI COMPONENT STYLES
-├── JS/                     # JAVASCRIPT MODULES
-│   ├── MAIN.JS             # APP ENTRY + EVENT BINDING
-│   ├── CONSTANTS.JS        # CONSTANT DEFINITIONS
-│   ├── UTILS.JS            # UTILITY FUNCTIONS
-│   ├── STORAGE.JS          # STORAGE MANAGEMENT
-│   ├── DOM-MANAGER.JS      # DOM ACCESS WRAPPER
-│   ├── UI-CONTROLLER.JS    # UI RENDERING + FEEDBACK
-│   ├── APP-CONTROLLER.JS   # CORE BUSINESS LOGIC
-│   ├── MODAL.JS            # COMMON MODAL COMPONENT
-│   └── INITIALIZE.JS       # APP STATE INITIALIZATION
-├── INDEX.HTML              # APP ENTRY PAGE
-├── README.MD               # ENGLISH DOCUMENTATION
-└── README-CHINESE.MD       # CHINESE DOCUMENTATION
+Temp-Notes/
+├── css/                    # Style directory
+│   ├── theme.css           # Theme system (color variables)
+│   ├── base.css            # Base styles (resets, utilities)
+│   ├── layout.css          # Layout structure
+│   └── components.css      # UI component styles
+├── js/                     # JavaScript modules
+│   ├── main.js             # App entry + event binding
+│   ├── constants.js        # Constant definitions
+│   ├── utils.js            # Utility functions
+│   ├── storage.js          # Storage management
+│   ├── dom-manager.js      # DOM access wrapper
+│   ├── ui-controller.js    # UI rendering + feedback
+│   ├── app-controller.js   # Core business logic
+│   ├── modal.js            # Common modal component
+│   └── initialize.js       # App state initialization
+├── index.html              # App entry page
+├── README.md               # English documentation
+└── readme-chinese.md       # Chinese documentation
 ```
 
-## ARCHITECTURE
+## Architecture
 
-### LAYERED DESIGN
+### Layered Design
 
-1. PRESENTATION LAYER
-   - `UI-CONTROLLER.JS`: UI RENDERING AND STATE DISPLAY
-   - `CSS/*`: ALL STYLE FILES
+1. Presentation layer
+   - `ui-controller.js`: UI rendering and state display
+   - `css/*`: all style files
 
-2. BUSINESS LOGIC LAYER
-   - `APP-CONTROLLER.JS`: CORE BUSINESS FLOWS
-   - `CONSTANTS.JS`: BUSINESS CONSTANTS
+2. Business logic layer
+   - `app-controller.js`: core business flows
+   - `constants.js`: business constants
 
-3. DATA ACCESS LAYER
-   - `STORAGE.JS`: LOCALSTORAGE/INDEXEDDB OPERATIONS
-   - `DOM-MANAGER.JS`: DOM OPERATIONS
+3. Data access layer
+   - `storage.js`: LocalStorage/IndexedDB operations
+   - `dom-manager.js`: DOM operations
 
-4. UTILITIES LAYER
-   - `UTILS.JS`: COMMON HELPER FUNCTIONS
+4. Utilities layer
+   - `utils.js`: common helper functions
 
-### MODULE RESPONSIBILITIES
+### Module Responsibilities
 
-| MODULE | RESPONSIBILITY | EXPORTS |
+| Module | Responsibility | Exports |
 |------|------|------|
-| `CONSTANTS.JS` | CONSTANT DEFINITIONS | `STORAGE_KEYS`, `THEMES`, `DEFAULT_THEME` |
-| `UTILS.JS` | HELPER FUNCTIONS | TIME FORMAT, WORD COUNT, BYTE CONVERSION, ETC. |
-| `STORAGE.JS` | STORAGE MANAGEMENT | LOAD/SAVE, IMPORT/EXPORT HANDLING |
-| `DOM-MANAGER.JS` | DOM MANAGEMENT | `DOMMANAGER` CLASS |
-| `UI-CONTROLLER.JS` | UI CONTROL | `UICONTROLLER` CLASS |
-| `APP-CONTROLLER.JS` | BUSINESS LOGIC | `APPCONTROLLER` CLASS |
-| `MAIN.JS` | APP BOOTSTRAP | INITIALIZATION + EVENT BINDING |
-| `MODAL.JS` | MODAL UI | `MODAL` CLASS |
-| `INITIALIZE.JS` | INITIALIZATION LOGIC | `INITIALIZEAPPSTATE` FUNCTION |
+| `constants.js` | Constant definitions | `STORAGE_KEYS`, `THEMES`, `DEFAULT_THEME` |
+| `utils.js` | Helper functions | Time format, word count, byte conversion, etc. |
+| `storage.js` | Storage management | Load/save, import/export handling |
+| `dom-manager.js` | DOM management | `DOMManager` class |
+| `ui-controller.js` | UI control | `UIController` class |
+| `app-controller.js` | Business logic | `AppController` class |
+| `main.js` | App bootstrap | Initialization + event binding |
+| `modal.js` | Modal UI | `Modal` class |
+| `initialize.js` | Initialization logic | `initializeAppState` function |
 
-## CSS STRUCTURE
+## CSS Structure
 
-### THEME.CSS
+### theme.css
 
-- CSS VARIABLE DEFINITIONS (`--BG`, `--TEXT`, `--ACCENT`, ETC.)
-- DARK/LIGHT THEME SWITCHING
+- CSS variable definitions (`--bg`, `--text`, `--accent`, etc.)
+- Dark/light theme switching
 
-### BASE.CSS
+### base.css
 
-- GLOBAL RESET (`BOX-SIZING`, `MARGIN`, FONT, ETC.)
-- UTILITY CLASSES (`.MUTED`, `.SMALL`, `.MONO`)
+- Global reset (`box-sizing`, `margin`, font, etc.)
+- Utility classes (`.muted`, `.small`, `.mono`)
 
-### LAYOUT.CSS
+### layout.css
 
-- MAIN CONTAINERS (`.APP`, `HEADER`, `.MAIN`, `.PANEL`)
-- RESPONSIVE DESIGN (MEDIA QUERIES)
+- Main containers (`.app`, `header`, `.main`, `.panel`)
+- Responsive design (media queries)
 
-### COMPONENTS.CSS
+### components.css
 
-- UI COMPONENTS (`BUTTON`, `TEXTAREA`, `INPUT`, `CARD`, ETC.)
-- INTERACTION STATES (`HOVER`, `ACTIVE`)
+- UI components (`button`, `textarea`, `input`, `card`, etc.)
+- Interaction states (`hover`, `active`)
 
-## QUICK START
+## Quick Start
 
-### KEYBOARD SHORTCUTS
+### Keyboard Shortcuts
 
-- `CTRL+S`: SAVE CURRENT DRAFT
-- `CTRL+K`: SEARCH ARCHIVED ENTRIES
-- `CTRL+L`: CLEAR DRAFT
+- `Ctrl+S`: Save current draft
+- `Ctrl+K`: Search archived entries
+- `Ctrl+L`: Clear draft
 
-## DATA FLOW
+## Data Flow
 
 ```text
-USER INPUT
+User input
    ↓
-CAPTURED BY DOMMANAGER
+Captured by DOMManager
    ↓
-PROCESSED BY APPCONTROLLER
+Processed by AppController
    ↓
-PERSISTED BY STORAGE + RENDERED BY UICONTROLLER
+Persisted by Storage + rendered by UIController
    ↓
-USER RECEIVES FEEDBACK
+User receives feedback
 ```
 
-## 📝 MAIN FEATURES
+## 📝 Main Features
 
-- 🖊️ FIRST-RUN USAGE GUIDE POPUP
-- ✍️ AUTO-SAVE DRAFTS
-- 📦 ENTRY ARCHIVE MANAGEMENT
-- 🔍 FULL-TEXT SEARCH
-- 📊 REAL-TIME WORD/STORAGE STATS
-- 🌓 DARK/LIGHT THEME SWITCHING
-- 💾 EXPORT TO JSON
-- 📥 IMPORT FROM JSON (MERGE + DEDUP SUPPORTED)
-- ⌨️ RICH KEYBOARD SHORTCUTS
+- 🖊️ First-run usage guide popup
+- ✍️ Auto-save drafts
+- 📦 Entry archive management
+- 🔍 Full-text search
+- 📊 Real-time word/storage stats
+- 🌓 Dark/light theme switching
+- 💾 Export to JSON
+- 📥 Import from JSON (merge + dedup supported)
+- ⌨️ Rich keyboard shortcuts
 
-## 🔧 EXTENSION GUIDE
+## 🔧 Extension Guide
 
-### TODO - COMPLETED
+### TODO - Completed
 
-- [X] SWITCHED TO INDEXEDDB FOR LARGER STORAGE CAPACITY AND BROADER CLIENT COMPATIBILITY.
-- [X] ADDED SYMMETRIC ENCRYPTION TO PROTECT DATA WITH A PASSWORD.
-- [X] MERGED DRAFT-TO-ENTRY SAVE LOGIC TO UPDATE MATCHED ENTRIES INSTEAD OF DUPLICATING.
-- [X] OPTIMIZED CHINESE FONT STACK FOR BETTER READABILITY.
-- [X] BEAUTIFIED SCROLLBAR STYLE.
-- [X] ADDED FONT SIZE SETTINGS.
-- [X] REPLACED CLEAR ENTRY WITH A MORE PANEL CONTAINING RECYCLE BIN + IMPORT/EXPORT.
-- [X] BUILT RECYCLE BIN UI WITH SINGLE DELETE, BULK CLEAR, AND CONFIRMATION DIALOGS.
-- [X] CHANGED DELETE FLOW TO MOVE ENTRIES INTO RECYCLE BIN FIRST.
-- [X] IMPLEMENTED RECYCLE BIN MANAGEMENT WITH DOUBLE CONFIRMATION FOR DESTRUCTIVE ACTIONS.
-- [X] ADDED JSON IMPORT/EXPORT WITH DEDUPLICATION AND FORMAT COMPATIBILITY.
-- [X] IMPLEMENTED A HARD BREAK LOGIC: IF DRAFT BECOMES EMPTY, NEXT SAVE MUST CREATE A NEW ENTRY ID.
-- [X] SET DEFAULT ENCRYPTION PASSWORD TO `PASSWORD` WHEN INPUT IS EMPTY; DEFAULT-PASSWORD NOTES CAN AUTO-DECRYPT.
-- [X] RETAINED PASSWORD HINT AFTER DECRYPTION FOR QUICK RE-ENCRYPTION.
-- [X] ADDED A SMALL GITHUB LINK NEXT TO THE MAIN TITLE.
-- [X] ENABLED CLICK-TO-EDIT ENTRY TITLES OUTSIDE ENCRYPTION FLOW.
-- [X] AUTO-FILLED ENCRYPTION MODAL TITLE FROM CURRENT ENTRY TITLE.
-- [X] FALLBACK TO FIRST LINE OF BODY WHEN TITLE IS EMPTY.
-- [X] INTRODUCED `INITIALIZE.JS` TO IMPROVE FIRST-OPEN BOOTSTRAP BEHAVIOR.
+- [x] Switched to IndexedDB for larger storage capacity and broader client compatibility.
+- [x] Added symmetric encryption to protect data with a password.
+- [x] Merged draft-to-entry save logic to update matched entries instead of duplicating.
+- [x] Optimized Chinese font stack for better readability.
+- [x] Beautified scrollbar style.
+- [x] Added font size settings.
+- [x] Replaced clear entry with a More panel containing recycle bin + import/export.
+- [x] Built recycle bin UI with single delete, bulk clear, and confirmation dialogs.
+- [x] Changed delete flow to move entries into recycle bin first.
+- [x] Implemented recycle bin management with double confirmation for destructive actions.
+- [x] Added JSON import/export with deduplication and format compatibility.
+- [x] Implemented a hard break logic: if draft becomes empty, next save must create a new entry ID.
+- [x] Set default encryption password to `password` when input is empty; default-password notes can auto-decrypt.
+- [x] Retained password hint after decryption for quick re-encryption.
+- [x] Added a small GitHub link next to the main title.
+- [x] Enabled click-to-edit entry titles outside encryption flow.
+- [x] Auto-filled encryption modal title from current entry title.
+- [x] Fallback to first line of body when title is empty.
+- [x] Introduced `initialize.js` to improve first-open bootstrap behavior.
 
-### TODO - PLANNED
+### TODO - Planned
 
-- [ ] REMEMBER PASSWORD AFTER DECRYPTION FOR OPTIONAL AUTO-FILL NEXT TIME.
-- [ ] AUTO-CLEAN EXPIRED ARCHIVE ENTRIES (E.G., OLDER THAN 30 DAYS).
-- [ ] ADD RECYCLE BIN AUTO-EXPIRY (SIMILAR TO RECENTLY DELETED IN PHOTO APPS).
-- [ ] SUPPORT IMAGE ATTACHMENT AND STORAGE.
-- [ ] ADD OPTIONAL SYNC FEATURE WITH USER-CONFIGURED SERVER `POST`/`GET` ENDPOINTS (DEFAULT OFF).
-- [ ] ADD A LIGHTWEIGHT PYTHON SERVER COMPONENT WITH BASIC DATA RECEIVE/READ APIS + CORS SUPPORT.
+- [ ] Remember password after decryption for optional auto-fill next time.
+- [ ] Auto-clean expired archive entries (e.g., older than 30 days).
+- [ ] Add recycle bin auto-expiry (similar to recently deleted in photo apps).
+- [ ] Support image attachment and storage.
+- [ ] Add optional sync feature with user-configured server `POST`/`GET` endpoints (default off).
+- [ ] Add a lightweight Python server component with basic data receive/read APIs + CORS support.
 
-### ADDING NEW FEATURES
+### Adding New Features
 
-1. ADD A NEW UI COMPONENT
-   - WRITE STYLES IN `CSS/COMPONENTS.CSS`
-   - ADD RENDERING LOGIC IN `UI-CONTROLLER.JS`
+1. Add a new UI component
+   - Write styles in `css/components.css`
+   - Add rendering logic in `ui-controller.js`
 
-2. ADD A NEW BUSINESS FEATURE
-   - IMPLEMENT METHODS IN `APP-CONTROLLER.JS`
-   - BIND EVENTS IN `MAIN.JS`
+2. Add a new business feature
+   - Implement methods in `app-controller.js`
+   - Bind events in `main.js`
 
-3. ADD NEW STORAGE DATA
-   - ADD LOAD/SAVE METHODS IN `STORAGE.JS`
-   - DEFINE NEW STORAGE KEYS IN `CONSTANTS.JS`
+3. Add new storage data
+   - Add load/save methods in `storage.js`
+   - Define new storage keys in `constants.js`
 
-4. ADD NEW UTILITY HELPERS
-   - IMPLEMENT + EXPORT IN `UTILS.JS`
+4. Add new utility helpers
+   - Implement and export in `utils.js`
 
-### ADDING A NEW CSS THEME
+### Adding a New CSS Theme
 
 ```css
-/* ADD A NEW THEME IN CSS/THEME.CSS */
+/* Add a new theme in css/theme.css */
 [data-theme="custom"] {
   --bg: #your-color;
   --text: #your-color;
@@ -223,50 +223,50 @@ USER RECEIVES FEEDBACK
 }
 ```
 
-## 💡 BEST PRACTICES
+## 💡 Best Practices
 
-1. MODULE INDEPENDENCE: EACH JS MODULE HANDLES A SINGLE RESPONSIBILITY.
-2. INPUT VALIDATION: VALIDATE ALL PUBLIC API INPUTS.
-3. ERROR HANDLING: USE TRY-CATCH AROUND CRITICAL OPERATIONS.
-4. PERFORMANCE: DEBOUNCED DRAFT SAVE (250MS).
-5. ACCESSIBILITY: KEEP SEMANTIC HTML STRUCTURE.
+1. Module independence: each JS module handles a single responsibility.
+2. Input validation: validate all public API inputs.
+3. Error handling: use try-catch around critical operations.
+4. Performance: debounced draft save (250ms).
+5. Accessibility: keep semantic HTML structure.
 
-## 🐛 KNOWN LIMITATIONS
+## 🐛 Known Limitations
 
-- BROWSER STORAGE SIZE LIMITS (TYPICALLY 5-10MB)
-- NO OFFLINE SYNC
-- SINGLE-TAB USAGE RECOMMENDED (MULTI-TAB MAY CONFLICT)
+- Browser storage size limits (typically 5-10MB)
+- No offline sync
+- Single-tab usage recommended (multi-tab may conflict)
 
-## 📦 BROWSER COMPATIBILITY
+## 📦 Browser Compatibility
 
-- CHROME/EDGE 85+
-- FIREFOX 78+
-- SAFARI 14+
-- ES6 MODULE SUPPORT REQUIRED
+- Chrome/Edge 85+
+- Firefox 78+
+- Safari 14+
+- ES6 module support required
 
-## 📄 LICENSE
+## 📄 License
 
-**AGPL-3.0 (GNU AFFERO GENERAL PUBLIC LICENSE V3.0)**
+**AGPL-3.0 (GNU Affero General Public License v3.0)**
 
-- ALL MODIFICATIONS MUST BE OPEN SOURCED.
-- COMMERCIAL USAGE MUST OPEN SOURCE THE FULL CODE.
-- NETWORK SERVICE USAGE IS ALSO COVERED.
+- All modifications must be open sourced.
+- Commercial usage must open source the full code.
+- Network service usage is also covered.
 
-SEE THE [LICENSE](LICENSE) FILE FOR DETAILS.
+See the [LICENSE](LICENSE) file for details.
 
-## 🤝 COMMERCIAL LICENSING
+## 🤝 Commercial Licensing
 
-IF YOU NEED COMMERCIAL LICENSING OR A DIFFERENT LICENSE AGREEMENT, PLEASE VISIT:
+If you need commercial licensing or a different license agreement, please visit:
 
-**HTTPS://IMAGINGMODEL.COM/**
+**https://imagingmodel.com/**
 
-CONTACT US TO DISCUSS COMMERCIAL LICENSE OPTIONS OR COOPERATION.
+Contact us to discuss commercial license options or cooperation.
 
 ---
 
-**DEVELOPER**: MUYYY @ CHENGDU INSAIT TECHNOLOGY CO., LTD.
-**LATEST VERSION**: 1.1.0
-**LICENSE**: AGPL-3.0
-**AI USAGE**: THIS PROJECT WAS BUILT WITH AI ASSISTANCE. SOME CODE WAS AI-GENERATED, THEN REVIEWED AND EDITED MANUALLY. THE DOCUMENTS IN `./DOC` WERE GENERATED TO HELP AI UNDERSTAND THE PROJECT AND SHOULD BE TREATED AS REFERENCE MATERIAL.
+**Developer**: MuYYY @ Chengdu Insait Technology Co., Ltd.
+**Latest version**: 1.1.0
+**License**: AGPL-3.0
+**AI usage**: This project was built with AI assistance. Some code was AI-generated, then reviewed and edited manually. The documents in `./doc` were generated to help AI understand the project and should be treated as reference material.
 
-## WELCOME TO OPEN ISSUES, FEATURE REQUESTS, AND PRS ON GITHUB!
+## Welcome to open issues, feature requests, and PRs on GitHub!
