@@ -20,7 +20,8 @@ import {
 } from "./storage.js";
 import { encryptContent, decryptContent, verifyPassword } from "./crypto.js";
 import { Modal } from "./modal.js";
-import { firstLine, now, uid, estimateStorageBytes, isMac } from "./utils.js";
+import { STORAGE_KEYS } from "./constants.js";
+import { cleanTitle, firstLine, now, resolveItemTitle, uid, estimateStorageBytes, isMac } from "./utils.js";
 import { RecycleManager } from "./recycle-manager.js";
 
 export class AppController {
@@ -184,6 +185,39 @@ export class AppController {
         this.ui.showToast("已存档为新条目");
         saveItems(this.items); // 异步但不等待
         this.render();
+    }
+
+    async renameItemTitle(id, rawTitle) {
+        const itemIndex = this.items.findIndex((x) => x.id === id);
+        if (itemIndex === -1) return;
+
+        const item = this.items[itemIndex];
+        const autoTitle = item.encrypted ? undefined : firstLine(item.content);
+        const currentTitle = cleanTitle(item.title);
+        const rawNextTitle = cleanTitle(rawTitle);
+        const nextTitle = !item.encrypted && rawNextTitle === autoTitle ? undefined : rawNextTitle;
+
+        if (nextTitle === currentTitle) {
+            return;
+        }
+
+        this.items[itemIndex] = {
+            ...item,
+            title: nextTitle,
+            encryptedTitle: item.encrypted
+                ? nextTitle || cleanTitle(item.encryptedTitle) || "已加密的内容"
+                : item.encryptedTitle,
+            updatedAt: now(),
+        };
+
+        await saveItems(this.items);
+        this.render();
+
+        if (nextTitle) {
+            this.ui.showToast("标题已更新");
+        } else {
+            this.ui.showToast(item.encrypted ? "已恢复为默认标题" : "已恢复为正文第一行标题");
+        }
     }
 
     async deleteItem(id) {
@@ -411,6 +445,7 @@ export class AppController {
             localStorage.removeItem("llm_api_key");
             localStorage.removeItem("llm_model");
             localStorage.removeItem("draft");
+            localStorage.removeItem(STORAGE_KEYS.FIRST_OPEN);
 
             // 清除内存数据
             this.items = [];
@@ -473,7 +508,7 @@ export class AppController {
 
         const item = items[index];
         const title = `恢复条目？`;
-        const msg = `标题：${firstLine(item.content)}`;
+        const msg = `标题：${resolveItemTitle(item)}`;
         
         const result = await this.modal.show({
             title: title,
@@ -508,7 +543,7 @@ export class AppController {
 
         const item = items[index];
         const title = `永久删除条目？`;
-        const msg = `此操作不可恢复。\n\n标题：${firstLine(item.content)}`;
+        const msg = `此操作不可恢复。\n\n标题：${resolveItemTitle(item)}`;
         
         const result = await this.modal.show({
             title: title,
@@ -677,15 +712,15 @@ export class AppController {
             return;
         }
 
-        // 提取内容第一行作为默认标题
-        const firstLine = item.content.split("\n")[0].trim() || "私人笔记";
+        const autoTitle = firstLine(item.content);
+        const currentTitle = cleanTitle(item.title) || cleanTitle(item.encryptedTitle) || autoTitle;
 
         // 显示输入框，让用户输入密码和提示
         const result = await this.modal.show({
             title: "加密条目",
             message: "设置密码保护此条目（密码留空则使用默认密码）",
             inputs: [
-                { type: "text", label: "条目标题", placeholder: "例如：私人笔记", value: firstLine, required: true },
+                { type: "text", label: "条目标题", placeholder: "例如：私人笔记", value: currentTitle, required: false },
                 { type: "password", label: "输入密码", placeholder: "留空使用默认密码", required: false },
                 { type: "text", label: "密码提示", placeholder: "例如：我的生日", required: false, value: item.encryptionHint || "" }
             ],
@@ -698,11 +733,9 @@ export class AppController {
         }
 
         const [encryptedTitle, rawPassword, hint] = result.values;
-
-        if (!encryptedTitle.trim()) {
-            this.ui.showToast("标题不能为空");
-            return;
-        }
+        const rawManualTitle = cleanTitle(encryptedTitle);
+        const manualTitle = rawManualTitle === autoTitle ? undefined : rawManualTitle;
+        const displayTitle = manualTitle || autoTitle;
 
         const useDefaultPassword = !rawPassword.trim();
         const password = useDefaultPassword ? "password" : rawPassword.trim();
@@ -717,8 +750,9 @@ export class AppController {
                 this.items[itemIndex] = {
                     ...this.items[itemIndex],
                     content: encrypted,
+                    title: manualTitle,
                     encrypted: true,
-                    encryptedTitle: encryptedTitle.trim(),
+                    encryptedTitle: displayTitle,
                     encryptionHint: hint.trim() || undefined,
                     defaultPassword: useDefaultPassword || undefined,
                     updatedAt: now(),
@@ -792,6 +826,7 @@ export class AppController {
                 this.items[itemIndex] = {
                     ...this.items[itemIndex],
                     content: content,
+                    title: item.title,
                     encrypted: false,
                     encryptedTitle: undefined,
                     encryptionHint: item.encryptionHint, // 保留提示，下次加密时自动填充

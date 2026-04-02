@@ -4,6 +4,7 @@
 
 import { Modal } from "./modal.js";
 import { loadRecycleItems, saveRecycleItems } from "./storage.js";
+import { resolveItemTitle } from "./utils.js";
 
 export class RecycleManager {
   constructor(domManager, uiController) {
@@ -91,7 +92,7 @@ export class RecycleManager {
     const filtered = !searchQuery
       ? items
       : items.filter((it) => {
-          const title = this.firstLine(it.content);
+          const title = resolveItemTitle(it);
           return title.toLowerCase().includes(searchQuery.toLowerCase());
         });
 
@@ -120,14 +121,9 @@ export class RecycleManager {
       const title = document.createElement("div");
       title.className = "recycle-item-title";
       
-      // 如果是加密条目，显示加密标题
-      if (item.encrypted && item.encryptedTitle) {
-        title.textContent = `🔒 ${item.encryptedTitle}`;
-      } else if (item.encrypted) {
-        title.textContent = `🔒 已加密的内容`;
-      } else {
-        title.textContent = this.firstLine(item.content);
-      }
+      title.textContent = item.encrypted
+        ? `🔒 ${resolveItemTitle(item)}`
+        : resolveItemTitle(item);
       
       title.style.maxWidth = "calc(100% - 80px)";
       title.style.whiteSpace = "nowrap";
@@ -143,7 +139,9 @@ export class RecycleManager {
 
       const preview = document.createElement("div");
       preview.className = "recycle-item-preview";
-      preview.textContent = this.clamp(item.content.trim() || "（空）", 100);
+      preview.textContent = item.encrypted
+        ? "加密条目，解密后才能查看内容"
+        : this.clamp(item.content.trim() || "（空）", 100);
 
       const actions = document.createElement("div");
       actions.className = "recycle-item-actions";
@@ -170,11 +168,6 @@ export class RecycleManager {
       card.appendChild(actions);
       this.dom.recycleList.appendChild(card);
     });
-  }
-
-  firstLine(text) {
-    const lines = text.split("\n");
-    return (lines[0] || "").trim() || "（无标题）";
   }
 
   clamp(text, length) {
