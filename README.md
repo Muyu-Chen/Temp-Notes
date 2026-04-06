@@ -188,6 +188,7 @@ User receives feedback
 
 ### TODO - Planned
 
+- [ ] Improve loading perfermance and add animation.  
 - [ ] Remember password after decryption for optional auto-fill next time.
 - [ ] Auto-clean expired archive entries (e.g., older than 30 days).
 - [ ] Add recycle bin auto-expiry (similar to recently deleted in photo apps).
