@@ -1,8 +1,12 @@
 # Temp Notes - A Fully Offline Private Draft App 📝
 
-这是一个 100% 完全离线运行的临时笔记应用，支持快速草稿、条目存档、导入导出。所有数据仅保存在本地浏览器，零网络请求、零隐私泄露。
+这是一个 **100% 完全离线** 运行的临时笔记应用，支持快速草稿、条目存档、导入导出。所有**数据仅保存在本地浏览器，零网络请求、零隐私泄露**。随手的草稿、临时信息都可以在这里安全地记录和管理，无需打开臃肿的笔记应用。无论是捕捉灵感、记录待办事项，还是临时粘贴文本，临时笔记都是一个轻量级的工具，帮助你高效管理临时信息。  
 
-This is a 100% fully offline temporary note app for quick drafts, entry archiving, and import/export. All data stays in your local browser with zero network requests and zero privacy leakage.
+A **100% fully offline** temporary note app supporting quick drafts, entry archiving, and data import/export. All data stays in your local browser with **zero network requests and zero privacy leakage**.
+
+When you need to quickly capture ideas, inspiration, or to-dos, Temp Notes provides a fast and secure environment to record and manage your notes without opening a bloated note app. For temporary text pasting or storing ephemeral information, it's a lightweight tool that opens instantly, helping you efficiently manage temporary information.
+
+> Your notes, your data, always in your control: JSON import/export makes it easy to backup, migrate, or recover your data anytime, anywhere.
 
 - Repository: [https://github.com/Muyu-Chen/Temp-Notes](https://github.com/Muyu-Chen/Temp-Notes)
 - 中文 README: [Read the Chinese version](https://github.com/Muyu-Chen/Temp-Notes/blob/master/README-CHINESE.md)
@@ -188,7 +192,10 @@ User receives feedback
 
 ### TODO - Planned
 
-- [ ] Improve loading perfermance and add animation.  
+- [ ] Improve loading performance and add animation.
+- [ ] Add TXT format download in notes menu for easy sharing on Mac.
+- [ ] Modify the "Clear Draft Area" prompt: if the user has already saved a draft, clear it directly without showing the prompt; if the user has never saved a draft, show the prompt to prevent accidental actions.
+- [ ] Repeatedly saving a draft no longer updates the timestamp; the save time is only updated when the draft content changes.
 - [ ] Remember password after decryption for optional auto-fill next time.
 - [ ] Auto-clean expired archive entries (e.g., older than 30 days).
 - [ ] Add recycle bin auto-expiry (similar to recently deleted in photo apps).
@@ -265,9 +272,9 @@ Contact us to discuss commercial license options or cooperation.
 
 ---
 
-**Developer**: MuYYY @ Chengdu Insait Technology Co., Ltd.
-**Latest version**: 1.1.0
-**License**: AGPL-3.0
-**AI usage**: This project was built with AI assistance. Some code was AI-generated, then reviewed and edited manually. The documents in `./doc` were generated to help AI understand the project and should be treated as reference material.
+**Developer**: MuYYY @ Chengdu Insaite Technology Co., Ltd.  
+**Latest version**: 1.1.0  
+**License**: AGPL-3.0  
+**AI usage**: This project was built with AI assistance. Some code was AI-generated, then reviewed and edited manually. The documents in `./doc` were generated to help AI understand the project and should be treated as reference material, which have not been manually edited.  
 
 ## Welcome to open issues, feature requests, and PRs on GitHub!
