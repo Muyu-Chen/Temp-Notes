@@ -1,10 +1,17 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-default-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>临时笔记（第二桌面）</title>
     <script src="./js/crypto-js.min.js"></script>
+    <script>
+      (() => {
+        const root = document.documentElement;
+        const defaultTheme = root.getAttribute("data-default-theme") || "light";
+        root.setAttribute("data-theme", root.getAttribute("data-theme") || defaultTheme);
+      })();
+    </script>
 
     <!-- 主题系统 -->
     <link rel="stylesheet" href="./css/theme.css" />

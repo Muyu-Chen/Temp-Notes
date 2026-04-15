@@ -3,7 +3,7 @@
    ======================================== */
 
 :root {
-  /* Dark theme (default) */
+  /* Base palette tokens */
   --bg: #0b0f17;
   --panel: rgba(255, 255, 255, 0.12);
   --panel2: rgba(255, 255, 255, 0.16);

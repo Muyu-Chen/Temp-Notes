@@ -2,7 +2,7 @@
  * 存储管理模块 - IndexedDB 实现
  */
 
-import { STORAGE_KEYS, DEFAULT_THEME } from "./constants.js";
+import { STORAGE_KEYS, getDefaultTheme } from "./constants.js";
 import { uid, now, safeJsonParse, wordCount } from "./utils.js";
 
 const DB_NAME = "tempnotes_db";
@@ -93,10 +93,10 @@ const writeSetting = async (key, value) => {
 export const loadTheme = async () => {
   try {
     const theme = await readSetting(STORAGE_KEYS.THEME);
-    return theme || DEFAULT_THEME;
+    return theme || getDefaultTheme();
   } catch (err) {
     console.error("Failed to load theme:", err);
-    return DEFAULT_THEME;
+    return getDefaultTheme();
   }
 };
 

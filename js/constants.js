@@ -15,4 +15,11 @@ export const THEMES = {
   LIGHT: "light",
 };
 
-export const DEFAULT_THEME = THEMES.LIGHT;
+export const getDefaultTheme = () => {
+  if (typeof document === "undefined") {
+    return THEMES.LIGHT;
+  }
+
+  const theme = document.documentElement.getAttribute("data-default-theme");
+  return theme === THEMES.DARK ? THEMES.DARK : THEMES.LIGHT;
+};

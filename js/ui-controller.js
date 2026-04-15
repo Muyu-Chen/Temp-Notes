@@ -3,6 +3,7 @@
  */
 
 import { humanBytes, clamp, resolveItemTitle, wordCount } from "./utils.js";
+import { getDefaultTheme } from "./constants.js";
 
 export class UIController {
   constructor(domManager) {
@@ -24,7 +25,7 @@ export class UIController {
   }
 
   getTheme() {
-    return document.documentElement.getAttribute("data-theme") || "dark";
+    return document.documentElement.getAttribute("data-theme") || getDefaultTheme();
   }
 
   updateMeta(draftValue, items, draftUsageBytes, totalUsageBytes) {
