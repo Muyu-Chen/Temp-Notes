@@ -9,7 +9,16 @@
       (() => {
         const root = document.documentElement;
         const defaultTheme = root.getAttribute("data-default-theme") || "light";
-        root.setAttribute("data-theme", root.getAttribute("data-theme") || defaultTheme);
+        let theme = defaultTheme;
+
+        try {
+          const storedTheme = localStorage.getItem("tempnotes:theme:v1");
+          if (storedTheme === "dark" || storedTheme === "light") {
+            theme = storedTheme;
+          }
+        } catch {}
+
+        root.setAttribute("data-theme", root.getAttribute("data-theme") || theme);
       })();
     </script>
 

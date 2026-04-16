@@ -445,6 +445,7 @@ export class AppController {
             localStorage.removeItem("llm_api_key");
             localStorage.removeItem("llm_model");
             localStorage.removeItem("draft");
+            localStorage.removeItem(STORAGE_KEYS.THEME);
             localStorage.removeItem(STORAGE_KEYS.FIRST_OPEN);
 
             // 清除内存数据

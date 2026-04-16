@@ -92,8 +92,8 @@ const writeSetting = async (key, value) => {
  */
 export const loadTheme = async () => {
   try {
-    const theme = await readSetting(STORAGE_KEYS.THEME);
-    return theme || getDefaultTheme();
+    const theme = localStorage.getItem(STORAGE_KEYS.THEME);
+    return theme === "dark" || theme === "light" ? theme : getDefaultTheme();
   } catch (err) {
     console.error("Failed to load theme:", err);
     return getDefaultTheme();
@@ -105,7 +105,7 @@ export const loadTheme = async () => {
  */
 export const saveTheme = async (theme) => {
   try {
-    await writeSetting(STORAGE_KEYS.THEME, theme);
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
   } catch (err) {
     console.error("Failed to save theme:", err);
   }
