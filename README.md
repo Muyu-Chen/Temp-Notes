@@ -196,7 +196,9 @@ User receives feedback
 - [ ] Add TXT format download in notes menu for easy sharing on Mac.
 - [ ] Modify the "Clear Draft Area" prompt: if the user has already saved a draft, clear it directly without showing the prompt; if the user has never saved a draft, show the prompt to prevent accidental actions.
 - [ ] Repeatedly saving a draft no longer updates the timestamp; the save time is only updated when the draft content changes.
-- [ ] Remember password after decryption for optional auto-fill next time.
+- [ ] Add configurable default password in Settings. New notes encrypted with an empty password should use this updated default, while previously encrypted notes keep their original default password.
+- [ ] Add one-click migration from old default password to new default password, so previously default-password-encrypted notes can be batch-updated safely (backup recommended before migration).
+- [ ] Add remember-password-after-decrypt as a user option, so users can choose whether to auto-fill next time.
 - [ ] Auto-clean expired archive entries (e.g., older than 30 days).
 - [ ] Add recycle bin auto-expiry (similar to recently deleted in photo apps).
 - [ ] Support image attachment and storage.
