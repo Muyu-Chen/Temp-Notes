@@ -88,6 +88,13 @@ export class DraftService {
     if (app.currentLoadedItemId) {
       const itemIndex = app.items.findIndex((x) => x.id === app.currentLoadedItemId);
       if (itemIndex !== -1) {
+        if (app.items[itemIndex].content === content) {
+          saveDraftItemId(app.currentLoadedItemId);
+          app.ui.showToast("内容未变化");
+          app.render();
+          return;
+        }
+
         app.items[itemIndex] = {
           ...app.items[itemIndex],
           content,
@@ -112,8 +119,14 @@ export class DraftService {
 
   clearDraft() {
     const { app } = this;
-    const ok = confirm("确认清空草稿？此操作不可恢复。");
-    if (!ok) return;
+    const hasArchivedDraft = Boolean(
+      app.currentLoadedItemId && app.items.some((item) => item.id === app.currentLoadedItemId)
+    );
+
+    if (!hasArchivedDraft) {
+      const ok = confirm("当前草稿尚未存档。确认清空草稿？此操作不可恢复。");
+      if (!ok) return;
+    }
 
     app.dom.setDraftValue("");
     saveDraft("");
