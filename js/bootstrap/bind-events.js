@@ -83,15 +83,29 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.setFontSize(e.target.value);
   });
 
+  domManager.recycleRetentionSelect.addEventListener("change", (e) => {
+    appController.setRecycleRetentionDays(e.target.value);
+  });
+
   domManager.recycleSearch.addEventListener("input", () => {
     appController.onRecycleSearch();
   });
 
+  const saveLLMSettings = () => {
+    const settings = domManager.getLLMSettings();
+    appController.saveLLMSettings(settings);
+  };
+
+  domManager.llmEnabled.addEventListener("change", saveLLMSettings);
+
   [domManager.llmBaseUrl, domManager.llmApiKey, domManager.llmModel].forEach((input) => {
     input.addEventListener("input", () => {
-      const settings = domManager.getLLMSettings();
-      appController.saveLLMSettings(settings.baseUrl, settings.apiKey, settings.model);
+      saveLLMSettings();
     });
+  });
+
+  domManager.llmTestBtn.addEventListener("click", () => {
+    appController.testLLMConnection();
   });
 
   domManager.btnClearAllData.addEventListener("click", () => {
@@ -112,6 +126,10 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
 
   uiController.onItemDecryptClick = (id) => {
     appController.decryptItem(id);
+  };
+
+  uiController.onItemExportClick = (id, format) => {
+    appController.exportItem(id, format);
   };
 
   uiController.onItemTitleEdit = (id, title) => {

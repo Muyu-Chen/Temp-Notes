@@ -11,9 +11,8 @@ import {
 } from "../storage/idb.js";
 
 const FONT_SIZE_KEY = "font_size";
-const LLM_BASE_URL_KEY = "llm_base_url";
-const LLM_API_KEY = "llm_api_key";
-const LLM_MODEL_KEY = "llm_model";
+const VALID_DRAFT_MODES = new Set(["edit", "preview"]);
+export const RECYCLE_RETENTION_OPTIONS = [0, 7, 30, 90];
 
 export const getFontSize = () => {
   try {
@@ -43,22 +42,70 @@ export const setFontSize = (size) => {
   return null;
 };
 
-export const getLLMSettings = () => {
+export const getDraftMode = () => {
   try {
-    const baseUrl = localStorage.getItem(LLM_BASE_URL_KEY) || "";
-    const apiKey = localStorage.getItem(LLM_API_KEY) || "";
-    const model = localStorage.getItem(LLM_MODEL_KEY) || "";
-    return { baseUrl, apiKey, model };
+    const mode = localStorage.getItem(STORAGE_KEYS.DRAFT_MODE);
+    return VALID_DRAFT_MODES.has(mode) ? mode : "edit";
   } catch {
-    return { baseUrl: "", apiKey: "", model: "" };
+    return "edit";
   }
 };
 
-export const saveLLMSettings = (baseUrl, apiKey, model) => {
+export const setDraftMode = (mode) => {
+  const nextMode = VALID_DRAFT_MODES.has(mode) ? mode : "edit";
   try {
-    localStorage.setItem(LLM_BASE_URL_KEY, baseUrl);
-    localStorage.setItem(LLM_API_KEY, apiKey);
-    localStorage.setItem(LLM_MODEL_KEY, model);
+    localStorage.setItem(STORAGE_KEYS.DRAFT_MODE, nextMode);
+  } catch (err) {
+    console.error("Failed to save draft mode:", err);
+  }
+  return nextMode;
+};
+
+export const getRecycleRetentionDays = () => {
+  try {
+    const value = Number(localStorage.getItem(STORAGE_KEYS.RECYCLE_RETENTION_DAYS));
+    return RECYCLE_RETENTION_OPTIONS.includes(value) ? value : 0;
+  } catch {
+    return 0;
+  }
+};
+
+export const setRecycleRetentionDays = (days) => {
+  const value = Number(days);
+  if (!RECYCLE_RETENTION_OPTIONS.includes(value)) {
+    return null;
+  }
+
+  try {
+    localStorage.setItem(STORAGE_KEYS.RECYCLE_RETENTION_DAYS, String(value));
+  } catch (err) {
+    console.error("Failed to save recycle retention:", err);
+  }
+
+  return value;
+};
+
+export const getRecycleRetentionText = (days) =>
+  Number(days) > 0 ? `超过 ${days} 天自动清理` : "自动清理：永不";
+
+export const getLLMSettings = () => {
+  try {
+    const enabled = localStorage.getItem(STORAGE_KEYS.LLM_ENABLED) === "true";
+    const baseUrl = localStorage.getItem(STORAGE_KEYS.LLM_BASE_URL) || "";
+    const apiKey = localStorage.getItem(STORAGE_KEYS.LLM_API_KEY) || "";
+    const model = localStorage.getItem(STORAGE_KEYS.LLM_MODEL) || "";
+    return { enabled, baseUrl, apiKey, model };
+  } catch {
+    return { enabled: false, baseUrl: "", apiKey: "", model: "" };
+  }
+};
+
+export const saveLLMSettings = (settings) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LLM_ENABLED, settings.enabled ? "true" : "false");
+    localStorage.setItem(STORAGE_KEYS.LLM_BASE_URL, String(settings.baseUrl || "").trim());
+    localStorage.setItem(STORAGE_KEYS.LLM_API_KEY, String(settings.apiKey || "").trim());
+    localStorage.setItem(STORAGE_KEYS.LLM_MODEL, String(settings.model || "").trim());
   } catch (err) {
     console.error("Failed to save LLM settings:", err);
   }
@@ -69,9 +116,12 @@ export const clearPersistentData = async () => {
 
   [
     FONT_SIZE_KEY,
-    LLM_BASE_URL_KEY,
-    LLM_API_KEY,
-    LLM_MODEL_KEY,
+    STORAGE_KEYS.DRAFT_MODE,
+    STORAGE_KEYS.RECYCLE_RETENTION_DAYS,
+    STORAGE_KEYS.LLM_ENABLED,
+    STORAGE_KEYS.LLM_BASE_URL,
+    STORAGE_KEYS.LLM_API_KEY,
+    STORAGE_KEYS.LLM_MODEL,
     "draft",
     STORAGE_KEYS.THEME,
     STORAGE_KEYS.FIRST_OPEN,

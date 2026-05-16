@@ -49,6 +49,24 @@ export class RecycleService {
     await this.saveToStorage();
   }
 
+  async cleanupExpired(retentionDays, now = Date.now()) {
+    const days = Number(retentionDays);
+    if (!days || days <= 0) {
+      return 0;
+    }
+
+    const cutoff = now - days * 24 * 60 * 60 * 1000;
+    const kept = this.deletedItems.filter((item) => Number(item.deletedAt || 0) >= cutoff);
+    const removedCount = this.deletedItems.length - kept.length;
+
+    if (removedCount > 0) {
+      this.deletedItems = kept;
+      await this.saveToStorage();
+    }
+
+    return removedCount;
+  }
+
   async restoreItem(index) {
     if (index >= 0 && index < this.deletedItems.length) {
       const item = this.deletedItems[index];

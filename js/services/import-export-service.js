@@ -4,6 +4,7 @@
 
 import { clearDraftItemId, saveDraft } from "../storage/draft-storage.js";
 import { saveItems } from "../storage/item-storage.js";
+import { downloadTextFile, getTextExportPayload } from "../lib/download-utils.js";
 import {
   exportData,
   mergeItems,
@@ -77,5 +78,24 @@ export class ImportExportService {
       app.ui.showToast(`导入完成：新增 ${addedCount} 条`);
     };
     input.click();
+  }
+
+  exportItem(id, format) {
+    const { app } = this;
+    const item = app.items.find((x) => x.id === id);
+
+    if (!item || item.encrypted) {
+      app.ui.showToast("请先解密后再导出");
+      return;
+    }
+
+    const payload = getTextExportPayload(item, format);
+    if (!payload) {
+      app.ui.showToast("不支持的导出格式");
+      return;
+    }
+
+    downloadTextFile(payload.content, payload.filename, payload.mimeType);
+    app.ui.showToast(`已导出 ${format.toUpperCase()}`);
   }
 }

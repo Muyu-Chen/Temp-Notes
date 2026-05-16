@@ -13,13 +13,19 @@ import { ImportExportService } from "./services/import-export-service.js";
 import { ItemService } from "./services/item-service.js";
 import { RecycleActionsService } from "./services/recycle-actions-service.js";
 import { RecycleService } from "./services/recycle-service.js";
+import { LLMService } from "./services/llm-service.js";
 import {
   applyFontSize,
   clearPersistentData,
+  getDraftMode as readDraftMode,
   getFontSize as readFontSize,
   getLLMSettings as readLLMSettings,
+  getRecycleRetentionDays as readRecycleRetentionDays,
+  getRecycleRetentionText,
   saveLLMSettings as persistLLMSettings,
+  setDraftMode as persistDraftMode,
   setFontSize as persistFontSize,
+  setRecycleRetentionDays as persistRecycleRetentionDays,
 } from "./services/settings-service.js";
 import { toggleTheme } from "./services/theme-manager.js";
 
@@ -44,6 +50,7 @@ export class AppController {
     this.importExportService = new ImportExportService(this);
     this.encryptionService = new EncryptionService(this);
     this.recycleActionsService = new RecycleActionsService(this);
+    this.llmService = new LLMService();
   }
 
   getStorageUsageBytes(draftValue = this.dom.getDraftValue()) {
@@ -58,6 +65,7 @@ export class AppController {
     try {
       const fontSize = this.getFontSize();
       applyFontSize(fontSize);
+      this.draftMode = this.getDraftMode();
 
       const draft = await loadDraft();
       const draftItemId = await loadDraftItemId();
@@ -78,6 +86,8 @@ export class AppController {
       }
 
       this.dom.setAutosaveState("已保存");
+      await this.applyRecycleRetentionPolicy();
+      this.dom.setDraftMode(this.draftMode);
       this.ui.updateMeta(
         draft,
         this.items,
@@ -85,7 +95,9 @@ export class AppController {
         this.getStorageUsageBytes(draft)
       );
       this.render();
-      this.dom.focusDraft();
+      if (this.draftMode === "edit") {
+        this.dom.focusDraft();
+      }
     } catch (e) {
       console.error("初始化失败", e);
       this.ui.showToast("初始化失败：可能是 IndexedDB 被禁用");
@@ -165,6 +177,7 @@ export class AppController {
     if (panelName === "recycle") {
       this.dom.recyclePanel.classList.add("active");
       this.dom.sidebarRecycle.classList.add("active");
+      this.updateRecycleRetentionUI();
       this.recycleListView.render(this.recycleService.getRecycleItems());
     } else if (panelName === "importExport") {
       this.dom.importExportPanel.classList.add("active");
@@ -181,18 +194,70 @@ export class AppController {
     this.dom.fontSizeSlider.value = fontSize;
     this.dom.fontSizeValue.textContent = `${fontSize}px`;
     this.dom.setLLMSettings(this.getLLMSettings());
+    this.dom.setLLMStatus("未测试", "pending");
+    this.updateRecycleRetentionUI();
   }
 
   getFontSize() {
     return readFontSize();
   }
 
+  getDraftMode() {
+    return readDraftMode();
+  }
+
+  getRecycleRetentionDays() {
+    return readRecycleRetentionDays();
+  }
+
+  updateRecycleRetentionUI() {
+    const days = this.getRecycleRetentionDays();
+    this.dom.setRecycleRetention(days, getRecycleRetentionText(days));
+  }
+
+  async applyRecycleRetentionPolicy({ showToast = false } = {}) {
+    const removedCount = await this.recycleService.cleanupExpired(this.getRecycleRetentionDays());
+    this.updateRecycleRetentionUI();
+
+    if (removedCount > 0) {
+      this.recycleListView.render(this.recycleService.getRecycleItems());
+      if (showToast) {
+        this.ui.showToast(`已自动清理 ${removedCount} 个回收站条目`);
+      }
+    }
+
+    return removedCount;
+  }
+
+  async setRecycleRetentionDays(days) {
+    const nextDays = persistRecycleRetentionDays(days);
+    if (nextDays === null) return;
+
+    this.updateRecycleRetentionUI();
+    const removedCount = await this.applyRecycleRetentionPolicy({ showToast: true });
+    if (removedCount === 0) {
+      this.ui.showToast(getRecycleRetentionText(nextDays));
+    }
+  }
+
   getLLMSettings() {
     return readLLMSettings();
   }
 
-  saveLLMSettings(baseUrl, apiKey, model) {
-    persistLLMSettings(baseUrl, apiKey, model);
+  saveLLMSettings(settings) {
+    persistLLMSettings(settings);
+    this.dom.setLLMInputsEnabled(settings.enabled);
+    this.dom.setLLMStatus(settings.enabled ? "未测试" : "已关闭", "pending");
+  }
+
+  async testLLMConnection() {
+    const settings = this.dom.getLLMSettings();
+    this.dom.setLLMStatus("测试中...", "pending");
+    this.dom.llmTestBtn.disabled = true;
+
+    const result = await this.llmService.testConnection(settings);
+    this.dom.setLLMStatus(result.message, result.ok ? "ok" : "error");
+    this.dom.llmTestBtn.disabled = !settings.enabled;
   }
 
   setFontSize(size) {
@@ -238,7 +303,9 @@ export class AppController {
 
       this.dom.fontSizeSlider.value = "16";
       this.dom.fontSizeValue.textContent = "16px";
-      this.dom.setLLMSettings({ baseUrl: "", apiKey: "", model: "" });
+      this.dom.setRecycleRetention(0, getRecycleRetentionText(0));
+      this.dom.setLLMSettings({ enabled: false, baseUrl: "", apiKey: "", model: "" });
+      this.dom.setLLMStatus("未测试", "pending");
 
       this.render();
       this.ui.showToast("所有数据已清除");
@@ -270,13 +337,18 @@ export class AppController {
     this.importExportService.exportAll();
   }
 
+  exportItem(id, format) {
+    this.importExportService.exportItem(id, format);
+  }
+
   importAll() {
     this.importExportService.importAll();
   }
 
   setDraftMode(mode) {
-    this.draftMode = mode;
-    this.ui.setDraftMode(mode);
+    const nextMode = persistDraftMode(mode);
+    this.draftMode = nextMode;
+    this.ui.setDraftMode(nextMode);
   }
 
   onDraftPreviewClick(e) {

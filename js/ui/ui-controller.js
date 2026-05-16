@@ -76,5 +76,6 @@ export class UIController {
   onItemDeleteClick(id) {}
   onItemEncryptClick(id) {}
   onItemDecryptClick(id) {}
+  onItemExportClick(id, format) {}
   onItemTitleEdit(id, title) {}
 }

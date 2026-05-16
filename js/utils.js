@@ -7,3 +7,9 @@ export { uid } from "./lib/id-utils.js";
 export { clamp, firstLine, cleanTitle, resolveItemTitle, wordCount } from "./lib/text-utils.js";
 export { estimateStorageBytes, humanBytes } from "./lib/bytes-utils.js";
 export { isMac } from "./lib/platform-utils.js";
+export {
+  formatExportTimestamp,
+  getTextExportPayload,
+  sanitizeFilePart,
+  TEXT_EXPORT_FORMATS,
+} from "./lib/download-utils.js";

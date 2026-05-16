@@ -40,6 +40,7 @@ export class DOMManager {
     this.recycleActions = document.getElementById("recycleActions");
     this.recycleClearAll = document.getElementById("recycleClearAll");
     this.recycleSearch = document.getElementById("recycleSearch");
+    this.recycleRetentionStatus = document.getElementById("recycleRetentionStatus");
 
     // 导入/导出相关的DOM元素
     this.exportBtn = document.getElementById("exportBtn");
@@ -48,9 +49,14 @@ export class DOMManager {
     // 设置相关的DOM元素
     this.fontSizeSlider = document.getElementById("fontSizeSlider");
     this.fontSizeValue = document.getElementById("fontSizeValue");
+    this.recycleRetentionSelect = document.getElementById("recycleRetentionSelect");
+    this.recycleRetentionDesc = document.getElementById("recycleRetentionDesc");
+    this.llmEnabled = document.getElementById("llmEnabled");
     this.llmBaseUrl = document.getElementById("llmBaseUrl");
     this.llmApiKey = document.getElementById("llmApiKey");
     this.llmModel = document.getElementById("llmModel");
+    this.llmTestBtn = document.getElementById("llmTestBtn");
+    this.llmStatus = document.getElementById("llmStatus");
     this.btnClearAllData = document.getElementById("btnClearAllData");
   }
 
@@ -125,6 +131,7 @@ export class DOMManager {
 
   getLLMSettings() {
     return {
+      enabled: this.llmEnabled.checked,
       baseUrl: this.llmBaseUrl.value || "",
       apiKey: this.llmApiKey.value || "",
       model: this.llmModel.value || "",
@@ -132,8 +139,29 @@ export class DOMManager {
   }
 
   setLLMSettings(settings) {
+    this.llmEnabled.checked = settings.enabled === true;
     this.llmBaseUrl.value = settings.baseUrl || "";
     this.llmApiKey.value = settings.apiKey || "";
     this.llmModel.value = settings.model || "";
+    this.setLLMInputsEnabled(settings.enabled === true);
+  }
+
+  setLLMInputsEnabled(enabled) {
+    [this.llmBaseUrl, this.llmApiKey, this.llmModel, this.llmTestBtn].forEach((el) => {
+      el.disabled = !enabled;
+    });
+  }
+
+  setLLMStatus(message, status = "pending") {
+    this.llmStatus.textContent = message;
+    this.llmStatus.classList.toggle("status-ok", status === "ok");
+    this.llmStatus.classList.toggle("status-error", status === "error");
+    this.llmStatus.classList.toggle("status-pending", status === "pending");
+  }
+
+  setRecycleRetention(days, text) {
+    this.recycleRetentionSelect.value = String(days);
+    this.recycleRetentionDesc.textContent = text;
+    this.recycleRetentionStatus.textContent = text;
   }
 }

@@ -5,6 +5,9 @@
 import { clamp, resolveItemTitle, wordCount } from "../lib/text-utils.js";
 import { formatTime } from "../lib/time-utils.js";
 
+export const getItemMenuActions = (item) =>
+  item?.encrypted === true ? ["decrypt"] : ["exportTxt", "exportMd", "encrypt"];
+
 export class ItemListView {
   constructor(domManager, handlers) {
     this.dom = domManager;
@@ -220,7 +223,9 @@ export class ItemListView {
     const menu = document.createElement("div");
     menu.className = "item-context-menu";
 
-    if (item.encrypted === true) {
+    const actions = getItemMenuActions(item);
+
+    if (actions.includes("decrypt")) {
       const decryptOption = document.createElement("div");
       decryptOption.className = "menu-item";
       decryptOption.textContent = "🔓 解密";
@@ -229,7 +234,31 @@ export class ItemListView {
         this.handlers.onItemDecryptClick(item.id);
       };
       menu.appendChild(decryptOption);
-    } else {
+    }
+
+    if (actions.includes("exportTxt")) {
+      const exportTxtOption = document.createElement("div");
+      exportTxtOption.className = "menu-item";
+      exportTxtOption.textContent = "导出 TXT";
+      exportTxtOption.onclick = () => {
+        menu.remove();
+        this.handlers.onItemExportClick(item.id, "txt");
+      };
+      menu.appendChild(exportTxtOption);
+    }
+
+    if (actions.includes("exportMd")) {
+      const exportMdOption = document.createElement("div");
+      exportMdOption.className = "menu-item";
+      exportMdOption.textContent = "导出 MD";
+      exportMdOption.onclick = () => {
+        menu.remove();
+        this.handlers.onItemExportClick(item.id, "md");
+      };
+      menu.appendChild(exportMdOption);
+    }
+
+    if (actions.includes("encrypt")) {
       const encryptOption = document.createElement("div");
       encryptOption.className = "menu-item";
       encryptOption.textContent = "🔒 加密";
