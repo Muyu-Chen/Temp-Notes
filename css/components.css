@@ -903,6 +903,10 @@ textarea {
   padding: 10px 16px;
 }
 
+.recycle-retention-status {
+  margin-top: 8px;
+}
+
 /* ========================================
    导入/导出内容样式
    ======================================== */
@@ -989,6 +993,11 @@ textarea {
   background: var(--panel);
   border-radius: 12px;
   border: 1px solid var(--line);
+}
+
+.settings-item-stack {
+  align-items: stretch;
+  flex-direction: column;
 }
 
 .settings-label {
@@ -1082,4 +1091,89 @@ textarea {
   min-width: 35px;
   text-align: right;
   font-family: var(--mono);
+}
+
+.setting-control {
+  min-width: 180px;
+}
+
+.settings-form {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.settings-field-grid {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.settings-field-grid label,
+.llm-toggle-row {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.settings-input,
+.settings-select {
+  width: 100%;
+  height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.settings-input:disabled,
+.settings-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.llm-toggle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.llm-status.status-ok {
+  color: #65d88b;
+}
+
+.llm-status.status-error {
+  color: #ff8a8a;
+}
+
+.llm-status.status-pending {
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .settings-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .font-size-controls,
+  .setting-control {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .settings-field-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
 }
