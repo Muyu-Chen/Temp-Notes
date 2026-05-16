@@ -6,7 +6,9 @@
   "main": "src/index.html",
   "scripts": {
     "dev": "python -m http.server 3000 --directory .",
-    "serve": "python -m http.server 8000 --directory ."
+    "serve": "python -m http.server 8000 --directory .",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "notes",
@@ -20,5 +22,7 @@
     "type": "git",
     "url": ""
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "vitest": "^4.1.6"
+  }
 }

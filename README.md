@@ -76,6 +76,7 @@ Temp-Notes/
 │   ├── ui/                 # DOM wrappers, views, modal, UI feedback
 │   ├── lib/                # Focused helper modules
 │   └── vendor/             # Local third-party browser libraries
+├── tests/                  # Vitest regression tests
 ├── index.html              # App entry page
 ├── README.md               # English documentation
 └── README-CHINESE.md       # Chinese documentation
@@ -169,6 +170,31 @@ Temp-Notes/
 - Interaction states (`hover`, `active`)
 
 ## Quick Start
+
+### Testing
+
+This project uses Vitest for regression tests.
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Run the test suite:
+
+```bash
+npm test
+```
+
+The current suite covers regression behavior for:
+
+- draft lifecycle rules: archive, clear, new draft, autosave, encrypted item loading, and timestamp preservation
+- item operations: title rename fallbacks, encrypted title metadata, delete-to-recycle behavior
+- recycle bin state: load-once init, add, delete, restore, and clear
+- import/export helpers: payload normalization, empty item filtering, deduplication, sorting, and export envelope shape
+- Markdown rendering: fallback escaping and local `marked` + `DOMPurify` integration
+- text utilities: title resolution, first-line fallback, clamping, and mixed-language word count
 
 ### Keyboard Shortcuts
 
