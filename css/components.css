@@ -211,6 +211,21 @@ textarea {
   background: rgba(0, 0, 0, 0.03);
 }
 
+.search-summary {
+  padding: 4px 6px 2px;
+}
+
+.search-hit {
+  border-radius: 4px;
+  background: rgba(91, 140, 255, 0.24);
+  color: var(--text);
+  padding: 0 2px;
+}
+
+[data-theme="light"] .search-hit {
+  background: rgba(43, 111, 243, 0.18);
+}
+
 /* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 8px;

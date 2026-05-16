@@ -8,6 +8,15 @@ export { clamp, firstLine, cleanTitle, resolveItemTitle, wordCount } from "./lib
 export { estimateStorageBytes, humanBytes } from "./lib/bytes-utils.js";
 export { isMac } from "./lib/platform-utils.js";
 export {
+  excerptAroundSearch,
+  filterItemsBySearch,
+  getHighlightRanges,
+  getItemSearchFields,
+  getSearchTokens,
+  itemMatchesSearch,
+  normalizeSearchText,
+} from "./lib/search-utils.js";
+export {
   formatExportTimestamp,
   getTextExportPayload,
   sanitizeFilePart,

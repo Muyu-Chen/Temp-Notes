@@ -3,7 +3,9 @@
  */
 
 import { clamp, resolveItemTitle, wordCount } from "../lib/text-utils.js";
+import { excerptAroundSearch, filterItemsBySearch, getSearchTokens } from "../lib/search-utils.js";
 import { formatTime } from "../lib/time-utils.js";
+import { appendHighlightedText } from "./search-highlight.js";
 
 export const getItemMenuActions = (item) =>
   item?.encrypted === true ? ["decrypt"] : ["exportTxt", "exportMd", "encrypt"];
@@ -16,15 +18,8 @@ export class ItemListView {
 
   render(items) {
     const searchQuery = this.dom.getSearchValue();
-    const filtered = !searchQuery
-      ? items
-      : items.filter((it) => {
-          const titleMatch = resolveItemTitle(it).toLowerCase().includes(searchQuery);
-          if (it.encrypted) {
-            return titleMatch;
-          }
-          return titleMatch || it.content.toLowerCase().includes(searchQuery);
-        });
+    const searchTokens = getSearchTokens(searchQuery);
+    const filtered = searchTokens.length === 0 ? items : filterItemsBySearch(items, searchTokens);
 
     this.dom.clearListContent();
 
@@ -39,12 +34,19 @@ export class ItemListView {
       return;
     }
 
+    if (searchTokens.length > 0) {
+      const summary = document.createElement("div");
+      summary.className = "search-summary muted small";
+      summary.textContent = `找到 ${filtered.length} / ${items.length} 个匹配条目`;
+      this.dom.appendListItem(summary);
+    }
+
     for (const it of filtered) {
-      this.dom.appendListItem(this.createItemCard(it));
+      this.dom.appendListItem(this.createItemCard(it, searchTokens));
     }
   }
 
-  createItemCard(item) {
+  createItemCard(item, searchTokens = []) {
     const card = document.createElement("div");
     card.className = "item";
 
@@ -58,7 +60,12 @@ export class ItemListView {
 
     const title = document.createElement("div");
     title.className = "titleline";
-    title.textContent = isEncrypted ? `🔒 ${resolveItemTitle(item)}` : resolveItemTitle(item);
+    if (isEncrypted) {
+      title.appendChild(document.createTextNode("🔒 "));
+    }
+    const titleText = document.createElement("span");
+    appendHighlightedText(titleText, resolveItemTitle(item), searchTokens);
+    title.appendChild(titleText);
     title.title = "点击修改标题";
     title.tabIndex = 0;
     title.onclick = (e) => {
@@ -99,7 +106,11 @@ export class ItemListView {
     if (isEncrypted) {
       preview.innerHTML = `<div class="muted small">加密条目，解密后才能预览/加载</div><div class="muted" style="font-style: italic;">提示：${item.encryptionHint || "无提示"}</div>`;
     } else {
-      preview.textContent = clamp(item.content.trim() || "（空）", 240);
+      const previewText =
+        searchTokens.length > 0
+          ? excerptAroundSearch(item.content, searchTokens, 240)
+          : clamp(item.content.trim() || "（空）", 240);
+      appendHighlightedText(preview, previewText, searchTokens);
     }
 
     const row = document.createElement("div");
