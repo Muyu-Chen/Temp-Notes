@@ -7,7 +7,7 @@ import {
   saveDraft,
   saveDraftItemId,
 } from "../storage/draft-storage.js";
-import { saveItems } from "../storage/item-storage.js";
+import { saveItem } from "../storage/item-storage.js";
 import { estimateStorageBytes } from "../lib/bytes-utils.js";
 import { uid } from "../lib/id-utils.js";
 import { now } from "../lib/time-utils.js";
@@ -77,7 +77,7 @@ export class DraftService {
     app.dom.focusDraft();
   }
 
-  archiveDraft() {
+  async archiveDraft() {
     const { app } = this;
     const content = app.dom.getDraftValue();
     if (!content.trim()) {
@@ -102,7 +102,7 @@ export class DraftService {
         };
         app.ui.showToast("已更新条目");
         saveDraftItemId(app.currentLoadedItemId);
-        saveItems(app.items);
+        await saveItem(app.items[itemIndex]);
         app.render();
         return;
       }
@@ -113,7 +113,7 @@ export class DraftService {
     app.currentLoadedItemId = item.id;
     saveDraftItemId(item.id);
     app.ui.showToast("已存档为新条目");
-    saveItems(app.items);
+    await saveItem(item);
     app.render();
   }
 
@@ -148,7 +148,7 @@ export class DraftService {
     });
 
     if (result.ok) {
-      this.archiveDraft();
+      await this.archiveDraft();
     }
 
     app.dom.setDraftValue("");

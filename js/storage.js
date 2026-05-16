@@ -11,7 +11,7 @@ export {
   saveDraftItemId,
   clearDraftItemId,
 } from "./storage/draft-storage.js";
-export { loadItems, saveItems } from "./storage/item-storage.js";
+export { loadItems, saveItems, saveItem, deleteItemById } from "./storage/item-storage.js";
 export {
   exportData,
   normalizeImportedData,

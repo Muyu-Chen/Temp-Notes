@@ -27,6 +27,18 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.clearDraft();
   });
 
+  domManager.btnMarkdownEdit.addEventListener("click", () => {
+    appController.setDraftMode("edit");
+  });
+
+  domManager.btnMarkdownPreview.addEventListener("click", () => {
+    appController.setDraftMode("preview");
+  });
+
+  domManager.draftPreview.addEventListener("click", (e) => {
+    appController.onDraftPreviewClick(e);
+  });
+
   domManager.btnMore.addEventListener("click", () => {
     appController.openMorePanel();
   });

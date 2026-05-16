@@ -5,6 +5,7 @@
 import { humanBytes } from "../lib/bytes-utils.js";
 import { wordCount } from "../lib/text-utils.js";
 import { ItemListView } from "./item-list-view.js";
+import { renderMarkdown } from "./markdown-renderer.js";
 
 export class UIController {
   constructor(domManager) {
@@ -36,6 +37,23 @@ export class UIController {
 
   renderItemsList(items) {
     this.itemListView.render(items);
+  }
+
+  updateDraftPreview() {
+    this.dom.setDraftPreview(renderMarkdown(this.dom.getDraftValue()));
+    this.dom.draftPreview.querySelectorAll("a[href]").forEach((link) => {
+      link.target = "_blank";
+      link.rel = "noreferrer";
+    });
+  }
+
+  setDraftMode(mode) {
+    this.dom.setDraftMode(mode);
+    if (mode === "preview") {
+      this.updateDraftPreview();
+    } else {
+      this.dom.focusDraft();
+    }
   }
 
   async copyText(text) {

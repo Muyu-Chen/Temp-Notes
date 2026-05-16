@@ -30,6 +30,7 @@ export class AppController {
     this.items = [];
     this.saveTimer = null;
     this.currentLoadedItemId = null;
+    this.draftMode = "edit";
     this.modal = new Modal();
 
     this.recycleService = new RecycleService();
@@ -93,6 +94,7 @@ export class AppController {
 
   render() {
     this.ui.renderItemsList(this.items);
+    this.ui.updateDraftPreview();
     const draft = this.dom.getDraftValue();
     this.ui.updateMeta(
       draft,
@@ -108,6 +110,7 @@ export class AppController {
 
   loadToDraft(id) {
     this.draftService.loadToDraft(id);
+    this.ui.updateDraftPreview();
   }
 
   archiveDraft() {
@@ -116,14 +119,17 @@ export class AppController {
 
   clearDraft() {
     this.draftService.clearDraft();
+    this.ui.updateDraftPreview();
   }
 
-  newDraft() {
-    return this.draftService.newDraft();
+  async newDraft() {
+    await this.draftService.newDraft();
+    this.ui.updateDraftPreview();
   }
 
   onDraftInput() {
     this.draftService.onDraftInput();
+    this.ui.updateDraftPreview();
   }
 
   renameItemTitle(id, title) {
@@ -264,6 +270,16 @@ export class AppController {
 
   importAll() {
     this.importExportService.importAll();
+  }
+
+  setDraftMode(mode) {
+    this.draftMode = mode;
+    this.ui.setDraftMode(mode);
+  }
+
+  onDraftPreviewClick(e) {
+    if (e.target.closest("a")) return;
+    this.ui.showToast("预览模式无法编辑，请切换到编辑模式");
   }
 
   onSearchInput() {

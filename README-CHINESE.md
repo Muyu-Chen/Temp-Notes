@@ -63,7 +63,8 @@
 │   ├── services/          # 业务服务
 │   ├── storage/           # IndexedDB 与数据持久化模块
 │   ├── ui/                # DOM、视图、弹窗、UI反馈
-│   └── lib/               # 按职责拆分的工具函数
+│   ├── lib/               # 按职责拆分的工具函数
+│   └── vendor/            # 本地第三方浏览器库
 ├── index.html             # 应用入口页面
 ├── README.md              # 英文项目文档
 └── README-CHINESE.md      # 中文项目文档
@@ -127,8 +128,10 @@
 | `ui/dom-manager.js` | DOM 管理 | `DOMManager` 类 |
 | `ui/item-list-view.js` | 条目列表渲染 | `ItemListView` 类 |
 | `ui/recycle-list-view.js` | 回收站渲染 | `RecycleListView` 类 |
+| `ui/markdown-renderer.js` | Markdown 渲染封装 | `renderMarkdown` |
 | `ui/modal.js` | 弹窗组件 | `Modal` 类 |
 | `lib/*` | 聚焦工具函数 | 文本/时间/字节/ID/平台工具 |
+| `vendor/*` | 本地第三方库 | Marked、DOMPurify |
 | `constants.js` | 稳定常量 | `STORAGE_KEYS` |
 | `crypto.js` | 加密底层能力 | 加密/解密/密码校验函数 |
 
@@ -185,6 +188,7 @@ UIController 和视图模块渲染反馈
 - 🌓 深色/浅色主题切换
 - 💾 导出为 JSON
 - 📥 从 JSON 导入（支持合并去重）
+- 👀 本地 Markdown 预览
 - ⌨️ 丰富的快捷键支持
 
 ## 🔧 扩展指南
@@ -211,6 +215,8 @@ UIController 和视图模块渲染反馈
 - [x] 首次打开逻辑会维护 `firstOpen` 标记，并在需要时向草稿区注入使用说明。
 - [x] 清空草稿时，如果当前草稿已经存档，则直接清空；未存档草稿才显示确认提示。
 - [x] 重复存档未变化的草稿时，不再更新时间戳。
+- [x] 常见单条条目修改改为增量保存，不再每次重写完整存档列表。
+- [x] 草稿区新增本地 Markdown 预览。
 
 ### TODO - 待开发
 - [ ] 增加打开页面时的加载动画。

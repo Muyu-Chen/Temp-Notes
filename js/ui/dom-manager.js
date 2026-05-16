@@ -5,6 +5,9 @@
 export class DOMManager {
   constructor() {
     this.draft = document.getElementById("draft");
+    this.draftPreview = document.getElementById("draftPreview");
+    this.btnMarkdownEdit = document.getElementById("btnMarkdownEdit");
+    this.btnMarkdownPreview = document.getElementById("btnMarkdownPreview");
     this.list = document.getElementById("list");
     this.search = document.getElementById("search");
     this.autosaveState = document.getElementById("autosaveState");
@@ -77,6 +80,18 @@ export class DOMManager {
 
   setDraftValue(content) {
     this.draft.value = content;
+  }
+
+  setDraftPreview(content) {
+    this.draftPreview.innerHTML = content;
+  }
+
+  setDraftMode(mode) {
+    const previewMode = mode === "preview";
+    this.draft.hidden = previewMode;
+    this.draftPreview.hidden = !previewMode;
+    this.btnMarkdownEdit.classList.toggle("active", !previewMode);
+    this.btnMarkdownPreview.classList.toggle("active", previewMode);
   }
 
   getSearchValue() {

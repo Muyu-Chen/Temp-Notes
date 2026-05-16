@@ -2,7 +2,7 @@
  * 回收站操作协调
  */
 
-import { saveItems } from "../storage/item-storage.js";
+import { saveItem } from "../storage/item-storage.js";
 import { resolveItemTitle } from "../lib/text-utils.js";
 
 export class RecycleActionsService {
@@ -36,7 +36,7 @@ export class RecycleActionsService {
     if (restoredItem) {
       delete restoredItem.deletedAt;
       app.items.unshift(restoredItem);
-      saveItems(app.items);
+      await saveItem(restoredItem);
       app.render();
       app.ui.showToast("条目已恢复");
       app.recycleListView.render(app.recycleService.getRecycleItems());

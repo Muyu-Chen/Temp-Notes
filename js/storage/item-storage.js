@@ -18,6 +18,18 @@ const normalizeItem = (item) => ({
   defaultPassword: Boolean(item.defaultPassword),
 });
 
+const toStoredItem = (item) => ({
+  id: item.id,
+  content: item.content,
+  createdAt: item.createdAt,
+  updatedAt: item.updatedAt,
+  title: item.title,
+  encrypted: item.encrypted === true,
+  encryptedTitle: item.encryptedTitle,
+  encryptionHint: item.encryptionHint,
+  defaultPassword: item.defaultPassword === true,
+});
+
 export const loadItems = async () => {
   try {
     const db = await getDB();
@@ -58,17 +70,7 @@ export const saveItems = async (items) => {
 
     return new Promise((resolve, reject) => {
       items.forEach((item) => {
-        store.add({
-          id: item.id,
-          content: item.content,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-          title: item.title,
-          encrypted: item.encrypted === true,
-          encryptedTitle: item.encryptedTitle,
-          encryptionHint: item.encryptionHint,
-          defaultPassword: item.defaultPassword === true,
-        });
+        store.add(toStoredItem(item));
       });
 
       transaction.onerror = () => reject(transaction.error);
@@ -76,5 +78,37 @@ export const saveItems = async (items) => {
     });
   } catch (err) {
     console.error("Failed to save items:", err);
+  }
+};
+
+export const saveItem = async (item) => {
+  try {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_ITEMS, "readwrite");
+      const store = transaction.objectStore(STORE_ITEMS);
+      store.put(toStoredItem(item));
+
+      transaction.onerror = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
+    });
+  } catch (err) {
+    console.error("Failed to save item:", err);
+  }
+};
+
+export const deleteItemById = async (id) => {
+  try {
+    const db = await getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_ITEMS, "readwrite");
+      const store = transaction.objectStore(STORE_ITEMS);
+      store.delete(id);
+
+      transaction.onerror = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
+    });
+  } catch (err) {
+    console.error("Failed to delete item:", err);
   }
 };

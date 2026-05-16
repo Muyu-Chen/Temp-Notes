@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>临时笔记（第二桌面）</title>
     <script src="./js/crypto-js.min.js"></script>
+    <script src="./js/vendor/purify.min.js"></script>
+    <script src="./js/vendor/marked.min.js"></script>
     <script>
       (() => {
         const root = document.documentElement;
@@ -86,19 +88,27 @@
               <span class="muted small">打开即用 重开仍在</span>
             </div>
             <div class="right">
+              <div class="mode-toggle" aria-label="草稿显示模式">
+                <button id="btnMarkdownEdit" class="active" type="button">编辑</button>
+                <button id="btnMarkdownPreview" type="button">预览</button>
+              </div>
+              <!-- 快捷键提示 目前我觉得可以暂时不显示 -->
+              <!-- 
               <span class="muted small"
                 >快捷键：<span class="kbd">Ctrl</span>+<span class="kbd">S</span>
                 存档，<span class="kbd">Ctrl</span>+<span class="kbd">K</span>
                 搜索，<span class="kbd">Ctrl</span>+<span class="kbd">L</span>
                 清空</span
               >
+            -->
             </div>
           </div>
           <textarea
             id="draft"
             spellcheck="false"
-            placeholder="把这里当作你的“第二桌面”。随手粘贴、临时记录、快速中转…&#10;&#10;提示：需要留档就点“存档”或Ctrl+S。"
+            placeholder="把这里当作你的“第二桌面”。随手粘贴、临时记录、快速中转…&#10;&#10;提示：所有内容均自动保存，若需要在右侧存档就点“存档”或Ctrl+S。"
           ></textarea>
+          <div id="draftPreview" class="draft-preview markdown-body" hidden></div>
         </section>
 
         <!-- Archive -->

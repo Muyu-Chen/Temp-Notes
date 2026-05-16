@@ -74,7 +74,8 @@ Temp-Notes/
 │   ├── services/           # Business services
 │   ├── storage/            # IndexedDB and data persistence modules
 │   ├── ui/                 # DOM wrappers, views, modal, UI feedback
-│   └── lib/                # Focused helper modules
+│   ├── lib/                # Focused helper modules
+│   └── vendor/             # Local third-party browser libraries
 ├── index.html              # App entry page
 ├── README.md               # English documentation
 └── README-CHINESE.md       # Chinese documentation
@@ -138,8 +139,10 @@ Temp-Notes/
 | `ui/dom-manager.js` | DOM management | `DOMManager` class |
 | `ui/item-list-view.js` | Entry list rendering | `ItemListView` class |
 | `ui/recycle-list-view.js` | Recycle bin rendering | `RecycleListView` class |
+| `ui/markdown-renderer.js` | Markdown rendering wrapper | `renderMarkdown` |
 | `ui/modal.js` | Modal UI | `Modal` class |
 | `lib/*` | Focused utility helpers | Text/time/bytes/id/platform helpers |
+| `vendor/*` | Local third-party libraries | Marked, DOMPurify |
 | `constants.js` | Stable constants | `STORAGE_KEYS` |
 | `crypto.js` | Encryption primitives | Encrypt/decrypt/verify helpers |
 
@@ -201,6 +204,7 @@ User receives feedback
 - 🌓 Dark/light theme switching
 - 💾 Export to JSON
 - 📥 Import from JSON (merge + dedup supported)
+- 👀 Local Markdown preview
 - ⌨️ Rich keyboard shortcuts
 
 ## 🔧 Extension Guide
@@ -228,6 +232,8 @@ User receives feedback
 - [x] Added first-run bootstrap logic to maintain the `firstOpen` flag and insert the usage notice when needed.
 - [x] Clear draft without confirmation after the draft has been archived; ask for confirmation only for never-archived drafts.
 - [x] Re-saving an unchanged archived draft keeps the original update timestamp.
+- [x] Save single-entry changes incrementally instead of rewriting the full archive list for common edits.
+- [x] Add local Markdown preview for drafts.
 
 ### TODO - Planned
 

@@ -3,7 +3,7 @@
  */
 
 import { clearDraftItemId } from "../storage/draft-storage.js";
-import { saveItems } from "../storage/item-storage.js";
+import { deleteItemById, saveItem } from "../storage/item-storage.js";
 import { cleanTitle, firstLine } from "../lib/text-utils.js";
 import { now } from "../lib/time-utils.js";
 
@@ -36,7 +36,7 @@ export class ItemService {
       updatedAt: now(),
     };
 
-    await saveItems(app.items);
+    await saveItem(app.items[itemIndex]);
     app.render();
 
     if (nextTitle) {
@@ -58,7 +58,7 @@ export class ItemService {
       app.currentLoadedItemId = null;
       clearDraftItemId();
     }
-    saveItems(app.items);
+    await deleteItemById(id);
     app.render();
     app.ui.showToast("已删除条目（可在回收站恢复）");
   }

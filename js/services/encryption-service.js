@@ -3,7 +3,7 @@
  */
 
 import { clearDraftItemId } from "../storage/draft-storage.js";
-import { saveItems } from "../storage/item-storage.js";
+import { saveItem } from "../storage/item-storage.js";
 import { decryptContent, encryptContent, verifyPassword } from "../crypto.js";
 import { cleanTitle, firstLine } from "../lib/text-utils.js";
 import { now } from "../lib/time-utils.js";
@@ -65,7 +65,7 @@ export class EncryptionService {
           updatedAt: now(),
         };
 
-        await saveItems(app.items);
+        await saveItem(app.items[itemIndex]);
         if (app.currentLoadedItemId === id) {
           app.currentLoadedItemId = null;
           clearDraftItemId();
@@ -132,7 +132,7 @@ export class EncryptionService {
           updatedAt: now(),
         };
 
-        await saveItems(app.items);
+        await saveItem(app.items[itemIndex]);
         app.ui.showToast("解密成功");
         app.render();
       }
