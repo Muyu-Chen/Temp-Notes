@@ -77,4 +77,29 @@ describe("RecycleService", () => {
     expect(service.getRecycleItems()).toEqual([]);
     expect(mocks.saveRecycleItems).toHaveBeenCalledWith([]);
   });
+
+  it("keeps all recycle items when auto-clean retention is never", async () => {
+    const service = new RecycleService();
+    service.deletedItems = [{ id: "old", deletedAt: 1000 }];
+
+    await expect(service.cleanupExpired(0, 10_000)).resolves.toBe(0);
+
+    expect(service.getRecycleItems()).toEqual([{ id: "old", deletedAt: 1000 }]);
+    expect(mocks.saveRecycleItems).not.toHaveBeenCalled();
+  });
+
+  it("removes only expired recycle items when retention is enabled", async () => {
+    const day = 24 * 60 * 60 * 1000;
+    const now = 10 * day;
+    const service = new RecycleService();
+    service.deletedItems = [
+      { id: "expired", deletedAt: now - 8 * day },
+      { id: "fresh", deletedAt: now - 6 * day },
+    ];
+
+    await expect(service.cleanupExpired(7, now)).resolves.toBe(1);
+
+    expect(service.getRecycleItems()).toEqual([{ id: "fresh", deletedAt: now - 6 * day }]);
+    expect(mocks.saveRecycleItems).toHaveBeenCalledWith(service.deletedItems);
+  });
 });
