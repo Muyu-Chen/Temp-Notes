@@ -1,8 +1,8 @@
-# Temp Notes - A Fully Offline Private Draft App 📝
+# Temp Notes - A Default-Offline Private Draft App 📝
 
-这是一个 **100% 完全离线** 运行的临时笔记应用，支持快速草稿、条目存档、导入导出。所有**数据仅保存在本地浏览器，零网络请求、零隐私泄露**。随手的草稿、临时信息都可以在这里安全地记录和管理，无需打开臃肿的笔记应用。无论是捕捉灵感、记录待办事项，还是临时粘贴文本，临时笔记都是一个轻量级的工具，帮助你高效管理临时信息。  
+这是一个 **默认完全离线** 运行的临时笔记应用，支持快速草稿、条目存档、Markdown 预览、导入导出。所有笔记数据默认仅保存在本地浏览器；只有用户主动启用大模型功能并点击测试连接或使用未来 AI 功能时，才会请求用户自己配置的服务。随手的草稿、临时信息都可以在这里安全地记录和管理，无需打开臃肿的笔记应用。
 
-A **100% fully offline** temporary note app supporting quick drafts, entry archiving, and data import/export. All data stays in your local browser with **zero network requests and zero privacy leakage**.
+A **default-offline** temporary note app supporting quick drafts, entry archiving, Markdown preview, and data import/export. Notes stay in your local browser by default; network requests only happen when you explicitly enable LLM features and click the connection test or use future AI actions against your own configured service.
 
 When you need to quickly capture ideas, inspiration, or to-dos, Temp Notes provides a fast and secure environment to record and manage your notes without opening a bloated note app. For temporary text pasting or storing ephemeral information, it's a lightweight tool that opens instantly, helping you efficiently manage temporary information.
 
@@ -34,22 +34,23 @@ You can run it locally after cloning, clone directly on a server, or upload the 
 
 ## Privacy Guarantee
 
-- Fully offline: 100% local browser execution, zero network connection
+- Default offline: local browser execution with no automatic network connection
 - Open source: all JavaScript files are open, with no hidden network requests
 - Local storage only: notes are stored in LocalStorage/IndexedDB
-- Never uploaded: your data is never sent anywhere
+- Never uploaded by default: your notes are not sent anywhere unless you explicitly enable and use user-configured LLM features
 - No tracking: no analytics, no cookies, no hidden connections
-- Tips: there is an `llm api` configuration option in settings, but this feature is currently in design only and makes no network requests. Future plans may support third-party LLM APIs (such as OpenAI), while `base_url`/`api_key` are user-provided and user-stored only. LLM features are disabled by default.
+- LLM features are disabled by default. The connection test sends `GET {base_url}/models` only after you enable LLM settings and click the test button; `base_url`, `api_key`, and `model` are user-provided and user-stored.
 
 ### Privacy Details
 
 In the JavaScript codebase:
 
-- No `fetch()` requests
+- No automatic `fetch()` requests
 - No `XMLHttpRequest`
 - No `WebSocket` connections
 - No external resource dependencies required for offline usage
 - Only local LocalStorage/IndexedDB operations
+- Optional LLM connectivity uses `fetch()` only after explicit user action.
 
 All code is open and auditable.
 
@@ -128,6 +129,7 @@ Temp-Notes/
 | `services/recycle-service.js` | Recycle bin data state | `RecycleService` |
 | `services/recycle-actions-service.js` | Recycle bin restore/delete/clear actions | `RecycleActionsService` |
 | `services/import-export-service.js` | JSON import/export flow | `ImportExportService` |
+| `services/llm-service.js` | Optional LLM configuration test | `LLMService` |
 | `services/settings-service.js` | Font size, LLM settings, data clearing | Settings helpers |
 | `services/theme-manager.js` | Theme load/apply/toggle | Theme helpers |
 | `storage/idb.js` | IndexedDB setup | `getDB`, store constants |
@@ -141,6 +143,7 @@ Temp-Notes/
 | `ui/item-list-view.js` | Entry list rendering | `ItemListView` class |
 | `ui/recycle-list-view.js` | Recycle bin rendering | `RecycleListView` class |
 | `ui/markdown-renderer.js` | Markdown rendering wrapper | `renderMarkdown` |
+| `lib/download-utils.js` | Single-entry text export helpers | File payload and filename helpers |
 | `ui/modal.js` | Modal UI | `Modal` class |
 | `lib/*` | Focused utility helpers | Text/time/bytes/id/platform helpers |
 | `vendor/*` | Local third-party libraries | Marked, DOMPurify |
@@ -192,7 +195,11 @@ The current suite covers regression behavior for:
 - draft lifecycle rules: archive, clear, new draft, autosave, encrypted item loading, and timestamp preservation
 - item operations: title rename fallbacks, encrypted title metadata, delete-to-recycle behavior
 - recycle bin state: load-once init, add, delete, restore, and clear
+- recycle bin auto-clean rules: never/7/30/90-day retention and setting-triggered cleanup
 - import/export helpers: payload normalization, empty item filtering, deduplication, sorting, and export envelope shape
+- single-entry TXT/MD export helpers: filename cleanup, timestamp format, MIME type, and encrypted-menu visibility
+- settings: Markdown mode persistence, recycle retention, and LLM settings persistence
+- LLM connection service: no request when disabled/incomplete, correct OpenAI-compatible `/models` request, success/failure states
 - Markdown rendering: fallback escaping and local `marked` + `DOMPurify` integration
 - text utilities: title resolution, first-line fallback, clamping, and mixed-language word count
 
@@ -229,8 +236,11 @@ User receives feedback
 - 📊 Real-time word/storage stats
 - 🌓 Dark/light theme switching
 - 💾 Export to JSON
+- 📄 Export a single archived entry as TXT or Markdown
 - 📥 Import from JSON (merge + dedup supported)
-- 👀 Local Markdown preview
+- 👀 Local Markdown preview with persistent edit/preview mode
+- 🧹 Optional recycle bin auto-cleanup
+- 🔌 Optional OpenAI-compatible LLM connection test
 - ⌨️ Rich keyboard shortcuts
 
 ## 🔧 Extension Guide
@@ -260,17 +270,20 @@ User receives feedback
 - [x] Re-saving an unchanged archived draft keeps the original update timestamp.
 - [x] Save single-entry changes incrementally instead of rewriting the full archive list for common edits.
 - [x] Add local Markdown preview for drafts.
+- [x] Add single-entry TXT/Markdown export from the archived entry menu.
+- [x] Persist Markdown edit/preview mode across entries and reloads.
+- [x] Add configurable recycle bin auto-cleanup.
+- [x] Add optional OpenAI-compatible LLM settings and connection test.
 
 ### TODO - Planned
 
 - [ ] Improve loading performance and add animation.
-- [ ] Add TXT format download in notes menu for easy sharing on Mac.
 - [ ] Add configurable default password in Settings. New notes encrypted with an empty password should use this updated default, while previously encrypted notes keep their original default password.
 - [ ] Add one-click migration from old default password to new default password, so previously default-password-encrypted notes can be batch-updated safely (backup recommended before migration).
 - [ ] Add remember-password-after-decrypt as a user option, so users can choose whether to auto-fill next time.
 - [ ] Auto-clean expired archive entries (e.g., older than 30 days).
-- [ ] Add recycle bin auto-expiry (similar to recently deleted in photo apps).
 - [ ] Support image attachment and storage.
+- [ ] Add AI-assisted draft actions such as summarize, polish, and tags using the optional LLM configuration.
 - [ ] Add optional sync feature with user-configured server `POST`/`GET` endpoints (default off).
 - [ ] Add a lightweight Python server component with basic data receive/read APIs + CORS support.
 
