@@ -114,12 +114,14 @@ export class AppController {
   }
 
   archiveDraft() {
-    this.draftService.archiveDraft();
+    return this.draftService.archiveDraft();
   }
 
-  clearDraft() {
-    this.draftService.clearDraft();
-    this.ui.updateDraftPreview();
+  async clearDraft() {
+    const cleared = await this.draftService.clearDraft();
+    if (cleared) {
+      this.ui.updateDraftPreview();
+    }
   }
 
   async newDraft() {
