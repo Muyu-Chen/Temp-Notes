@@ -85,18 +85,6 @@ export const decryptContent = (cipherPayloadText, password) => {
 };
 
 /**
- * 从加密数据中提取内容（不需要验证密码）
- */
-export const extractFromEncrypted = (encryptedData) => {
-  try {
-    // 只返回存在加密数据的标记，不能解密内容
-    return "encrypted";
-  } catch (err) {
-    return null;
-  }
-};
-
-/**
  * 验证密码（通过检查解密后是否能正确解析 id|content）
  */
 export const verifyPassword = (id, encryptedData, password) => {

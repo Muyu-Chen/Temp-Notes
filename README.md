@@ -63,52 +63,85 @@ Temp-Notes/
 │   ├── layout.css          # Layout structure
 │   └── components.css      # UI component styles
 ├── js/                     # JavaScript modules
-│   ├── main.js             # App entry + event binding
-│   ├── constants.js        # Constant definitions
-│   ├── utils.js            # Utility functions
-│   ├── storage.js          # Storage management
-│   ├── dom-manager.js      # DOM access wrapper
-│   ├── ui-controller.js    # UI rendering + feedback
-│   ├── app-controller.js   # Core business logic
-│   ├── modal.js            # Common modal component
-│   └── initialize.js       # App state initialization
+│   ├── main.js             # Thin app entry (DOM ready -> bootstrap)
+│   ├── app-controller.js   # App-level coordinator
+│   ├── constants.js        # Stable app constants
+│   ├── crypto.js           # Encryption primitives
+│   ├── crypto-js.min.js    # Local CryptoJS dependency
+│   ├── storage.js          # Storage module barrel export
+│   ├── utils.js            # Utility module barrel export
+│   ├── bootstrap/          # Startup orchestration and event binding
+│   ├── services/           # Business services
+│   ├── storage/            # IndexedDB and data persistence modules
+│   ├── ui/                 # DOM wrappers, views, modal, UI feedback
+│   └── lib/                # Focused helper modules
 ├── index.html              # App entry page
 ├── README.md               # English documentation
-└── readme-chinese.md       # Chinese documentation
+└── README-CHINESE.md       # Chinese documentation
 ```
 
 ## Architecture
 
 ### Layered Design
 
-1. Presentation layer
-   - `ui-controller.js`: UI rendering and state display
+1. Entry and bootstrap layer
+   - `main.js`: waits for DOM readiness and starts the app
+   - `bootstrap/app-bootstrap.js`: creates core objects and runs startup steps
+   - `bootstrap/bind-events.js`: binds DOM events to controller actions
+   - `bootstrap/first-run.js`: first-run flag and usage notice
+
+2. Presentation layer
+   - `ui/ui-controller.js`: toast, metadata, and shell-level UI feedback
+   - `ui/item-list-view.js`: archived entry list rendering
+   - `ui/recycle-list-view.js`: recycle bin list rendering
+   - `ui/dom-manager.js`: DOM access wrapper
+   - `ui/modal.js`: common modal component
    - `css/*`: all style files
 
-2. Business logic layer
-   - `app-controller.js`: core business flows
-   - `constants.js`: business constants
+3. Coordination and service layer
+   - `app-controller.js`: app-level coordinator and shared state
+   - `services/*`: draft, entry, encryption, recycle bin, settings, theme, import/export flows
 
-3. Data access layer
-   - `storage.js`: LocalStorage/IndexedDB operations
-   - `dom-manager.js`: DOM operations
+4. Data access layer
+   - `storage/idb.js`: IndexedDB connection and store setup
+   - `storage/*-storage.js`: draft, item, recycle, settings, and import/export storage helpers
+   - `storage.js`: public storage export surface
 
-4. Utilities layer
-   - `utils.js`: common helper functions
+5. Utilities layer
+   - `lib/*`: text, time, byte, ID, and platform helpers
+   - `utils.js`: public utility export surface
 
 ### Module Responsibilities
 
 | Module | Responsibility | Exports |
 |------|------|------|
-| `constants.js` | Constant definitions | `STORAGE_KEYS`, `THEMES`, `DEFAULT_THEME` |
-| `utils.js` | Helper functions | Time format, word count, byte conversion, etc. |
-| `storage.js` | Storage management | Load/save, import/export handling |
-| `dom-manager.js` | DOM management | `DOMManager` class |
-| `ui-controller.js` | UI control | `UIController` class |
-| `app-controller.js` | Business logic | `AppController` class |
-| `main.js` | App bootstrap | Initialization + event binding |
-| `modal.js` | Modal UI | `Modal` class |
-| `initialize.js` | Initialization logic | `initializeAppState` function |
+| `main.js` | App entry | DOM ready startup |
+| `bootstrap/app-bootstrap.js` | Startup orchestration | `bootstrapApp` |
+| `bootstrap/bind-events.js` | Event binding | `bindAppEvents` |
+| `bootstrap/first-run.js` | First-run state | `initializeFirstRun` |
+| `app-controller.js` | App coordination | `AppController` class |
+| `services/draft-service.js` | Draft autosave and archive flow | `DraftService` |
+| `services/item-service.js` | Entry title and delete flow | `ItemService` |
+| `services/encryption-service.js` | Entry encryption/decryption flow | `EncryptionService` |
+| `services/recycle-service.js` | Recycle bin data state | `RecycleService` |
+| `services/recycle-actions-service.js` | Recycle bin restore/delete/clear actions | `RecycleActionsService` |
+| `services/import-export-service.js` | JSON import/export flow | `ImportExportService` |
+| `services/settings-service.js` | Font size, LLM settings, data clearing | Settings helpers |
+| `services/theme-manager.js` | Theme load/apply/toggle | Theme helpers |
+| `storage/idb.js` | IndexedDB setup | `getDB`, store constants |
+| `storage/draft-storage.js` | Draft persistence | Draft load/save helpers |
+| `storage/item-storage.js` | Entry persistence | Item load/save helpers |
+| `storage/recycle-storage.js` | Recycle bin persistence | Recycle load/save helpers |
+| `storage/settings-storage.js` | Settings object-store access | `readSetting`, `writeSetting` |
+| `storage/import-export-storage.js` | Import/export normalization | Export, normalize, merge helpers |
+| `ui/ui-controller.js` | UI feedback and metadata | `UIController` class |
+| `ui/dom-manager.js` | DOM management | `DOMManager` class |
+| `ui/item-list-view.js` | Entry list rendering | `ItemListView` class |
+| `ui/recycle-list-view.js` | Recycle bin rendering | `RecycleListView` class |
+| `ui/modal.js` | Modal UI | `Modal` class |
+| `lib/*` | Focused utility helpers | Text/time/bytes/id/platform helpers |
+| `constants.js` | Stable constants | `STORAGE_KEYS` |
+| `crypto.js` | Encryption primitives | Encrypt/decrypt/verify helpers |
 
 ## CSS Structure
 
@@ -145,11 +178,15 @@ Temp-Notes/
 ```text
 User input
    ↓
-Captured by DOMManager
+DOMManager reads/writes DOM state
    ↓
-Processed by AppController
+bindAppEvents routes browser events
    ↓
-Persisted by Storage + rendered by UIController
+AppController coordinates services
+   ↓
+Services update app state and call storage modules
+   ↓
+UIController and view modules render feedback
    ↓
 User receives feedback
 ```
@@ -188,7 +225,7 @@ User receives feedback
 - [x] Enabled click-to-edit entry titles outside encryption flow.
 - [x] Auto-filled encryption modal title from current entry title.
 - [x] Fallback to first line of body when title is empty.
-- [x] Introduced `initialize.js` to improve first-open bootstrap behavior.
+- [x] Added first-run bootstrap logic to maintain the `firstOpen` flag and insert the usage notice when needed.
 
 ### TODO - Planned
 
@@ -209,18 +246,22 @@ User receives feedback
 
 1. Add a new UI component
    - Write styles in `css/components.css`
-   - Add rendering logic in `ui-controller.js`
+   - Add focused rendering logic in `js/ui/`
+   - Use `ui/ui-controller.js` only for shared UI feedback and metadata
 
 2. Add a new business feature
-   - Implement methods in `app-controller.js`
-   - Bind events in `main.js`
+   - Put the core flow in `js/services/`
+   - Keep `app-controller.js` as the coordinator
+   - Bind DOM events in `bootstrap/bind-events.js`
 
 3. Add new storage data
-   - Add load/save methods in `storage.js`
+   - Add load/save methods in `js/storage/`
    - Define new storage keys in `constants.js`
+   - Export shared storage helpers through `storage.js` when needed
 
 4. Add new utility helpers
-   - Implement and export in `utils.js`
+   - Implement focused helpers in `js/lib/`
+   - Export public helper surfaces through `utils.js` when needed
 
 ### Adding a New CSS Theme
 

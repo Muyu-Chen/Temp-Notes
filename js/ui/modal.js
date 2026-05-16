@@ -5,7 +5,6 @@
 export class Modal {
   constructor() {
     this.modalElement = null;
-    this.resolveCallback = null;
   }
 
   /**
@@ -145,7 +144,3 @@ export class Modal {
     }
   }
 }
-
-export const createGlobalModal = () => {
-  return new Modal();
-};

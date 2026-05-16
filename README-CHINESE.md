@@ -46,59 +46,91 @@
 
 ```
 临时笔记/
-├── src/
-│   └── index.html          # 应用主页面（已分离CSS、JS）
 ├── css/                    # 样式文件目录
 │   ├── theme.css          # 主题系统（颜色变量定义）
 │   ├── base.css           # 基础样式（全局重置、Utility类）
 │   ├── layout.css         # 布局组件（app、header、main、panel等）
 │   └── components.css     # UI组件（button、textarea、card等）
 ├── js/                     # JavaScript 模块目录
-│   ├── main.js            # 应用入口和事件绑定
-│   ├── constants.js       # 常量定义（存储键、主题等）
-│   ├── utils.js           # 工具函数库（时间、格式化、计算等）
-│   ├── storage.js         # 数据存储管理（LocalStorage操作）
-│   ├── dom-manager.js     # DOM元素选择器和管理
-│   ├── ui-controller.js   # UI控制器（渲染、显示、交互反馈）
-│   └── app-controller.js  # 应用业务逻辑（核心功能实现）
-|   ├── modal.js           # 通用弹窗组件
-|   └── initialize.js      # 应用初始化逻辑
-├── index.html             # 原始单文件版本（保留备份）
-└── README.md              # 项目文档
+│   ├── main.js            # 最薄入口（DOM ready -> bootstrap）
+│   ├── app-controller.js  # 应用级协调器
+│   ├── constants.js       # 稳定常量
+│   ├── crypto.js          # 加密底层函数
+│   ├── crypto-js.min.js   # 本地 CryptoJS 依赖
+│   ├── storage.js         # 存储模块统一出口
+│   ├── utils.js           # 工具模块统一出口
+│   ├── bootstrap/         # 启动编排与事件绑定
+│   ├── services/          # 业务服务
+│   ├── storage/           # IndexedDB 与数据持久化模块
+│   ├── ui/                # DOM、视图、弹窗、UI反馈
+│   └── lib/               # 按职责拆分的工具函数
+├── index.html             # 应用入口页面
+├── README.md              # 英文项目文档
+└── README-CHINESE.md      # 中文项目文档
 ```
 
 ## 架构设计
 
 ### 分层架构
 
-1. **表现层（Presentation）**
-   - `ui-controller.js`: UI渲染和状态展示
+1. **入口与启动层（Entry & Bootstrap）**
+   - `main.js`: 等待 DOM 就绪并启动应用
+   - `bootstrap/app-bootstrap.js`: 创建核心对象并编排启动步骤
+   - `bootstrap/bind-events.js`: 绑定 DOM 事件到控制器动作
+   - `bootstrap/first-run.js`: 首次打开标记和使用说明写入
+
+2. **表现层（Presentation）**
+   - `ui/ui-controller.js`: toast、meta 信息和壳层级 UI 反馈
+   - `ui/item-list-view.js`: 存档条目列表渲染
+   - `ui/recycle-list-view.js`: 回收站列表渲染
+   - `ui/dom-manager.js`: DOM 访问封装
+   - `ui/modal.js`: 通用弹窗组件
    - `css/*`: 所有样式文件
 
-2. **业务逻辑层（Business Logic）**
-   - `app-controller.js`: 核心业务流程
-   - `constants.js`: 业务常量
+3. **协调与业务服务层（Coordination & Services）**
+   - `app-controller.js`: 应用级协调器和共享状态
+   - `services/*`: 草稿、条目、加密、回收站、设置、主题、导入导出流程
 
-3. **数据访问层（Data Access）**
-   - `storage.js`: LocalStorage操作
-   - `dom-manager.js`: DOM操作
+4. **数据访问层（Data Access）**
+   - `storage/idb.js`: IndexedDB 连接和 object store 初始化
+   - `storage/*-storage.js`: 草稿、条目、回收站、设置、导入导出相关存储能力
+   - `storage.js`: 对外统一存储出口
 
-4. **工具层（Utilities）**
-   - `utils.js`: 通用工具函数
+5. **工具层（Utilities）**
+   - `lib/*`: 文本、时间、字节、ID、平台判断等工具
+   - `utils.js`: 对外统一工具出口
 
 ### 模块职责
 
 | 模块 | 职责 | 导出内容 |
 |------|------|---------|
-| `constants.js` | 常量定义 | STORAGE_KEYS, THEMES, DEFAULT_THEME |
-| `utils.js` | 工具函数 | 时间格式化、字数统计、字节转换等 |
-| `storage.js` | 存储管理 | Load/Save数据、导入导出处理 |
-| `dom-manager.js` | DOM管理 | DOMManager类，提供DOM操作接口 |
-| `ui-controller.js` | UI控制 | UIController类，渲染和反馈 |
-| `app-controller.js` | 业务逻辑 | AppController类，核心功能实现 |
-| `main.js` | 应用启动 | 初始化和事件绑定 |
-| `modal.js` | 弹窗组件 | Modal类，通用弹窗功能 |
-｜`initialize.js` | 初始化逻辑 | initializeAppState函数，应用状态初始化 |
+| `main.js` | 应用入口 | DOM ready 启动 |
+| `bootstrap/app-bootstrap.js` | 启动编排 | `bootstrapApp` |
+| `bootstrap/bind-events.js` | 事件绑定 | `bindAppEvents` |
+| `bootstrap/first-run.js` | 首次打开逻辑 | `initializeFirstRun` |
+| `app-controller.js` | 应用协调 | `AppController` 类 |
+| `services/draft-service.js` | 草稿自动保存与存档流程 | `DraftService` |
+| `services/item-service.js` | 条目标题和删除流程 | `ItemService` |
+| `services/encryption-service.js` | 条目加密/解密流程 | `EncryptionService` |
+| `services/recycle-service.js` | 回收站数据状态 | `RecycleService` |
+| `services/recycle-actions-service.js` | 回收站恢复/删除/清空动作 | `RecycleActionsService` |
+| `services/import-export-service.js` | JSON 导入导出流程 | `ImportExportService` |
+| `services/settings-service.js` | 字体大小、LLM 设置、清空数据 | 设置相关函数 |
+| `services/theme-manager.js` | 主题读取、应用、切换 | 主题相关函数 |
+| `storage/idb.js` | IndexedDB 基础能力 | `getDB`、store 常量 |
+| `storage/draft-storage.js` | 草稿持久化 | 草稿读写函数 |
+| `storage/item-storage.js` | 条目持久化 | 条目读写函数 |
+| `storage/recycle-storage.js` | 回收站持久化 | 回收站读写函数 |
+| `storage/settings-storage.js` | settings object store 访问 | `readSetting`、`writeSetting` |
+| `storage/import-export-storage.js` | 导入导出规范化 | 导出、规范化、合并函数 |
+| `ui/ui-controller.js` | UI 反馈和 meta 信息 | `UIController` 类 |
+| `ui/dom-manager.js` | DOM 管理 | `DOMManager` 类 |
+| `ui/item-list-view.js` | 条目列表渲染 | `ItemListView` 类 |
+| `ui/recycle-list-view.js` | 回收站渲染 | `RecycleListView` 类 |
+| `ui/modal.js` | 弹窗组件 | `Modal` 类 |
+| `lib/*` | 聚焦工具函数 | 文本/时间/字节/ID/平台工具 |
+| `constants.js` | 稳定常量 | `STORAGE_KEYS` |
+| `crypto.js` | 加密底层能力 | 加密/解密/密码校验函数 |
 
 ## CSS 结构
 
@@ -130,11 +162,15 @@
 ```
 用户输入
    ↓
-DOMManager 捕获
+DOMManager 读写 DOM 状态
    ↓
-AppController 业务处理
+bindAppEvents 分发浏览器事件
    ↓
-Storage 持久化 + UIController 渲染
+AppController 协调服务模块
+   ↓
+Services 更新应用状态并调用 storage 模块
+   ↓
+UIController 和视图模块渲染反馈
    ↓
 用户看到反馈
 ```
@@ -172,7 +208,7 @@ Storage 持久化 + UIController 渲染
 - [x] 条目标题支持点击修改，不再只能在加密时填写。
 - [x] 加密弹窗会自动读取并填入当前已有标题，避免重复输入。
 - [x] 条目标题清空后自动回退为正文第一行，保持默认标题逻辑。
-- [x] 新增 `initialize.js` 初始化逻辑：补充 `firstOpen` 标记，并在缺少该字段时向草稿区注入使用说明。
+- [x] 首次打开逻辑会维护 `firstOpen` 标记，并在需要时向草稿区注入使用说明。
 
 ### TODO - 待开发
 - [ ] 增加打开页面时的加载动画。
@@ -193,18 +229,22 @@ Storage 持久化 + UIController 渲染
 
 1. **添加新的UI组件**
    - 在 `css/components.css` 中编写样式
-   - 在 `ui-controller.js` 中编写渲染逻辑
+   - 在 `js/ui/` 中编写聚焦的渲染逻辑
+   - `ui/ui-controller.js` 只处理共享 UI 反馈和 meta 信息
 
 2. **添加新的业务功能**
-   - 在 `app-controller.js` 中实现业务方法
-   - 在 `main.js` 中绑定事件
+   - 在 `js/services/` 中实现核心流程
+   - `app-controller.js` 只负责协调
+   - 在 `bootstrap/bind-events.js` 中绑定 DOM 事件
 
 3. **添加新的数据存储**
-   - 在 `storage.js` 中添加 Load/Save 方法
+   - 在 `js/storage/` 中添加 Load/Save 方法
    - 在 `constants.js` 中定义存储键
+   - 需要公开给外部使用时，通过 `storage.js` 导出
 
 4. **添加新的工具函数**
-   - 在 `utils.js` 中实现，并导出
+   - 在 `js/lib/` 中按职责实现
+   - 需要公开给外部使用时，通过 `utils.js` 导出
 
 ### 添加新的CSS主题
 ```css

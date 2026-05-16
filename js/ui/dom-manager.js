@@ -117,8 +117,8 @@ export class DOMManager {
   }
 
   setLLMSettings(settings) {
-    if (settings.baseUrl) this.llmBaseUrl.value = settings.baseUrl;
-    if (settings.apiKey) this.llmApiKey.value = settings.apiKey;
-    if (settings.model) this.llmModel.value = settings.model;
+    this.llmBaseUrl.value = settings.baseUrl || "";
+    this.llmApiKey.value = settings.apiKey || "";
+    this.llmModel.value = settings.model || "";
   }
 }
