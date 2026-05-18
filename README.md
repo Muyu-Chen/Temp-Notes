@@ -277,15 +277,54 @@ User receives feedback
 
 ### TODO - Planned
 
-- [ ] Improve loading performance and add animation.
+#### Short-Term Workflow Improvements
+
+- [ ] Upgrade `Ctrl+K` into a global quick switcher that can search archived entries, recycle bin entries, and the current draft, with keyboard navigation and enter-to-open.
+- [ ] Add batch actions for archived entries, including multi-select delete, batch export, and batch encryption/decryption where safe.
+- [ ] Add entry pinning and favorites so frequently used temporary notes stay at the top without affecting normal update order.
+- [ ] Add lightweight entry tags and tag filters; keep tag data local and include it in JSON import/export.
+- [ ] Add draft version history for recent edits, with simple restore support for accidental overwrites.
+- [ ] Improve first-load performance and add a restrained loading state for large local databases.
+
+#### Recording and Attachments
+
+- [ ] Add local voice recording for drafts using the browser recording API, with start/pause/resume/stop, duration display, and local-only storage by default.
+- [ ] Attach recordings to archived entries, export them through JSON backup, and show attachment size in storage stats.
+- [ ] Add recording playback controls inside entries, including seek, speed, and rename/remove attachment actions.
+- [ ] Add image attachment support with local previews, size warnings, and JSON backup compatibility.
+- [ ] Add an attachment manager that lists large files and helps users clean storage without deleting the whole entry.
+- [ ] Plan optional audio transcription as a future LLM action; transcription must only run after explicit user action and use the user-configured provider.
+
+#### Security and Data Control
+
 - [ ] Add configurable default password in Settings. New notes encrypted with an empty password should use this updated default, while previously encrypted notes keep their original default password.
 - [ ] Add one-click migration from old default password to new default password, so previously default-password-encrypted notes can be batch-updated safely (backup recommended before migration).
 - [ ] Add remember-password-after-decrypt as a user option, so users can choose whether to auto-fill next time.
-- [ ] Auto-clean expired archive entries (e.g., older than 30 days).
-- [ ] Support image attachment and storage.
-- [ ] Add AI-assisted draft actions such as summarize, polish, and tags using the optional LLM configuration.
-- [ ] Add optional sync feature with user-configured server `POST`/`GET` endpoints (default off).
-- [ ] Add a lightweight Python server component with basic data receive/read APIs + CORS support.
+- [ ] Add archive auto-clean rules separate from recycle bin cleanup, such as deleting or moving entries older than a selected retention period.
+- [ ] Add backup reminders and backup health checks, including last export time and estimated local storage usage.
+- [ ] Add import preview before merge, showing new, duplicate, and conflicting entries.
+
+#### Markdown and Editing
+
+- [ ] Improve Markdown editing with toolbar actions for headings, bold, links, lists, code blocks, and task lists.
+- [ ] Add split-view Markdown preview on larger screens while keeping the current edit/preview toggle on narrow screens.
+- [ ] Add local search inside the active draft, including match count and next/previous navigation.
+- [ ] Add reusable note templates for common temporary-note formats such as meeting notes, daily logs, and task lists.
+
+#### Optional LLM Features
+
+- [ ] Add AI-assisted draft actions such as summarize, polish, continue writing, extract tasks, and generate tags using the optional LLM configuration.
+- [ ] Add per-action confirmation showing which text will be sent before any LLM request.
+- [ ] Add model capability notes in Settings so users understand which configured models are suitable for summarization, rewriting, or transcription.
+- [ ] Keep all LLM features default-off, user-triggered, and routed only through the user-configured OpenAI-compatible provider.
+
+#### Sync and Platform
+
+- [ ] Add optional sync with user-configured server `POST`/`GET` endpoints, disabled by default and separated from local-only usage.
+- [ ] Add a lightweight Python server component with basic data receive/read APIs + CORS support for self-hosted sync.
+- [ ] Add conflict handling for sync, including local-first merge rules and a manual conflict review screen.
+- [ ] Consider PWA support for installability, offline launch, and mobile-friendly capture workflows.
+- [ ] Add browser compatibility checks for recording, attachment storage, and large IndexedDB payloads.
 
 ### Adding New Features
 
