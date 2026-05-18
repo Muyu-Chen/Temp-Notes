@@ -50,6 +50,19 @@ describe("search utils", () => {
     expect(itemMatchesSearch(item, "decrypting")).toBe(false);
   });
 
+  it("searches tags even when item content is encrypted", () => {
+    const item = {
+      id: "secret",
+      encrypted: true,
+      encryptedTitle: "Private Plan",
+      content: "visible only after decrypting",
+      tags: ["Work"],
+    };
+
+    expect(itemMatchesSearch(item, "work")).toBe(true);
+    expect(getItemSearchFields(item)).toContain("Work");
+  });
+
   it("filters item lists without cloning the original entries", () => {
     const first = { id: "a", title: "Daily", content: "breakfast" };
     const second = { id: "b", title: "Work", content: "meeting" };

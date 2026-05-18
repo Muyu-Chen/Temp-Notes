@@ -78,4 +78,9 @@ export class UIController {
   onItemDecryptClick(id) {}
   onItemExportClick(id, format) {}
   onItemTitleEdit(id, title) {}
+  onItemPinToggle(id) {}
+  onItemFavoriteToggle(id) {}
+  onItemTagsEdit(id) {}
+  onItemGenerateTags(id) {}
+  onTagFilterClick(tag) {}
 }

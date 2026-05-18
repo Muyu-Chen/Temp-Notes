@@ -6,10 +6,17 @@ export class DOMManager {
   constructor() {
     this.draft = document.getElementById("draft");
     this.draftPreview = document.getElementById("draftPreview");
+    this.draftModeToggle = document.getElementById("draftModeToggle");
     this.btnMarkdownEdit = document.getElementById("btnMarkdownEdit");
     this.btnMarkdownPreview = document.getElementById("btnMarkdownPreview");
     this.list = document.getElementById("list");
     this.search = document.getElementById("search");
+    this.archiveSearchTools = document.getElementById("archiveSearchTools");
+    this.archiveFilterToggleBtn = document.getElementById("archiveFilterToggleBtn");
+    this.archiveFilterMenu = document.getElementById("archiveFilterMenu");
+    this.favoriteFilterBtn = document.getElementById("favoriteFilterBtn");
+    this.activeTagFilterBtn = document.getElementById("activeTagFilterBtn");
+    this.activeTagFilterText = document.getElementById("activeTagFilterText");
     this.autosaveState = document.getElementById("autosaveState");
     this.wc = document.getElementById("wc");
     this.countItems = document.getElementById("countItems");
@@ -57,6 +64,9 @@ export class DOMManager {
     this.llmModel = document.getElementById("llmModel");
     this.llmTestBtn = document.getElementById("llmTestBtn");
     this.llmStatus = document.getElementById("llmStatus");
+    this.llmDebugLog = document.getElementById("llmDebugLog");
+    this.llmCopyLogBtn = document.getElementById("llmCopyLogBtn");
+    this.llmClearLogBtn = document.getElementById("llmClearLogBtn");
     this.btnClearAllData = document.getElementById("btnClearAllData");
   }
 
@@ -96,12 +106,53 @@ export class DOMManager {
     const previewMode = mode === "preview";
     this.draft.hidden = previewMode;
     this.draftPreview.hidden = !previewMode;
+    this.draftModeToggle.dataset.mode = previewMode ? "preview" : "edit";
     this.btnMarkdownEdit.classList.toggle("active", !previewMode);
     this.btnMarkdownPreview.classList.toggle("active", previewMode);
+    this.btnMarkdownEdit.setAttribute("aria-pressed", String(!previewMode));
+    this.btnMarkdownPreview.setAttribute("aria-pressed", String(previewMode));
   }
 
   getSearchValue() {
     return (this.search.value || "").trim().toLowerCase();
+  }
+
+  getFavoriteFilterEnabled() {
+    return this.favoriteFilterBtn.classList.contains("active");
+  }
+
+  setFavoriteFilterEnabled(enabled) {
+    this.favoriteFilterBtn.classList.toggle("active", Boolean(enabled));
+    this.archiveSearchTools.classList.toggle(
+      "has-active-filter",
+      Boolean(enabled) || Boolean(this.getActiveTagFilter())
+    );
+  }
+
+  getActiveTagFilter() {
+    return this.activeTagFilterBtn.dataset.tag || "";
+  }
+
+  setActiveTagFilter(tag) {
+    const value = String(tag || "").trim();
+    this.activeTagFilterBtn.dataset.tag = value;
+    this.activeTagFilterText.textContent = value;
+    this.activeTagFilterBtn.hidden = !value;
+    this.archiveSearchTools.classList.toggle(
+      "has-active-filter",
+      Boolean(value) || this.getFavoriteFilterEnabled()
+    );
+  }
+
+  getArchiveFilterMenuOpen() {
+    return this.archiveSearchTools.classList.contains("filter-open");
+  }
+
+  setArchiveFilterMenuOpen(open) {
+    const value = Boolean(open);
+    this.archiveSearchTools.classList.toggle("filter-open", value);
+    this.archiveFilterMenu.hidden = !value;
+    this.archiveFilterToggleBtn.setAttribute("aria-expanded", String(value));
   }
 
   setSearchValue(value) {
@@ -157,6 +208,14 @@ export class DOMManager {
     this.llmStatus.classList.toggle("status-ok", status === "ok");
     this.llmStatus.classList.toggle("status-error", status === "error");
     this.llmStatus.classList.toggle("status-pending", status === "pending");
+  }
+
+  setLLMDebugLog(logText) {
+    this.llmDebugLog.value = logText || "";
+  }
+
+  getLLMDebugLog() {
+    return this.llmDebugLog.value || "";
   }
 
   setRecycleRetention(days, text) {

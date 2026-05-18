@@ -3,12 +3,15 @@
  */
 
 import { clamp, resolveItemTitle, wordCount } from "../lib/text-utils.js";
+import { itemHasTag, normalizeTags } from "../lib/item-utils.js";
 import { excerptAroundSearch, filterItemsBySearch, getSearchTokens } from "../lib/search-utils.js";
 import { formatTime } from "../lib/time-utils.js";
 import { appendHighlightedText } from "./search-highlight.js";
 
 export const getItemMenuActions = (item) =>
-  item?.encrypted === true ? ["decrypt"] : ["exportTxt", "exportMd", "encrypt"];
+  item?.encrypted === true
+    ? ["decrypt", "editTags", "generateTags"]
+    : ["exportTxt", "exportMd", "editTags", "generateTags", "encrypt"];
 
 export class ItemListView {
   constructor(domManager, handlers) {
@@ -19,7 +22,13 @@ export class ItemListView {
   render(items) {
     const searchQuery = this.dom.getSearchValue();
     const searchTokens = getSearchTokens(searchQuery);
-    const filtered = searchTokens.length === 0 ? items : filterItemsBySearch(items, searchTokens);
+    const favoriteOnly = this.dom.getFavoriteFilterEnabled();
+    const activeTag = this.dom.getActiveTagFilter();
+    const baseItems = items
+      .filter((item) => !favoriteOnly || item.favorite === true)
+      .filter((item) => !activeTag || itemHasTag(item, activeTag));
+    const filtered =
+      searchTokens.length === 0 ? baseItems : filterItemsBySearch(baseItems, searchTokens);
 
     this.dom.clearListContent();
 
@@ -34,7 +43,7 @@ export class ItemListView {
       return;
     }
 
-    if (searchTokens.length > 0) {
+    if (searchTokens.length > 0 || favoriteOnly || activeTag) {
       const summary = document.createElement("div");
       summary.className = "search-summary muted small";
       summary.textContent = `找到 ${filtered.length} / ${items.length} 个匹配条目`;
@@ -89,7 +98,31 @@ export class ItemListView {
       this.showItemMenu(item, menuBtn);
     };
 
-    header.append(title, menuBtn);
+    const headerActions = document.createElement("div");
+    headerActions.className = "item-header-actions";
+
+    const pinBtn = document.createElement("button");
+    pinBtn.className = `item-icon-btn${item.pinned ? " active" : ""}`;
+    pinBtn.type = "button";
+    pinBtn.textContent = "📌";
+    pinBtn.title = item.pinned ? "取消置顶" : "置顶条目";
+    pinBtn.onclick = (e) => {
+      e.stopPropagation();
+      this.handlers.onItemPinToggle(item.id);
+    };
+
+    const favoriteBtn = document.createElement("button");
+    favoriteBtn.className = `item-icon-btn${item.favorite ? " active" : ""}`;
+    favoriteBtn.type = "button";
+    favoriteBtn.textContent = "★";
+    favoriteBtn.title = item.favorite ? "取消收藏" : "收藏条目";
+    favoriteBtn.onclick = (e) => {
+      e.stopPropagation();
+      this.handlers.onItemFavoriteToggle(item.id);
+    };
+
+    headerActions.append(pinBtn, favoriteBtn, menuBtn);
+    header.append(title, headerActions);
 
     const meta = document.createElement("div");
     meta.className = "meta";
@@ -112,6 +145,22 @@ export class ItemListView {
           : clamp(item.content.trim() || "（空）", 240);
       appendHighlightedText(preview, previewText, searchTokens);
     }
+
+    const tagList = document.createElement("div");
+    tagList.className = "item-tags";
+    const tags = isEncrypted ? [] : normalizeTags(item.tags);
+    tags.forEach((tag) => {
+      const tagBtn = document.createElement("button");
+      tagBtn.className = "note-tag";
+      tagBtn.type = "button";
+      tagBtn.textContent = `#${tag}`;
+      tagBtn.title = `筛选标签：${tag}`;
+      tagBtn.onclick = (e) => {
+        e.stopPropagation();
+        this.handlers.onTagFilterClick(tag);
+      };
+      tagList.appendChild(tagBtn);
+    });
 
     const row = document.createElement("div");
     row.className = "row";
@@ -160,7 +209,11 @@ export class ItemListView {
       row.append(btnLoad, btnCopyItem, btnDel);
     }
 
-    card.append(header, meta, preview, row);
+    card.append(header, meta);
+    if (tagList.children.length > 0) {
+      card.appendChild(tagList);
+    }
+    card.append(preview, row);
 
     if (!isEncrypted) {
       card.onclick = () => this.handlers.onItemLoadClick(item.id);
@@ -267,6 +320,28 @@ export class ItemListView {
         this.handlers.onItemExportClick(item.id, "md");
       };
       menu.appendChild(exportMdOption);
+    }
+
+    if (actions.includes("editTags")) {
+      const editTagsOption = document.createElement("div");
+      editTagsOption.className = "menu-item";
+      editTagsOption.textContent = "编辑标签";
+      editTagsOption.onclick = () => {
+        menu.remove();
+        this.handlers.onItemTagsEdit(item.id);
+      };
+      menu.appendChild(editTagsOption);
+    }
+
+    if (actions.includes("generateTags")) {
+      const generateTagsOption = document.createElement("div");
+      generateTagsOption.className = "menu-item";
+      generateTagsOption.textContent = "AI 生成标签";
+      generateTagsOption.onclick = () => {
+        menu.remove();
+        this.handlers.onItemGenerateTags(item.id);
+      };
+      menu.appendChild(generateTagsOption);
     }
 
     if (actions.includes("encrypt")) {

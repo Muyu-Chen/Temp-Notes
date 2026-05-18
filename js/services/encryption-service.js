@@ -23,6 +23,16 @@ export class EncryptionService {
       return;
     }
 
+    if (Array.isArray(item.tags) && item.tags.length > 0) {
+      const warning = await app.modal.show({
+        title: "标签会保持明文",
+        message: "当前条目已有标签。加密只会保护正文内容，标签会继续以明文保存并用于检索。",
+        okText: "继续加密",
+        cancelText: "取消",
+      });
+      if (!warning.ok) return;
+    }
+
     const autoTitle = firstLine(item.content);
     const currentTitle = cleanTitle(item.title) || cleanTitle(item.encryptedTitle) || autoTitle;
 

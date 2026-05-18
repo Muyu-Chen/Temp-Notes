@@ -88,7 +88,7 @@
               <span class="muted small">打开即用 重开仍在</span>
             </div>
             <div class="right">
-              <div class="mode-toggle" aria-label="草稿显示模式">
+              <div id="draftModeToggle" class="mode-toggle" data-mode="edit" aria-label="草稿显示模式">
                 <button id="btnMarkdownEdit" class="active" type="button">编辑</button>
                 <button id="btnMarkdownPreview" type="button">预览</button>
               </div>
@@ -112,7 +112,7 @@
         </section>
 
         <!-- Archive -->
-        <section class="panel">
+        <section class="panel archive-panel">
           <div class="panel-head" style="gap: 8px; flex-wrap: wrap">
             <div class="label" style="flex: 1; min-width: 200px">
             <!--<span>存档条目</span>
@@ -123,12 +123,33 @@
                 <span>总占用估算：<span id="usage">0 KB</span></span>
               </div>
             </div>
-            <div class="right" style="flex: 1; min-width: 220px">
-              <input
-                id="search"
-                class="search"
-                placeholder="搜索条目（Ctrl+K）"
-              />
+            <div class="right archive-search-area" style="flex: 1; min-width: 220px">
+              <div class="archive-search-tools" id="archiveSearchTools">
+                <input
+                  id="search"
+                  class="search"
+                  placeholder="搜索条目（Ctrl+K）"
+                />
+                <button
+                  id="archiveFilterToggleBtn"
+                  class="archive-filter-toggle"
+                  type="button"
+                  aria-label="展开筛选"
+                  aria-expanded="false"
+                  aria-controls="archiveFilterMenu"
+                  title="展开筛选"
+                >
+                  ▾
+                </button>
+                <div id="archiveFilterMenu" class="archive-filter-menu" hidden aria-label="存档筛选">
+                  <button id="favoriteFilterBtn" type="button" title="只看收藏条目">收藏</button>
+                  <button type="button" disabled title="稍后实现">按名字排序</button>
+                  <button type="button" disabled title="稍后实现">时间段筛选</button>
+                  <button id="activeTagFilterBtn" type="button" hidden title="清除标签筛选">
+                    标签：<span id="activeTagFilterText"></span>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="right">
               <button
@@ -278,6 +299,18 @@
                     <div class="settings-actions">
                       <button id="llmTestBtn" type="button">测试连接</button>
                       <span id="llmStatus" class="llm-status muted small">未测试</span>
+                    </div>
+
+                    <div class="settings-debug-log">
+                      <div class="settings-debug-log-head">
+                        <span class="muted small">最近一次 AI 失败日志</span>
+                        <div class="settings-actions">
+                          <button id="llmCopyLogBtn" type="button">复制日志</button>
+                          <button id="llmClearLogBtn" type="button">清除日志</button>
+                        </div>
+                      </div>
+                      <textarea id="llmDebugLog" class="settings-input llm-debug-log" readonly
+                        placeholder="暂无失败日志"></textarea>
                     </div>
                   </div>
                 </div>

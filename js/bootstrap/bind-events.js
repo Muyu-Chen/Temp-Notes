@@ -11,6 +11,27 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.onSearchInput();
   });
 
+  domManager.archiveFilterToggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    domManager.setArchiveFilterMenuOpen(!domManager.getArchiveFilterMenuOpen());
+  });
+
+  domManager.archiveSearchTools.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+
+  document.addEventListener("click", () => {
+    domManager.setArchiveFilterMenuOpen(false);
+  });
+
+  domManager.favoriteFilterBtn.addEventListener("click", () => {
+    appController.toggleFavoriteFilter();
+  });
+
+  domManager.activeTagFilterBtn.addEventListener("click", () => {
+    appController.setTagFilter("");
+  });
+
   domManager.btnArchive.addEventListener("click", () => {
     appController.archiveDraft();
   });
@@ -108,6 +129,14 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.testLLMConnection();
   });
 
+  domManager.llmCopyLogBtn.addEventListener("click", () => {
+    appController.copyLLMDebugLog();
+  });
+
+  domManager.llmClearLogBtn.addEventListener("click", () => {
+    appController.clearLLMDebugLog();
+  });
+
   domManager.btnClearAllData.addEventListener("click", () => {
     appController.clearAllData();
   });
@@ -134,6 +163,26 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
 
   uiController.onItemTitleEdit = (id, title) => {
     appController.renameItemTitle(id, title);
+  };
+
+  uiController.onItemPinToggle = (id) => {
+    appController.toggleItemPinned(id);
+  };
+
+  uiController.onItemFavoriteToggle = (id) => {
+    appController.toggleItemFavorite(id);
+  };
+
+  uiController.onItemTagsEdit = (id) => {
+    appController.editItemTags(id);
+  };
+
+  uiController.onItemGenerateTags = (id) => {
+    appController.generateItemTags(id);
+  };
+
+  uiController.onTagFilterClick = (tag) => {
+    appController.setTagFilter(tag);
   };
 
   document.addEventListener("keydown", (e) => {

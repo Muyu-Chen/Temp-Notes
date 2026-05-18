@@ -111,6 +111,30 @@ export const saveLLMSettings = (settings) => {
   }
 };
 
+export const getLLMDebugLog = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.LLM_DEBUG_LOG) || "";
+  } catch {
+    return "";
+  }
+};
+
+export const saveLLMDebugLog = (logText) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LLM_DEBUG_LOG, String(logText || ""));
+  } catch (err) {
+    console.error("Failed to save LLM debug log:", err);
+  }
+};
+
+export const clearLLMDebugLog = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.LLM_DEBUG_LOG);
+  } catch (err) {
+    console.error("Failed to clear LLM debug log:", err);
+  }
+};
+
 export const clearPersistentData = async () => {
   await clearObjectStores([STORE_SETTINGS, STORE_ITEMS, STORE_RECYCLE]);
 
@@ -122,6 +146,7 @@ export const clearPersistentData = async () => {
     STORAGE_KEYS.LLM_BASE_URL,
     STORAGE_KEYS.LLM_API_KEY,
     STORAGE_KEYS.LLM_MODEL,
+    STORAGE_KEYS.LLM_DEBUG_LOG,
     "draft",
     STORAGE_KEYS.THEME,
     STORAGE_KEYS.FIRST_OPEN,

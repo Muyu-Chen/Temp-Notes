@@ -68,6 +68,10 @@ describe("import/export storage helpers", () => {
         encryptedTitle: "99",
         encryptionHint: "hint",
         defaultPassword: true,
+        pinned: false,
+        pinnedAt: undefined,
+        favorite: false,
+        tags: [],
       },
     ]);
   });
@@ -106,6 +110,30 @@ describe("import/export storage helpers", () => {
       { id: "existing-newer", content: "existing", createdAt: 2, updatedAt: 50 },
       { id: "old", content: "same", createdAt: 1, updatedAt: 10 },
     ]);
+  });
+
+  it("keeps pinned, favorite, and tag metadata from imports", () => {
+    const result = normalizeImportedData({
+      items: [
+        {
+          id: "meta",
+          content: "content",
+          createdAt: 10,
+          updatedAt: 20,
+          pinned: true,
+          pinnedAt: 30,
+          favorite: true,
+          tags: [" Work ", "#work", "想法"],
+        },
+      ],
+    });
+
+    expect(result.items[0]).toMatchObject({
+      pinned: true,
+      pinnedAt: 30,
+      favorite: true,
+      tags: ["Work", "想法"],
+    });
   });
 
   it("builds stable item signatures and export envelopes", () => {

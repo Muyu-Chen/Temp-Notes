@@ -7,11 +7,17 @@ describe("ItemListView menu actions", () => {
     expect(getItemMenuActions({ id: "plain", encrypted: false })).toEqual([
       "exportTxt",
       "exportMd",
+      "editTags",
+      "generateTags",
       "encrypt",
     ]);
   });
 
-  it("only shows decrypt for encrypted entries", () => {
-    expect(getItemMenuActions({ id: "secret", encrypted: true })).toEqual(["decrypt"]);
+  it("shows decrypt and tag editing for encrypted entries", () => {
+    expect(getItemMenuActions({ id: "secret", encrypted: true })).toEqual([
+      "decrypt",
+      "editTags",
+      "generateTags",
+    ]);
   });
 });

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { STORAGE_KEYS } from "../js/constants.js";
 
 const mocks = vi.hoisted(() => ({
   clearDraftItemId: vi.fn(() => Promise.resolve()),
@@ -146,5 +147,191 @@ describe("ItemService", () => {
     expect(app.recycleService.addToRecycle).not.toHaveBeenCalled();
     expect(mocks.deleteItemById).not.toHaveBeenCalled();
     expect(events.renders).toBe(0);
+  });
+
+  it("toggles pinned state without touching updatedAt", async () => {
+    const { app, events, service } = createApp({
+      items: [
+        { id: "item-1", content: "Body", updatedAt: 1000 },
+        { id: "item-2", content: "Other", updatedAt: 2000 },
+      ],
+    });
+
+    await service.togglePinned("item-1");
+
+    expect(app.items[0]).toMatchObject({
+      id: "item-1",
+      pinned: true,
+      pinnedAt: 3000,
+      updatedAt: 1000,
+    });
+    expect(mocks.saveItem).toHaveBeenCalledWith(app.items[0]);
+    expect(events.toasts).toEqual(["已置顶条目"]);
+  });
+
+  it("toggles favorite state without changing list order", async () => {
+    const { app, events, service } = createApp({
+      items: [
+        { id: "item-1", content: "Body", updatedAt: 1000 },
+        { id: "item-2", content: "Other", updatedAt: 2000 },
+      ],
+    });
+
+    await service.toggleFavorite("item-1");
+
+    expect(app.items[0]).toMatchObject({ id: "item-1", favorite: true, updatedAt: 1000 });
+    expect(mocks.saveItem).toHaveBeenCalledWith(app.items[0]);
+    expect(events.toasts).toEqual(["已收藏条目"]);
+  });
+
+  it("edits tags with normalized values", async () => {
+    const { app, events, service } = createApp({
+      items: [{ id: "item-1", content: "Body", tags: ["old"], updatedAt: 1000 }],
+    });
+    app.modal = {
+      show: vi.fn(() => Promise.resolve({ ok: true, values: ["#Work, work, 想法"] })),
+    };
+
+    await service.editTags("item-1");
+
+    expect(app.items[0]).toMatchObject({
+      id: "item-1",
+      tags: ["Work", "想法"],
+      updatedAt: 1000,
+    });
+    expect(mocks.saveItem).toHaveBeenCalledWith(app.items[0]);
+    expect(events.toasts).toEqual(["标签已更新"]);
+  });
+
+  it("warns before editing tags on encrypted entries", async () => {
+    const { app, service } = createApp({
+      items: [{ id: "item-1", content: "cipher", encrypted: true, tags: [], updatedAt: 1000 }],
+    });
+    app.modal = {
+      show: vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, values: [] })
+        .mockResolvedValueOnce({ ok: true, values: ["secret"] }),
+    };
+
+    await service.editTags("item-1");
+
+    expect(app.modal.show).toHaveBeenCalledTimes(2);
+    expect(app.items[0].tags).toEqual(["secret"]);
+  });
+
+  it("generates and merges AI tags without changing updatedAt", async () => {
+    const { app, events, service } = createApp({
+      items: [{ id: "item-1", content: "Body", tags: ["old"], updatedAt: 1000 }],
+    });
+    app.getLLMSettings = vi.fn(() => ({
+      enabled: true,
+      baseUrl: "https://api.example.com/v1",
+      apiKey: "x",
+      model: "tag-model",
+    }));
+    app.llmService = {
+      generateTags: vi.fn(() =>
+        Promise.resolve({ ok: true, requested: true, message: "标签已生成", tags: ["old", "new"] })
+      ),
+    };
+
+    await service.generateTags("item-1");
+
+    expect(app.llmService.generateTags).toHaveBeenCalledWith(app.getLLMSettings(), {
+      id: "item-1",
+      content: "Body",
+      tags: ["old"],
+      updatedAt: 1000,
+    });
+    expect(app.items[0]).toMatchObject({
+      tags: ["old", "new"],
+      updatedAt: 1000,
+    });
+    expect(mocks.saveItem).toHaveBeenCalledWith(app.items[0]);
+    expect(events.toasts).toEqual(["正在生成标签...", "已添加 1 个标签"]);
+  });
+
+  it("does not request AI tags for encrypted items", async () => {
+    const { app, events, service } = createApp({
+      items: [{ id: "item-1", content: "cipher", encrypted: true, updatedAt: 1000 }],
+    });
+    app.llmService = {
+      generateTags: vi.fn(),
+    };
+    app.getLLMSettings = vi.fn();
+
+    await service.generateTags("item-1");
+
+    expect(app.llmService.generateTags).not.toHaveBeenCalled();
+    expect(mocks.saveItem).not.toHaveBeenCalled();
+    expect(events.toasts).toEqual(["请先解密后再生成标签"]);
+  });
+
+  it("does not modify tags when AI generation fails", async () => {
+    const { app, events, service } = createApp({
+      items: [{ id: "item-1", content: "Body", tags: ["old"], updatedAt: 1000 }],
+    });
+    app.getLLMSettings = vi.fn(() => ({ enabled: false }));
+    app.llmService = {
+      generateTags: vi.fn(() =>
+        Promise.resolve({ ok: false, requested: false, message: "请先启用大模型功能", tags: [] })
+      ),
+    };
+
+    await service.generateTags("item-1");
+
+    expect(app.items[0].tags).toEqual(["old"]);
+    expect(mocks.saveItem).not.toHaveBeenCalled();
+    expect(events.toasts).toEqual(["正在生成标签...", "请先启用大模型功能"]);
+  });
+
+  it("stores local debug logs when AI tag generation fails after a request", async () => {
+    const store = new Map();
+    vi.stubGlobal("localStorage", {
+      setItem: vi.fn((key, value) => {
+        store.set(key, String(value));
+      }),
+      getItem: vi.fn((key) => (store.has(key) ? store.get(key) : null)),
+      removeItem: vi.fn((key) => {
+        store.delete(key);
+      }),
+    });
+
+    const { app, events, service } = createApp({
+      items: [{ id: "item-1", content: "Body", tags: ["old"], updatedAt: 1000 }],
+    });
+    app.dom = {
+      setLLMDebugLog: vi.fn(),
+    };
+    app.getLLMSettings = vi.fn(() => ({
+      enabled: true,
+      baseUrl: "https://api.example.com/v1",
+      apiKey: "x",
+      model: "tag-model",
+    }));
+    app.llmService = {
+      generateTags: vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          requested: true,
+          message: "生成失败：未返回有效标签",
+          tags: [],
+          debugLog: "debug details",
+        })
+      ),
+    };
+
+    await service.generateTags("item-1");
+
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      STORAGE_KEYS.LLM_DEBUG_LOG,
+      "debug details"
+    );
+    expect(app.dom.setLLMDebugLog).toHaveBeenCalledWith("debug details");
+    expect(mocks.saveItem).not.toHaveBeenCalled();
+    expect(events.toasts).toEqual(["正在生成标签...", "生成失败：未返回有效标签（日志已保存）"]);
+
+    vi.unstubAllGlobals();
   });
 });

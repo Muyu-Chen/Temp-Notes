@@ -13,5 +13,6 @@ export const STORAGE_KEYS = {
   LLM_BASE_URL: "llm_base_url",
   LLM_API_KEY: "llm_api_key",
   LLM_MODEL: "llm_model",
+  LLM_DEBUG_LOG: "tempnotes:llm-debug-log:v1",
   FIRST_OPEN: "firstOpen",
 };

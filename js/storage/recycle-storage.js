@@ -2,21 +2,13 @@
  * 回收站持久化
  */
 
-import { uid } from "../lib/id-utils.js";
+import { normalizeItem, toStoredItem } from "../lib/item-utils.js";
 import { now } from "../lib/time-utils.js";
 import { getDB, STORE_RECYCLE } from "./idb.js";
 
 const normalizeRecycleItem = (item) => ({
-  id: item.id || uid(),
-  content: String(item.content ?? ""),
-  createdAt: Number(item.createdAt || now()),
-  updatedAt: Number(item.updatedAt || item.createdAt || now()),
+  ...normalizeItem(item),
   deletedAt: Number(item.deletedAt || now()),
-  title: item.title ? String(item.title) : undefined,
-  encrypted: Boolean(item.encrypted),
-  encryptedTitle: item.encryptedTitle ? String(item.encryptedTitle) : undefined,
-  encryptionHint: item.encryptionHint ? String(item.encryptionHint) : undefined,
-  defaultPassword: Boolean(item.defaultPassword),
 });
 
 export const loadRecycleItems = async () => {
@@ -60,16 +52,8 @@ export const saveRecycleItems = async (items) => {
     return new Promise((resolve, reject) => {
       items.forEach((item) => {
         store.add({
-          id: item.id,
-          content: item.content,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
+          ...toStoredItem(item),
           deletedAt: item.deletedAt,
-          title: item.title,
-          encrypted: item.encrypted === true,
-          encryptedTitle: item.encryptedTitle,
-          encryptionHint: item.encryptionHint,
-          defaultPassword: item.defaultPassword === true,
         });
       });
 

@@ -4,6 +4,7 @@
 
 import { clearDraftItemId, loadDraft, loadDraftItemId } from "./storage/draft-storage.js";
 import { loadItems } from "./storage/item-storage.js";
+import { sortItemsForDisplay } from "./lib/item-utils.js";
 import { isMac } from "./lib/platform-utils.js";
 import { Modal } from "./ui/modal.js";
 import { RecycleListView } from "./ui/recycle-list-view.js";
@@ -19,9 +20,11 @@ import {
   clearPersistentData,
   getDraftMode as readDraftMode,
   getFontSize as readFontSize,
+  getLLMDebugLog as readLLMDebugLog,
   getLLMSettings as readLLMSettings,
   getRecycleRetentionDays as readRecycleRetentionDays,
   getRecycleRetentionText,
+  clearLLMDebugLog as removeLLMDebugLog,
   saveLLMSettings as persistLLMSettings,
   setDraftMode as persistDraftMode,
   setFontSize as persistFontSize,
@@ -105,6 +108,7 @@ export class AppController {
   }
 
   render() {
+    this.items = sortItemsForDisplay(this.items);
     this.ui.renderItemsList(this.items);
     this.ui.updateDraftPreview();
     const draft = this.dom.getDraftValue();
@@ -148,6 +152,22 @@ export class AppController {
 
   renameItemTitle(id, title) {
     return this.itemService.renameItemTitle(id, title);
+  }
+
+  toggleItemPinned(id) {
+    return this.itemService.togglePinned(id);
+  }
+
+  toggleItemFavorite(id) {
+    return this.itemService.toggleFavorite(id);
+  }
+
+  editItemTags(id) {
+    return this.itemService.editTags(id);
+  }
+
+  generateItemTags(id) {
+    return this.itemService.generateTags(id);
   }
 
   deleteItem(id) {
@@ -195,6 +215,7 @@ export class AppController {
     this.dom.fontSizeValue.textContent = `${fontSize}px`;
     this.dom.setLLMSettings(this.getLLMSettings());
     this.dom.setLLMStatus("未测试", "pending");
+    this.dom.setLLMDebugLog(this.getLLMDebugLog());
     this.updateRecycleRetentionUI();
   }
 
@@ -244,6 +265,10 @@ export class AppController {
     return readLLMSettings();
   }
 
+  getLLMDebugLog() {
+    return readLLMDebugLog();
+  }
+
   saveLLMSettings(settings) {
     persistLLMSettings(settings);
     this.dom.setLLMInputsEnabled(settings.enabled);
@@ -258,6 +283,21 @@ export class AppController {
     const result = await this.llmService.testConnection(settings);
     this.dom.setLLMStatus(result.message, result.ok ? "ok" : "error");
     this.dom.llmTestBtn.disabled = !settings.enabled;
+  }
+
+  async copyLLMDebugLog() {
+    const logText = this.dom.getLLMDebugLog();
+    if (!logText.trim()) {
+      this.ui.showToast("暂无 AI 失败日志");
+      return;
+    }
+    await this.ui.copyText(logText);
+  }
+
+  clearLLMDebugLog() {
+    removeLLMDebugLog();
+    this.dom.setLLMDebugLog("");
+    this.ui.showToast("AI 失败日志已清除");
   }
 
   setFontSize(size) {
@@ -306,6 +346,7 @@ export class AppController {
       this.dom.setRecycleRetention(0, getRecycleRetentionText(0));
       this.dom.setLLMSettings({ enabled: false, baseUrl: "", apiKey: "", model: "" });
       this.dom.setLLMStatus("未测试", "pending");
+      this.dom.setLLMDebugLog("");
 
       this.render();
       this.ui.showToast("所有数据已清除");
@@ -357,6 +398,16 @@ export class AppController {
   }
 
   onSearchInput() {
+    this.render();
+  }
+
+  toggleFavoriteFilter() {
+    this.dom.setFavoriteFilterEnabled(!this.dom.getFavoriteFilterEnabled());
+    this.render();
+  }
+
+  setTagFilter(tag) {
+    this.dom.setActiveTagFilter(tag);
     this.render();
   }
 

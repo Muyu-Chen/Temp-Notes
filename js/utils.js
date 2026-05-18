@@ -8,6 +8,14 @@ export { clamp, firstLine, cleanTitle, resolveItemTitle, wordCount } from "./lib
 export { estimateStorageBytes, humanBytes } from "./lib/bytes-utils.js";
 export { isMac } from "./lib/platform-utils.js";
 export {
+  compareItemsForDisplay,
+  itemHasTag,
+  normalizeItem,
+  normalizeTags,
+  sortItemsForDisplay,
+  toStoredItem,
+} from "./lib/item-utils.js";
+export {
   excerptAroundSearch,
   filterItemsBySearch,
   getHighlightRanges,

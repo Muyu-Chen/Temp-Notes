@@ -2,8 +2,7 @@
  * 导入导出数据规范化
  */
 
-import { uid } from "../lib/id-utils.js";
-import { now } from "../lib/time-utils.js";
+import { normalizeItem, sortItemsForDisplay } from "../lib/item-utils.js";
 
 export const exportData = (draft, items) => ({
   version: 1,
@@ -22,17 +21,7 @@ export const normalizeImportedData = (data) => {
 
   const items = importedItems
     .filter((x) => x && typeof x === "object")
-    .map((x) => ({
-      id: x.id || uid(),
-      content: String(x.content ?? ""),
-      createdAt: Number(x.createdAt || now()),
-      updatedAt: Number(x.updatedAt || x.createdAt || now()),
-      title: x.title ? String(x.title) : undefined,
-      encrypted: Boolean(x.encrypted),
-      encryptedTitle: x.encryptedTitle ? String(x.encryptedTitle) : undefined,
-      encryptionHint: x.encryptionHint ? String(x.encryptionHint) : undefined,
-      defaultPassword: Boolean(x.defaultPassword),
-    }))
+    .map(normalizeItem)
     .filter((x) => x.content.length > 0);
 
   return { draft, items, valid: true };
@@ -44,5 +33,5 @@ export const itemSignature = (item) =>
 export const mergeItems = (existing, imported) => {
   const existingSigs = new Set(existing.map(itemSignature));
   const newItems = imported.filter((x) => !existingSigs.has(itemSignature(x)));
-  return [...newItems, ...existing].sort((a, b) => b.updatedAt - a.updatedAt);
+  return sortItemsForDisplay([...newItems, ...existing]);
 };

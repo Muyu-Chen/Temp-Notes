@@ -2,11 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { STORAGE_KEYS } from "../js/constants.js";
 import {
+  clearLLMDebugLog,
   getDraftMode,
+  getLLMDebugLog,
   getLLMSettings,
   getRecycleRetentionDays,
   getRecycleRetentionText,
   saveLLMSettings,
+  saveLLMDebugLog,
   setDraftMode,
   setRecycleRetentionDays,
 } from "../js/services/settings-service.js";
@@ -78,5 +81,15 @@ describe("settings service", () => {
       apiKey: "test-key",
       model: "model-a",
     });
+  });
+
+  it("stores and clears the local LLM debug log", () => {
+    expect(getLLMDebugLog()).toBe("");
+
+    saveLLMDebugLog("debug details");
+    expect(getLLMDebugLog()).toBe("debug details");
+
+    clearLLMDebugLog();
+    expect(getLLMDebugLog()).toBe("");
   });
 });
