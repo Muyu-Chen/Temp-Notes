@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Audio Notes Prototype</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="workspace" aria-label="录音笔记原型">
+      <section class="note-surface">
+        <header class="topbar">
+          <div class="title-block">
+            <div class="eyebrow">Audio Draft</div>
+            <h1>会议记录</h1>
+          </div>
+
+          <div class="toolbar" aria-label="草稿工具">
+            <div class="mode-toggle" aria-label="草稿显示模式">
+              <button id="editModeBtn" class="active" type="button">编辑</button>
+              <button id="previewModeBtn" type="button">预览</button>
+            </div>
+            <button class="record-trigger" id="openRecorderBtn" type="button">
+              <span class="record-dot" aria-hidden="true"></span>
+              录音
+            </button>
+            <button class="ghost-button" id="toggleList" type="button" aria-expanded="true">
+              片段
+            </button>
+          </div>
+        </header>
+
+        <textarea
+          id="note"
+          class="note-editor"
+          spellcheck="false"
+          placeholder="开始记录..."
+        >今天要确认的问题：
+
+- 
+
+结论：
+</textarea>
+        <article class="preview-pane" id="previewPane" hidden aria-label="预览内容"></article>
+      </section>
+
+      <aside class="clip-panel" id="clipPanel" aria-label="录音片段">
+        <div class="panel-head">
+          <span>片段</span>
+          <span class="muted" id="clipCount">0</span>
+        </div>
+        <div class="clip-list" id="clipList"></div>
+      </aside>
+
+      <section class="modal-layer" id="modalLayer" hidden>
+        <div class="recorder-modal" role="dialog" aria-modal="true" aria-labelledby="recorderTitle">
+          <header class="recorder-head">
+            <div>
+              <div class="eyebrow">Voice Memo</div>
+              <h2 id="recorderTitle">当前草稿录音</h2>
+            </div>
+            <div class="window-actions">
+              <button class="window-button" id="minimizeBtn" type="button" title="最小化">
+                <span aria-hidden="true">−</span>
+              </button>
+              <button class="window-button" id="closeBtn" type="button" title="关闭">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+          </header>
+
+          <div class="record-card">
+            <div class="record-meta">
+              <span class="status-dot" id="statusDot"></span>
+              <div>
+                <div class="record-state" data-record-state>准备录音</div>
+                <div class="record-name" id="recordName">当前草稿</div>
+              </div>
+            </div>
+
+            <div class="timer" data-timer>00:00</div>
+
+            <div class="waveform" aria-hidden="true">
+              <span style="--h: 18%"></span>
+              <span style="--h: 42%"></span>
+              <span style="--h: 28%"></span>
+              <span style="--h: 68%"></span>
+              <span style="--h: 36%"></span>
+              <span style="--h: 74%"></span>
+              <span style="--h: 52%"></span>
+              <span style="--h: 88%"></span>
+              <span style="--h: 32%"></span>
+              <span style="--h: 62%"></span>
+              <span style="--h: 46%"></span>
+              <span style="--h: 78%"></span>
+              <span style="--h: 24%"></span>
+              <span style="--h: 58%"></span>
+              <span style="--h: 38%"></span>
+              <span style="--h: 70%"></span>
+            </div>
+          </div>
+
+          <div class="recorder-controls">
+            <button class="control secondary" data-action="pause" type="button" disabled>
+              暂停
+            </button>
+            <button class="record-button" id="recordBtn" type="button" title="开始/结束录音">
+              <span id="recordIcon" aria-hidden="true"></span>
+            </button>
+            <button class="control secondary" data-action="stop" type="button" disabled>
+              结束
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="floating-recorder" id="floatingRecorder" hidden aria-label="悬浮录音控制">
+        <div class="floating-status">
+          <span class="status-dot"></span>
+          <div>
+            <div class="record-state" data-record-state>准备录音</div>
+            <div class="timer mini" data-timer>00:00</div>
+          </div>
+        </div>
+        <div class="floating-actions">
+          <button class="mini-button" data-action="pause" type="button" disabled title="暂停/继续">
+            暂停
+          </button>
+          <button class="mini-button danger" data-action="stop" type="button" disabled title="结束">
+            结束
+          </button>
+          <button class="mini-button" id="maximizeBtn" type="button" title="展开">
+            展开
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
