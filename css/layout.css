@@ -80,7 +80,7 @@ header .sub {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1.45fr 0.85fr;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.85fr);
   gap: 14px;
 }
 
@@ -94,6 +94,7 @@ header .sub {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
 }
 
 .panel-head {
