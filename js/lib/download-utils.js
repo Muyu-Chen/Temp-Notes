@@ -48,8 +48,14 @@ export const getTextExportPayload = (item, format, timestamp = Date.now()) => {
   };
 };
 
-export const downloadTextFile = (content, filename, mimeType) => {
-  const blob = new Blob([content], { type: mimeType });
+export const getRecordingExportFilename = (attachment, timestamp = Date.now()) => {
+  const namePart =
+    sanitizeFilePart(attachment?.name) || sanitizeFilePart(attachment?.id) || "recording";
+  const ext = sanitizeFilePart(attachment?.ext) || "webm";
+  return `tempnotes-audio-${namePart}-${formatExportTimestamp(timestamp)}.${ext}`;
+};
+
+export const downloadBlobFile = (blob, filename) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
 
@@ -59,4 +65,8 @@ export const downloadTextFile = (content, filename, mimeType) => {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+};
+
+export const downloadTextFile = (content, filename, mimeType) => {
+  downloadBlobFile(new Blob([content], { type: mimeType }), filename);
 };

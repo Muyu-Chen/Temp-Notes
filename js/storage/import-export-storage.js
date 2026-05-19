@@ -22,7 +22,7 @@ export const normalizeImportedData = (data) => {
   const items = importedItems
     .filter((x) => x && typeof x === "object")
     .map(normalizeItem)
-    .filter((x) => x.content.length > 0);
+    .filter((x) => x.content.length > 0 || x.attachments.length > 0);
 
   return { draft, items, valid: true };
 };

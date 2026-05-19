@@ -4,7 +4,7 @@
 
 import { formatTime } from "./time-utils.js";
 import { resolveItemTitle } from "./text-utils.js";
-import { normalizeTags } from "./item-utils.js";
+import { normalizeItemTags } from "./item-utils.js";
 
 export const normalizeSearchText = (value) => String(value ?? "").toLowerCase();
 
@@ -27,7 +27,7 @@ const pushTimeField = (fields, timestamp) => {
 
 export const getItemSearchFields = (item) => {
   const fields = [resolveItemTitle(item)];
-  fields.push(...normalizeTags(item?.tags));
+  fields.push(...normalizeItemTags(item?.tags, item?.attachments));
 
   if (!item?.encrypted) {
     fields.push(item?.content || "");

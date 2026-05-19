@@ -4,8 +4,10 @@
 
 import { uid } from "./id-utils.js";
 import { now } from "./time-utils.js";
+import { normalizeAttachments } from "./attachment-utils.js";
 
 const TAG_SPLIT_RE = /[,，;；\n]+/;
+export const RECORDING_TAG = "录音";
 
 export const normalizeTags = (value) => {
   const rawTags = Array.isArray(value) ? value : String(value ?? "").split(TAG_SPLIT_RE);
@@ -33,12 +35,29 @@ export const normalizeTags = (value) => {
 export const itemHasTag = (item, tag) => {
   const target = String(tag ?? "").trim().toLowerCase();
   if (!target) return true;
-  return normalizeTags(item?.tags).some((itemTag) => itemTag.toLowerCase() === target);
+  return normalizeItemTags(item?.tags, item?.attachments).some(
+    (itemTag) => itemTag.toLowerCase() === target
+  );
+};
+
+export const hasAudioAttachments = (attachments) =>
+  normalizeAttachments(attachments).some((attachment) => attachment.type === "audio");
+
+export const normalizeItemTags = (tags, attachments) => {
+  const normalizedTags = normalizeTags(tags);
+  if (
+    hasAudioAttachments(attachments) &&
+    !normalizedTags.some((tag) => tag.toLowerCase() === RECORDING_TAG.toLowerCase())
+  ) {
+    normalizedTags.push(RECORDING_TAG);
+  }
+  return normalizedTags;
 };
 
 export const normalizeItem = (item) => {
   const pinned = item?.pinned === true;
   const pinnedAt = Number(item?.pinnedAt);
+  const attachments = normalizeAttachments(item?.attachments);
 
   return {
     id: item?.id || uid(),
@@ -53,7 +72,8 @@ export const normalizeItem = (item) => {
     pinned,
     pinnedAt: pinned && Number.isFinite(pinnedAt) ? pinnedAt : undefined,
     favorite: item?.favorite === true,
-    tags: normalizeTags(item?.tags),
+    tags: normalizeItemTags(item?.tags, attachments),
+    attachments,
   };
 };
 
@@ -70,7 +90,8 @@ export const toStoredItem = (item) => ({
   pinned: item.pinned === true,
   pinnedAt: item.pinned === true ? item.pinnedAt : undefined,
   favorite: item.favorite === true,
-  tags: normalizeTags(item.tags),
+  tags: normalizeItemTags(item.tags, item.attachments),
+  attachments: normalizeAttachments(item.attachments),
 });
 
 export const compareItemsForDisplay = (a, b) => {
