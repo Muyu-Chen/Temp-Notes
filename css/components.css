@@ -33,12 +33,12 @@ button:active {
 }
 
 button.primary {
-  border-color: rgba(122, 162, 255, 0.4);
-  background: rgba(122, 162, 255, 0.15);
+  border-color: rgba(var(--action-rgb), 0.42);
+  background: rgba(var(--action-rgb), 0.14);
 }
 
 button.primary:hover {
-  background: rgba(122, 162, 255, 0.2);
+  background: rgba(var(--action-rgb), 0.2);
 }
 
 button.danger {
@@ -87,9 +87,9 @@ textarea {
   left: 3px;
   width: calc((100% - 6px) / 2);
   border-radius: 8px;
-  background: rgba(122, 162, 255, 0.28);
-  box-shadow: inset 0 0 0 1px rgba(122, 162, 255, 0.6),
-    0 5px 14px rgba(122, 162, 255, 0.16);
+  background: rgba(var(--action-rgb), 0.2);
+  box-shadow: inset 0 0 0 1px rgba(var(--action-rgb), 0.46),
+    0 5px 14px rgba(var(--action-rgb), 0.12);
   transform: translateX(0);
   transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
     background 0.15s ease, box-shadow 0.15s ease;
@@ -132,12 +132,6 @@ textarea {
 
 .mode-toggle button.active:hover {
   background: transparent;
-}
-
-[data-theme="light"] .mode-toggle::before {
-  background: rgba(47, 107, 255, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(47, 107, 255, 0.5),
-    0 5px 14px rgba(47, 107, 255, 0.12);
 }
 
 .archive-search-area {
@@ -216,9 +210,9 @@ textarea {
 }
 
 .archive-search-tools.filter-open .archive-filter-toggle {
-  color: var(--accent);
-  border-color: rgba(122, 162, 255, 0.55);
-  background: rgba(122, 162, 255, 0.2);
+  color: var(--action);
+  border-color: rgba(var(--action-rgb), 0.48);
+  background: rgba(var(--action-rgb), 0.16);
 }
 
 .archive-filter-menu {
@@ -261,21 +255,10 @@ textarea {
 
 .archive-filter-menu button.active,
 .archive-filter-menu button:not([hidden])#activeTagFilterBtn {
-  border-color: rgba(122, 162, 255, 0.58);
-  background: rgba(122, 162, 255, 0.28);
-  color: var(--accent);
+  border-color: rgba(var(--action-rgb), 0.48);
+  background: rgba(var(--action-rgb), 0.16);
+  color: var(--action);
   font-weight: 700;
-}
-
-[data-theme="light"] .archive-search-tools.filter-open .archive-filter-toggle {
-  border-color: rgba(47, 107, 255, 0.45);
-  background: rgba(47, 107, 255, 0.14);
-}
-
-[data-theme="light"] .archive-filter-menu button.active,
-[data-theme="light"] .archive-filter-menu button:not([hidden])#activeTagFilterBtn {
-  border-color: rgba(47, 107, 255, 0.45);
-  background: rgba(47, 107, 255, 0.16);
 }
 
 .draft-preview {
@@ -544,14 +527,16 @@ textarea {
   opacity: 0.62;
 }
 
-.item-icon-btn.active {
-  color: #edc451;
+.item-pin-btn.active {
+  color: var(--pin-active);
   font-weight: 700;
   opacity: 1;
 }
 
-[data-theme="light"] .item-icon-btn.active {
-  color: #c89222;
+.item-favorite-btn.active {
+  color: var(--favorite-active);
+  font-weight: 700;
+  opacity: 1;
 }
 
 .item:hover .item-menu-btn {

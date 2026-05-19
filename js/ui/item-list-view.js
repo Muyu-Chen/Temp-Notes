@@ -102,7 +102,7 @@ export class ItemListView {
     headerActions.className = "item-header-actions";
 
     const pinBtn = document.createElement("button");
-    pinBtn.className = `item-icon-btn${item.pinned ? " active" : ""}`;
+    pinBtn.className = `item-icon-btn item-pin-btn${item.pinned ? " active" : ""}`;
     pinBtn.type = "button";
     pinBtn.textContent = "📌";
     pinBtn.title = item.pinned ? "取消置顶" : "置顶条目";
@@ -112,7 +112,7 @@ export class ItemListView {
     };
 
     const favoriteBtn = document.createElement("button");
-    favoriteBtn.className = `item-icon-btn${item.favorite ? " active" : ""}`;
+    favoriteBtn.className = `item-icon-btn item-favorite-btn${item.favorite ? " active" : ""}`;
     favoriteBtn.type = "button";
     favoriteBtn.textContent = "★";
     favoriteBtn.title = item.favorite ? "取消收藏" : "收藏条目";

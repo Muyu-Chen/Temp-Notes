@@ -11,6 +11,10 @@
   --muted: rgba(255, 255, 255, 0.65);
   --line: rgba(255, 255, 255, 0.18);
   --accent: #7aa2ff;
+  --action: #8aa6e8;
+  --action-rgb: 138, 166, 232;
+  --pin-active: #9aa7bd;
+  --favorite-active: #d8a032;
   --danger: #ff6b6b;
   --ok: #41d1a6;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -32,6 +36,10 @@
   --muted: rgba(0, 0, 0, 0.62);
   --line: rgba(0, 0, 0, 0.15);
   --accent: #2f6bff;
+  --action: #4267c9;
+  --action-rgb: 66, 103, 201;
+  --pin-active: #5c6a7d;
+  --favorite-active: #c89222;
   --danger: #d64545;
   --ok: #0f8a68;
   --shadow: 0 12px 26px rgba(0, 0, 0, 0.1);
