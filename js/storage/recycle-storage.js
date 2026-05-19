@@ -2,14 +2,8 @@
  * 回收站持久化
  */
 
-import { normalizeItem, toStoredItem } from "../lib/item-utils.js";
-import { now } from "../lib/time-utils.js";
+import { normalizeRecycleEntry, toStoredRecycleEntry } from "../lib/recycle-utils.js";
 import { getDB, STORE_RECYCLE } from "./idb.js";
-
-const normalizeRecycleItem = (item) => ({
-  ...normalizeItem(item),
-  deletedAt: Number(item.deletedAt || now()),
-});
 
 export const loadRecycleItems = async () => {
   try {
@@ -26,7 +20,8 @@ export const loadRecycleItems = async () => {
         resolve(
           items
             .filter((x) => x && typeof x === "object")
-            .map(normalizeRecycleItem)
+            .map(normalizeRecycleEntry)
+            .filter(Boolean)
             .sort((a, b) => b.deletedAt - a.deletedAt)
         );
       };
@@ -51,10 +46,8 @@ export const saveRecycleItems = async (items) => {
 
     return new Promise((resolve, reject) => {
       items.forEach((item) => {
-        store.add({
-          ...toStoredItem(item),
-          deletedAt: item.deletedAt,
-        });
+        const stored = toStoredRecycleEntry(item);
+        if (stored) store.add(stored);
       });
 
       transaction.onerror = () => reject(transaction.error);
