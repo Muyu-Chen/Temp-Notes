@@ -11,7 +11,18 @@ export {
   saveDraftItemId,
   clearDraftItemId,
 } from "./storage/draft-storage.js";
+export {
+  loadDraftAttachments,
+  saveDraftAttachments,
+  clearDraftAttachments,
+} from "./storage/draft-attachments-storage.js";
 export { loadItems, saveItems, saveItem, deleteItemById } from "./storage/item-storage.js";
+export {
+  saveRecording,
+  loadRecording,
+  deleteRecordings,
+  deleteUnreferencedRecordings,
+} from "./storage/recording-storage.js";
 export {
   exportData,
   normalizeImportedData,

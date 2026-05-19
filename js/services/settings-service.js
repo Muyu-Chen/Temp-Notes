@@ -6,6 +6,7 @@ import { STORAGE_KEYS } from "../constants.js";
 import {
   clearObjectStores,
   STORE_ITEMS,
+  STORE_RECORDINGS,
   STORE_RECYCLE,
   STORE_SETTINGS,
 } from "../storage/idb.js";
@@ -136,7 +137,7 @@ export const clearLLMDebugLog = () => {
 };
 
 export const clearPersistentData = async () => {
-  await clearObjectStores([STORE_SETTINGS, STORE_ITEMS, STORE_RECYCLE]);
+  await clearObjectStores([STORE_SETTINGS, STORE_ITEMS, STORE_RECYCLE, STORE_RECORDINGS]);
 
   [
     FONT_SIZE_KEY,

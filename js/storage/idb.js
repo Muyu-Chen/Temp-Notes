@@ -3,10 +3,11 @@
  */
 
 export const DB_NAME = "tempnotes_db";
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 export const STORE_SETTINGS = "settings";
 export const STORE_ITEMS = "items";
 export const STORE_RECYCLE = "recycle";
+export const STORE_RECORDINGS = "recordings";
 
 let dbInstance = null;
 
@@ -32,6 +33,10 @@ export const initDB = () => {
       if (!db.objectStoreNames.contains(STORE_RECYCLE)) {
         const recycleStore = db.createObjectStore(STORE_RECYCLE, { keyPath: "id" });
         recycleStore.createIndex("deletedAt", "deletedAt", { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains(STORE_RECORDINGS)) {
+        db.createObjectStore(STORE_RECORDINGS, { keyPath: "id" });
       }
     };
   });

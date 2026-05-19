@@ -5,6 +5,7 @@
 export const STORAGE_KEYS = {
   DRAFT: "tempnotes:draft:v1",
   DRAFT_ITEM_ID: "tempnotes:draft-item-id:v1",
+  DRAFT_ATTACHMENTS: "tempnotes:draft-attachments:v1",
   ITEMS: "tempnotes:items:v1",
   DRAFT_MODE: "tempnotes:draft-mode:v1",
   RECYCLE_RETENTION_DAYS: "tempnotes:recycle-retention-days:v1",
