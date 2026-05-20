@@ -4,6 +4,7 @@
 
 import { clamp, resolveItemTitle } from "../lib/text-utils.js";
 import { excerptAroundSearch, filterItemsBySearch, getSearchTokens } from "../lib/search-utils.js";
+import { isRecordingRecycleEntry } from "../lib/recycle-utils.js";
 import { formatTime } from "../lib/time-utils.js";
 import { appendHighlightedText } from "./search-highlight.js";
 
@@ -15,7 +16,17 @@ export class RecycleListView {
 
   render(items, searchQuery = "") {
     const searchTokens = getSearchTokens(searchQuery);
-    const filtered = searchTokens.length === 0 ? items : filterItemsBySearch(items, searchTokens);
+    const itemEntries = items.filter((item) => !isRecordingRecycleEntry(item));
+    const recordingEntries = items.filter(isRecordingRecycleEntry);
+    const filtered =
+      searchTokens.length === 0
+        ? items
+        : [
+            ...filterItemsBySearch(itemEntries, searchTokens),
+            ...recordingEntries.filter((entry) =>
+              this.recordingMatchesSearch(entry, searchTokens)
+            ),
+          ].sort((a, b) => Number(b.deletedAt || 0) - Number(a.deletedAt || 0));
 
     this.dom.recycleList.innerHTML = "";
 
@@ -45,6 +56,10 @@ export class RecycleListView {
   }
 
   createRecycleCard(item, actualIndex, searchTokens = []) {
+    if (isRecordingRecycleEntry(item)) {
+      return this.createRecordingRecycleCard(item, actualIndex, searchTokens);
+    }
+
     const card = document.createElement("div");
     card.className = "recycle-item";
 
@@ -82,6 +97,78 @@ export class RecycleListView {
           : clamp(item.content.trim() || "（空）", 100);
       appendHighlightedText(preview, previewText, searchTokens);
     }
+
+    const actions = document.createElement("div");
+    actions.className = "recycle-item-actions";
+
+    const btnRestore = document.createElement("button");
+    btnRestore.className = "primary";
+    btnRestore.textContent = "恢复";
+    btnRestore.onclick = () => {
+      this.handlers.onItemRestore(actualIndex);
+    };
+
+    const btnDelete = document.createElement("button");
+    btnDelete.className = "danger";
+    btnDelete.textContent = "永久删除";
+    btnDelete.onclick = () => {
+      this.handlers.onItemDelete(actualIndex);
+    };
+
+    actions.appendChild(btnRestore);
+    actions.appendChild(btnDelete);
+
+    card.appendChild(header);
+    card.appendChild(preview);
+    card.appendChild(actions);
+    return card;
+  }
+
+  getRecordingSourceLabel(item) {
+    return this.handlers.getRecordingSourceLabel?.(item) || item.sourceItemTitle || "草稿";
+  }
+
+  recordingMatchesSearch(item, searchTokens) {
+    const sourceLabel = this.getRecordingSourceLabel(item);
+    const fields = [
+      "录音",
+      item.attachment?.name || "",
+      sourceLabel,
+      formatTime(item.deletedAt),
+    ].map((field) => String(field).toLowerCase());
+
+    return searchTokens.every((token) => fields.some((field) => field.includes(token)));
+  }
+
+  createRecordingRecycleCard(item, actualIndex, searchTokens = []) {
+    const card = document.createElement("div");
+    card.className = "recycle-item recycle-recording-item";
+
+    const header = document.createElement("div");
+    header.className = "recycle-item-header";
+
+    const title = document.createElement("div");
+    title.className = "recycle-item-title";
+    title.appendChild(document.createTextNode("录音："));
+    const titleText = document.createElement("span");
+    appendHighlightedText(titleText, item.attachment?.name || "录音", searchTokens);
+    title.appendChild(titleText);
+    title.style.maxWidth = "calc(100% - 80px)";
+    title.style.whiteSpace = "nowrap";
+    title.style.overflow = "hidden";
+    title.style.textOverflow = "ellipsis";
+
+    const deleteTime = document.createElement("div");
+    deleteTime.className = "recycle-item-time";
+    deleteTime.textContent = `删除于: ${formatTime(item.deletedAt)}`;
+
+    header.appendChild(title);
+    header.appendChild(deleteTime);
+
+    const preview = document.createElement("div");
+    preview.className = "recycle-item-preview";
+    preview.appendChild(document.createTextNode("关联条目："));
+    appendHighlightedText(preview, this.getRecordingSourceLabel(item), searchTokens);
 
     const actions = document.createElement("div");
     actions.className = "recycle-item-actions";

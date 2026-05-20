@@ -92,6 +92,15 @@
                 <button id="btnMarkdownEdit" class="active" type="button">编辑</button>
                 <button id="btnMarkdownPreview" type="button">预览</button>
               </div>
+              <button
+                id="btnRecordDraft"
+                class="record-draft-btn"
+                type="button"
+                title="开始录音"
+              >
+                <span class="record-dot" aria-hidden="true"></span>
+                <span>录音</span>
+              </button>
               <!-- 快捷键提示 目前我觉得可以暂时不显示 -->
               <!-- 
               <span class="muted small"
@@ -109,6 +118,12 @@
             placeholder="把这里当作你的“第二桌面”。随手粘贴、临时记录、快速中转…&#10;&#10;提示：所有内容均自动保存，若需要在右侧存档就点“存档”或Ctrl+S。"
           ></textarea>
           <div id="draftPreview" class="draft-preview markdown-body" hidden></div>
+          <div
+            id="draftAttachments"
+            class="draft-attachments"
+            aria-label="草稿录音附件"
+            hidden
+          ></div>
         </section>
 
         <!-- Archive -->
@@ -162,6 +177,28 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <section
+      id="recordingFloatingPanel"
+      class="recording-floating-panel"
+      aria-label="录音控制"
+      hidden
+    >
+      <div id="recordingDragHandle" class="recording-floating-head">
+        <div class="recording-status">
+          <span class="recording-status-dot" aria-hidden="true"></span>
+          <div class="recording-status-texts">
+            <div id="recordingStatusText" class="recording-state">录音中</div>
+            <div class="recording-hint">当前草稿</div>
+          </div>
+        </div>
+        <div id="recordingTimer" class="recording-timer">00:00</div>
+      </div>
+      <div class="recording-actions">
+        <button id="btnRecordingPause" type="button">暂停</button>
+        <button id="btnRecordingStop" class="danger" type="button">结束</button>
+      </div>
+    </section>
 
     <!-- 更多功能面板（仿ChatGPT设置面板） -->
     <div class="modal-overlay" id="moreModalOverlay" style="display: none;"></div>

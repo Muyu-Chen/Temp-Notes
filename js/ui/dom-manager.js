@@ -6,9 +6,17 @@ export class DOMManager {
   constructor() {
     this.draft = document.getElementById("draft");
     this.draftPreview = document.getElementById("draftPreview");
+    this.draftAttachments = document.getElementById("draftAttachments");
     this.draftModeToggle = document.getElementById("draftModeToggle");
     this.btnMarkdownEdit = document.getElementById("btnMarkdownEdit");
     this.btnMarkdownPreview = document.getElementById("btnMarkdownPreview");
+    this.btnRecordDraft = document.getElementById("btnRecordDraft");
+    this.recordingFloatingPanel = document.getElementById("recordingFloatingPanel");
+    this.recordingDragHandle = document.getElementById("recordingDragHandle");
+    this.recordingStatusText = document.getElementById("recordingStatusText");
+    this.recordingTimer = document.getElementById("recordingTimer");
+    this.btnRecordingPause = document.getElementById("btnRecordingPause");
+    this.btnRecordingStop = document.getElementById("btnRecordingStop");
     this.list = document.getElementById("list");
     this.search = document.getElementById("search");
     this.archiveSearchTools = document.getElementById("archiveSearchTools");
@@ -100,6 +108,40 @@ export class DOMManager {
 
   setDraftPreview(content) {
     this.draftPreview.innerHTML = content;
+  }
+
+  setRecordingLauncherDisabled(disabled) {
+    this.btnRecordDraft.disabled = Boolean(disabled);
+    this.btnRecordDraft.classList.toggle("disabled", Boolean(disabled));
+  }
+
+  setRecordingPanelVisible(visible) {
+    this.recordingFloatingPanel.hidden = !visible;
+  }
+
+  setRecordingPanelState({ state = "recording", timer = "00:00", stopping = false } = {}) {
+    const paused = state === "paused";
+    this.recordingFloatingPanel.dataset.state = paused ? "paused" : "recording";
+    this.recordingStatusText.textContent = paused ? "已暂停" : "录音中";
+    this.recordingTimer.textContent = timer;
+    this.btnRecordingPause.textContent = paused ? "继续" : "暂停";
+    this.btnRecordingPause.disabled = Boolean(stopping);
+    this.btnRecordingStop.disabled = Boolean(stopping);
+  }
+
+  setRecordingPanelPosition(left, top) {
+    const panel = this.recordingFloatingPanel;
+    const rect = panel.getBoundingClientRect();
+    const margin = 12;
+    const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
+    const maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+    const nextLeft = Math.min(Math.max(left, margin), maxLeft);
+    const nextTop = Math.min(Math.max(top, margin), maxTop);
+
+    panel.style.left = `${nextLeft}px`;
+    panel.style.top = `${nextTop}px`;
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
   }
 
   setDraftMode(mode) {

@@ -3,7 +3,7 @@
  */
 
 import { clamp, resolveItemTitle, wordCount } from "../lib/text-utils.js";
-import { itemHasTag, normalizeTags } from "../lib/item-utils.js";
+import { itemHasTag, normalizeItemTags } from "../lib/item-utils.js";
 import { excerptAroundSearch, filterItemsBySearch, getSearchTokens } from "../lib/search-utils.js";
 import { formatTime } from "../lib/time-utils.js";
 import { appendHighlightedText } from "./search-highlight.js";
@@ -45,8 +45,23 @@ export class ItemListView {
 
     if (searchTokens.length > 0 || favoriteOnly || activeTag) {
       const summary = document.createElement("div");
-      summary.className = "search-summary muted small";
-      summary.textContent = `找到 ${filtered.length} / ${items.length} 个匹配条目`;
+      summary.className = "search-summary archive-search-summary muted small";
+
+      const summaryText = document.createElement("span");
+      summaryText.textContent = `找到 ${filtered.length} / ${items.length} 个匹配条目`;
+
+      const clearBtn = document.createElement("button");
+      clearBtn.className = "filter-clear-btn";
+      clearBtn.type = "button";
+      clearBtn.textContent = "×";
+      clearBtn.title = "取消筛选";
+      clearBtn.setAttribute("aria-label", "取消筛选");
+      clearBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.handlers.onArchiveFiltersClear();
+      });
+
+      summary.append(summaryText, clearBtn);
       this.dom.appendListItem(summary);
     }
 
@@ -148,8 +163,10 @@ export class ItemListView {
 
     const tagList = document.createElement("div");
     tagList.className = "item-tags";
-    const tags = isEncrypted ? [] : normalizeTags(item.tags);
-    tags.forEach((tag) => {
+    const tags = isEncrypted ? [] : normalizeItemTags(item.tags, item.attachments);
+    tagList.title = tags.length > 0 ? tags.map((tag) => `#${tag}`).join(" ") : "";
+    const visibleTags = tags.slice(0, 3);
+    visibleTags.forEach((tag) => {
       const tagBtn = document.createElement("button");
       tagBtn.className = "note-tag";
       tagBtn.type = "button";
@@ -161,9 +178,18 @@ export class ItemListView {
       };
       tagList.appendChild(tagBtn);
     });
+    if (tags.length > visibleTags.length) {
+      const moreTags = document.createElement("span");
+      moreTags.className = "note-tag note-tag-more";
+      moreTags.textContent = "...";
+      moreTags.title = tagList.title;
+      tagList.appendChild(moreTags);
+    }
 
     const row = document.createElement("div");
     row.className = "row";
+    const rowActions = document.createElement("div");
+    rowActions.className = "item-actions";
 
     if (isEncrypted) {
       const btnDecrypt = document.createElement("button");
@@ -182,7 +208,7 @@ export class ItemListView {
         this.handlers.onItemDeleteClick(item.id);
       };
 
-      row.append(btnDecrypt, btnDel);
+      rowActions.append(btnDecrypt, btnDel);
     } else {
       const btnLoad = document.createElement("button");
       btnLoad.textContent = "加载到草稿";
@@ -206,13 +232,15 @@ export class ItemListView {
         this.handlers.onItemDeleteClick(item.id);
       };
 
-      row.append(btnLoad, btnCopyItem, btnDel);
+      rowActions.append(btnLoad, btnCopyItem, btnDel);
+    }
+
+    row.appendChild(rowActions);
+    if (tagList.children.length > 0) {
+      row.appendChild(tagList);
     }
 
     card.append(header, meta);
-    if (tagList.children.length > 0) {
-      card.appendChild(tagList);
-    }
     card.append(preview, row);
 
     if (!isEncrypted) {
