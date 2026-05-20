@@ -3,8 +3,17 @@
  */
 
 import { clearDraftItemId, loadDraft, loadDraftItemId } from "./storage/draft-storage.js";
+import {
+  loadDraftAttachments,
+  saveDraftAttachments,
+} from "./storage/draft-attachments-storage.js";
 import { loadItems } from "./storage/item-storage.js";
+import { deleteUnreferencedRecordings, loadRecording } from "./storage/recording-storage.js";
+import { normalizeAttachments } from "./lib/attachment-utils.js";
+import { downloadBlobFile, getRecordingExportFilename } from "./lib/download-utils.js";
 import { sortItemsForDisplay } from "./lib/item-utils.js";
+import { getRecycleEntryAttachmentIds, isRecordingRecycleEntry } from "./lib/recycle-utils.js";
+import { resolveItemTitle } from "./lib/text-utils.js";
 import { isMac } from "./lib/platform-utils.js";
 import { Modal } from "./ui/modal.js";
 import { RecycleListView } from "./ui/recycle-list-view.js";
@@ -15,6 +24,7 @@ import { ItemService } from "./services/item-service.js";
 import { RecycleActionsService } from "./services/recycle-actions-service.js";
 import { RecycleService } from "./services/recycle-service.js";
 import { LLMService } from "./services/llm-service.js";
+import { RecordingService } from "./services/recording-service.js";
 import {
   applyFontSize,
   clearPersistentData,
@@ -32,6 +42,13 @@ import {
 } from "./services/settings-service.js";
 import { toggleTheme } from "./services/theme-manager.js";
 
+const formatRecordingTimer = (durationMs = 0) => {
+  const totalSeconds = Math.max(0, Math.floor(Number(durationMs || 0) / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
 export class AppController {
   constructor(uiController, domManager) {
     this.ui = uiController;
@@ -39,13 +56,27 @@ export class AppController {
     this.items = [];
     this.saveTimer = null;
     this.currentLoadedItemId = null;
+    this.currentDraftAttachments = [];
     this.draftMode = "edit";
+    this.recordingUi = {
+      active: false,
+      paused: false,
+      stopping: false,
+      startedAt: 0,
+      pausedAt: 0,
+      pausedMs: 0,
+      timerId: null,
+    };
+    this.recordingDrag = null;
+    this.draftAttachmentPlayback = null;
+    this.playingDraftAttachmentId = null;
     this.modal = new Modal();
 
     this.recycleService = new RecycleService();
     this.recycleListView = new RecycleListView(domManager, {
       onItemRestore: (index) => this.restoreFromRecycle(index),
       onItemDelete: (index) => this.deleteFromRecycle(index),
+      getRecordingSourceLabel: (entry) => this.getRecordingRecycleSourceLabel(entry),
     });
 
     this.draftService = new DraftService(this);
@@ -54,6 +85,7 @@ export class AppController {
     this.encryptionService = new EncryptionService(this);
     this.recycleActionsService = new RecycleActionsService(this);
     this.llmService = new LLMService();
+    this.recordingService = new RecordingService();
   }
 
   getStorageUsageBytes(draftValue = this.dom.getDraftValue()) {
@@ -72,12 +104,13 @@ export class AppController {
 
       const draft = await loadDraft();
       const draftItemId = await loadDraftItemId();
+      this.currentDraftAttachments = await loadDraftAttachments();
       this.dom.setDraftValue(draft);
 
       this.items = await loadItems();
 
       this.currentLoadedItemId = draftItemId || null;
-      if (!draft.trim()) {
+      if (!draft.trim() && this.currentDraftAttachments.length === 0) {
         this.currentLoadedItemId = null;
         clearDraftItemId();
       } else if (this.currentLoadedItemId) {
@@ -110,6 +143,9 @@ export class AppController {
   render() {
     this.items = sortItemsForDisplay(this.items);
     this.ui.renderItemsList(this.items);
+    this.ui.renderDraftAttachments(this.currentDraftAttachments, {
+      playingId: this.playingDraftAttachmentId,
+    });
     this.ui.updateDraftPreview();
     const draft = this.dom.getDraftValue();
     this.ui.updateMeta(
@@ -127,6 +163,7 @@ export class AppController {
   loadToDraft(id) {
     this.draftService.loadToDraft(id);
     this.ui.updateDraftPreview();
+    this.render();
   }
 
   archiveDraft() {
@@ -137,12 +174,14 @@ export class AppController {
     const cleared = await this.draftService.clearDraft();
     if (cleared) {
       this.ui.updateDraftPreview();
+      this.render();
     }
   }
 
   async newDraft() {
     await this.draftService.newDraft();
     this.ui.updateDraftPreview();
+    this.render();
   }
 
   onDraftInput() {
@@ -238,6 +277,9 @@ export class AppController {
 
   async applyRecycleRetentionPolicy({ showToast = false } = {}) {
     const removedCount = await this.recycleService.cleanupExpired(this.getRecycleRetentionDays());
+    const removedItems = this.recycleService.getLastCleanedItems?.() || [];
+    const removedAttachmentIds = removedItems.flatMap(getRecycleEntryAttachmentIds);
+    await this.cleanupUnreferencedRecordings(removedAttachmentIds);
     this.updateRecycleRetentionUI();
 
     if (removedCount > 0) {
@@ -331,10 +373,12 @@ export class AppController {
     if (!confirmResult.ok) return;
 
     try {
+      this.stopDraftAttachmentPlayback();
       await clearPersistentData();
 
       this.items = [];
       this.currentLoadedItemId = null;
+      this.currentDraftAttachments = [];
       this.recycleService.deletedItems = [];
 
       this.dom.setDraftValue("");
@@ -386,6 +430,354 @@ export class AppController {
     this.importExportService.importAll();
   }
 
+  async cleanupUnreferencedRecordings(ids) {
+    await deleteUnreferencedRecordings(ids, [
+      this.items,
+      this.recycleService.getRecycleItems(),
+      this.currentDraftAttachments,
+    ]);
+  }
+
+  getRecordingRecycleSourceLabel(entry) {
+    if (!isRecordingRecycleEntry(entry)) return "";
+    if (!entry.sourceItemId) return entry.sourceItemTitle || "草稿";
+    const item = this.items.find((x) => x.id === entry.sourceItemId);
+    return item ? resolveItemTitle(item) : "条目已删除";
+  }
+
+  async startRecording() {
+    return this.recordingService.start();
+  }
+
+  pauseRecording() {
+    return this.recordingService.pause();
+  }
+
+  resumeRecording() {
+    return this.recordingService.resume();
+  }
+
+  async stopRecording() {
+    const attachment = await this.recordingService.stop();
+    if (!attachment) return null;
+    this.currentDraftAttachments = normalizeAttachments([
+      ...this.currentDraftAttachments,
+      attachment,
+    ]);
+    await saveDraftAttachments(this.currentDraftAttachments);
+    return attachment;
+  }
+
+  stopDraftAttachmentPlayback(id = null, { render = false } = {}) {
+    const playback = this.draftAttachmentPlayback;
+    if (!playback || (id && playback.id !== id)) return;
+
+    playback.audio.pause();
+    playback.audio.removeAttribute?.("src");
+    playback.audio.load?.();
+    if (playback.url) {
+      URL.revokeObjectURL(playback.url);
+    }
+
+    this.draftAttachmentPlayback = null;
+    this.playingDraftAttachmentId = null;
+    if (render) this.render();
+  }
+
+  async toggleDraftAttachmentPlayback(id) {
+    const playback = this.draftAttachmentPlayback;
+
+    if (playback?.id === id) {
+      if (playback.audio.paused) {
+        try {
+          await playback.audio.play();
+          this.playingDraftAttachmentId = id;
+        } catch (error) {
+          console.error("播放录音失败", error);
+          this.stopDraftAttachmentPlayback(id);
+          this.ui.showToast("播放录音失败");
+        }
+      } else {
+        playback.audio.pause();
+        this.playingDraftAttachmentId = null;
+      }
+      this.render();
+      return;
+    }
+
+    this.stopDraftAttachmentPlayback();
+
+    try {
+      const record = await loadRecording(id);
+      if (!record?.blob) {
+        this.ui.showToast("录音文件不存在");
+        return;
+      }
+
+      const url = URL.createObjectURL(record.blob);
+      const audio = new Audio(url);
+      this.draftAttachmentPlayback = { id, audio, url };
+
+      audio.onended = () => {
+        this.stopDraftAttachmentPlayback(id, { render: true });
+      };
+      audio.onerror = () => {
+        this.stopDraftAttachmentPlayback(id, { render: true });
+        this.ui.showToast("播放录音失败");
+      };
+
+      await audio.play();
+      this.playingDraftAttachmentId = id;
+      this.render();
+    } catch (error) {
+      console.error("播放录音失败", error);
+      this.stopDraftAttachmentPlayback(id);
+      this.ui.showToast("播放录音失败");
+    }
+  }
+
+  async renameDraftAttachment(id, name) {
+    const nextName = String(name || "").trim() || "录音";
+    let changed = false;
+
+    this.currentDraftAttachments = normalizeAttachments(
+      this.currentDraftAttachments.map((attachment) => {
+        if (attachment.id !== id || attachment.name === nextName) {
+          return attachment;
+        }
+        changed = true;
+        return { ...attachment, name: nextName };
+      })
+    );
+
+    if (!changed) {
+      this.render();
+      return;
+    }
+
+    await saveDraftAttachments(this.currentDraftAttachments);
+    this.render();
+  }
+
+  async exportDraftAttachment(id) {
+    const attachment = this.currentDraftAttachments.find((item) => item.id === id);
+    if (!attachment) {
+      this.ui.showToast("录音附件不存在");
+      return;
+    }
+
+    try {
+      const record = await loadRecording(id);
+      if (!record?.blob) {
+        this.ui.showToast("录音文件不存在");
+        return;
+      }
+
+      const blob =
+        record.blob.type || !record.mimeType
+          ? record.blob
+          : new Blob([record.blob], { type: record.mimeType });
+      downloadBlobFile(blob, getRecordingExportFilename(attachment));
+      this.ui.showToast("已导出录音");
+    } catch (error) {
+      console.error("导出录音失败", error);
+      this.ui.showToast("导出录音失败");
+    }
+  }
+
+  transcribeDraftAttachment() {
+    this.ui.showToast("转录功能待接入");
+  }
+
+  getRecordingElapsedMs() {
+    const state = this.recordingUi;
+    if (!state.active) return 0;
+    const pausedDuration = state.paused && state.pausedAt ? Date.now() - state.pausedAt : 0;
+    return Math.max(0, Date.now() - state.startedAt - state.pausedMs - pausedDuration);
+  }
+
+  updateRecordingPanel() {
+    this.dom.setRecordingPanelState({
+      state: this.recordingUi.paused ? "paused" : "recording",
+      timer: formatRecordingTimer(this.getRecordingElapsedMs()),
+      stopping: this.recordingUi.stopping,
+    });
+  }
+
+  startRecordingTimer() {
+    this.stopRecordingTimer();
+    this.updateRecordingPanel();
+    this.recordingUi.timerId = setInterval(() => {
+      this.updateRecordingPanel();
+    }, 500);
+  }
+
+  stopRecordingTimer() {
+    if (this.recordingUi.timerId) {
+      clearInterval(this.recordingUi.timerId);
+      this.recordingUi.timerId = null;
+    }
+  }
+
+  resetRecordingUi() {
+    this.stopRecordingTimer();
+    this.recordingUi = {
+      active: false,
+      paused: false,
+      stopping: false,
+      startedAt: 0,
+      pausedAt: 0,
+      pausedMs: 0,
+      timerId: null,
+    };
+    this.recordingDrag = null;
+    this.dom.setRecordingPanelVisible(false);
+    this.dom.setRecordingLauncherDisabled(false);
+    this.dom.setRecordingPanelState({ state: "recording", timer: "00:00", stopping: false });
+  }
+
+  async beginDraftRecording() {
+    if (this.recordingUi.active) return { ok: false, message: "录音已在进行中" };
+
+    this.dom.setRecordingLauncherDisabled(true);
+
+    try {
+      const result = await this.startRecording();
+      if (!result?.ok) {
+        this.dom.setRecordingLauncherDisabled(false);
+        this.ui.showToast(result?.message || "录音启动失败");
+        return result;
+      }
+
+      this.recordingUi = {
+        active: true,
+        paused: false,
+        stopping: false,
+        startedAt: Date.now(),
+        pausedAt: 0,
+        pausedMs: 0,
+        timerId: null,
+      };
+      this.dom.setRecordingPanelVisible(true);
+      this.startRecordingTimer();
+      return result;
+    } catch (error) {
+      console.error("录音启动失败", error);
+      this.resetRecordingUi();
+      this.ui.showToast("录音启动失败");
+      return { ok: false, message: "录音启动失败" };
+    }
+  }
+
+  toggleDraftRecordingPause() {
+    if (!this.recordingUi.active || this.recordingUi.stopping) return false;
+
+    if (this.recordingUi.paused) {
+      const resumed = this.resumeRecording();
+      if (!resumed) return false;
+      if (this.recordingUi.pausedAt) {
+        this.recordingUi.pausedMs += Date.now() - this.recordingUi.pausedAt;
+      }
+      this.recordingUi.paused = false;
+      this.recordingUi.pausedAt = 0;
+    } else {
+      const paused = this.pauseRecording();
+      if (!paused) return false;
+      this.recordingUi.paused = true;
+      this.recordingUi.pausedAt = Date.now();
+    }
+
+    this.updateRecordingPanel();
+    return true;
+  }
+
+  async finishDraftRecording() {
+    if (!this.recordingUi.active || this.recordingUi.stopping) return null;
+
+    this.recordingUi.stopping = true;
+    this.updateRecordingPanel();
+    this.stopRecordingTimer();
+
+    try {
+      const attachment = await this.stopRecording();
+      this.resetRecordingUi();
+      this.render();
+
+      if (attachment) {
+        this.ui.showToast("录音已保存到当前草稿");
+      } else {
+        this.ui.showToast("录音未保存");
+      }
+
+      return attachment;
+    } catch (error) {
+      console.error("录音保存失败", error);
+      this.resetRecordingUi();
+      this.render();
+      this.ui.showToast("录音保存失败");
+      return null;
+    }
+  }
+
+  startRecordingPanelDrag(event) {
+    if (!this.recordingUi.active || event.button !== 0) return;
+
+    const rect = this.dom.recordingFloatingPanel.getBoundingClientRect();
+    this.recordingDrag = {
+      pointerId: event.pointerId,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+    };
+    this.dom.recordingDragHandle.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  }
+
+  dragRecordingPanel(event) {
+    if (!this.recordingDrag || event.pointerId !== this.recordingDrag.pointerId) return;
+
+    this.dom.setRecordingPanelPosition(
+      event.clientX - this.recordingDrag.offsetX,
+      event.clientY - this.recordingDrag.offsetY
+    );
+  }
+
+  endRecordingPanelDrag(event) {
+    if (!this.recordingDrag || event.pointerId !== this.recordingDrag.pointerId) return;
+
+    this.dom.recordingDragHandle.releasePointerCapture?.(event.pointerId);
+    this.recordingDrag = null;
+  }
+
+  async cancelRecording() {
+    return this.recordingService.cancel();
+  }
+
+  async deleteDraftAttachment(id) {
+    this.stopDraftAttachmentPlayback(id);
+    const removedAttachment = this.currentDraftAttachments.find(
+      (attachment) => attachment.id === id
+    );
+    if (!removedAttachment) return;
+
+    const sourceItem = this.currentLoadedItemId
+      ? this.items.find((item) => item.id === this.currentLoadedItemId)
+      : null;
+    await this.recycleService.addRecordingToRecycle({
+      attachment: removedAttachment,
+      sourceItemId: sourceItem?.id || "",
+      sourceItemTitle: sourceItem ? resolveItemTitle(sourceItem) : "草稿",
+      sourceDraftContent: this.dom.getDraftValue(),
+    });
+
+    this.currentDraftAttachments = this.currentDraftAttachments.filter(
+      (attachment) => attachment.id !== id
+    );
+    await saveDraftAttachments(this.currentDraftAttachments);
+    this.render();
+    this.recycleListView.render(this.recycleService.getRecycleItems());
+    this.ui.showToast("录音已移入回收站");
+  }
+
   setDraftMode(mode) {
     const nextMode = persistDraftMode(mode);
     this.draftMode = nextMode;
@@ -408,6 +800,14 @@ export class AppController {
 
   setTagFilter(tag) {
     this.dom.setActiveTagFilter(tag);
+    this.render();
+  }
+
+  clearArchiveFilters() {
+    this.dom.setSearchValue("");
+    this.dom.setFavoriteFilterEnabled(false);
+    this.dom.setActiveTagFilter("");
+    this.dom.setArchiveFilterMenuOpen(false);
     this.render();
   }
 

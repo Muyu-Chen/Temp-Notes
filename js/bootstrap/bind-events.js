@@ -56,6 +56,30 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.setDraftMode("preview");
   });
 
+  domManager.btnRecordDraft.addEventListener("click", () => {
+    appController.beginDraftRecording();
+  });
+
+  domManager.btnRecordingPause.addEventListener("click", () => {
+    appController.toggleDraftRecordingPause();
+  });
+
+  domManager.btnRecordingStop.addEventListener("click", () => {
+    appController.finishDraftRecording();
+  });
+
+  domManager.recordingDragHandle.addEventListener("pointerdown", (e) => {
+    appController.startRecordingPanelDrag(e);
+  });
+
+  document.addEventListener("pointermove", (e) => {
+    appController.dragRecordingPanel(e);
+  });
+
+  document.addEventListener("pointerup", (e) => {
+    appController.endRecordingPanelDrag(e);
+  });
+
   domManager.draftPreview.addEventListener("click", (e) => {
     appController.onDraftPreviewClick(e);
   });
@@ -183,6 +207,30 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
 
   uiController.onTagFilterClick = (tag) => {
     appController.setTagFilter(tag);
+  };
+
+  uiController.onDraftAttachmentDelete = (id) => {
+    appController.deleteDraftAttachment(id);
+  };
+
+  uiController.onDraftAttachmentPlay = (id) => {
+    appController.toggleDraftAttachmentPlayback(id);
+  };
+
+  uiController.onDraftAttachmentRename = (id, name) => {
+    appController.renameDraftAttachment(id, name);
+  };
+
+  uiController.onDraftAttachmentExport = (id) => {
+    appController.exportDraftAttachment(id);
+  };
+
+  uiController.onDraftAttachmentTranscribe = (id) => {
+    appController.transcribeDraftAttachment(id);
+  };
+
+  uiController.onArchiveFiltersClear = () => {
+    appController.clearArchiveFilters();
   };
 
   document.addEventListener("keydown", (e) => {
