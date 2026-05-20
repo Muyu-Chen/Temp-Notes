@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   itemHasTag,
   normalizeItem,
+  normalizeItemTags,
   normalizeTags,
   sortItemsForDisplay,
   toStoredItem,
@@ -21,6 +22,7 @@ describe("item metadata utilities", () => {
       pinnedAt: undefined,
       favorite: false,
       tags: [],
+      attachments: [],
     });
 
     expect(
@@ -31,13 +33,35 @@ describe("item metadata utilities", () => {
         pinnedAt: 9,
         favorite: true,
         tags: "A, b",
+        attachments: [{ id: "rec", type: "audio", mimeType: "audio/webm", createdAt: 4 }],
       })
     ).toMatchObject({
       pinned: true,
       pinnedAt: 9,
       favorite: true,
-      tags: ["A", "b"],
+      tags: ["A", "b", "录音"],
+      attachments: [
+        {
+          id: "rec",
+          type: "audio",
+          name: "录音",
+          mimeType: "audio/webm",
+          ext: "webm",
+          size: 0,
+          durationMs: 0,
+          createdAt: 4,
+        },
+      ],
     });
+  });
+
+  it("adds the recording tag for audio attachments without duplicating it", () => {
+    const attachments = [{ id: "rec", type: "audio", mimeType: "audio/webm", createdAt: 4 }];
+
+    expect(normalizeItemTags(["work"], attachments)).toEqual(["work", "录音"]);
+    expect(normalizeItemTags(["录音"], attachments)).toEqual(["录音"]);
+    expect(normalizeItemTags(["work"], [])).toEqual(["work"]);
+    expect(itemHasTag({ tags: [], attachments }, "录音")).toBe(true);
   });
 
   it("sorts pinned entries first without letting favorites affect order", () => {
@@ -60,6 +84,21 @@ describe("item metadata utilities", () => {
       pinned: true,
       favorite: true,
       tags: ["Work"],
+      attachments: [],
+    });
+  });
+
+  it("stores the recording tag for audio entries", () => {
+    expect(
+      toStoredItem({
+        id: "audio",
+        content: "",
+        attachments: [{ id: "rec", type: "audio", mimeType: "audio/webm", createdAt: 4 }],
+        tags: [],
+      })
+    ).toMatchObject({
+      tags: ["录音"],
+      attachments: [{ id: "rec" }],
     });
   });
 });

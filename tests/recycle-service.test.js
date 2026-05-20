@@ -46,6 +46,30 @@ describe("RecycleService", () => {
     expect(mocks.saveRecycleItems).toHaveBeenCalledWith(service.deletedItems);
   });
 
+  it("prepends deleted recording entries and persists recycle state", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(6000);
+    const service = new RecycleService();
+
+    await service.addRecordingToRecycle({
+      attachment: { id: "rec-1", type: "audio", mimeType: "audio/webm", createdAt: 10 },
+      sourceItemId: "item-1",
+      sourceItemTitle: "Meeting",
+      sourceDraftContent: "draft body",
+    });
+
+    expect(service.getRecycleItems()[0]).toMatchObject({
+      id: "recording-rec-1-6000",
+      recycleType: "recording",
+      attachment: { id: "rec-1", name: "录音" },
+      sourceItemId: "item-1",
+      sourceItemTitle: "Meeting",
+      sourceDraftContent: "draft body",
+      deletedAt: 6000,
+    });
+    expect(mocks.saveRecycleItems).toHaveBeenCalledWith(service.deletedItems);
+  });
+
   it("deletes valid recycle items and ignores invalid indexes", async () => {
     const service = new RecycleService();
     service.deletedItems = [{ id: "a" }, { id: "b" }];

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatExportTimestamp,
+  getRecordingExportFilename,
   getTextExportPayload,
   sanitizeFilePart,
 } from "../js/lib/download-utils.js";
@@ -49,5 +50,16 @@ describe("download utilities", () => {
 
   it("returns null for unsupported formats", () => {
     expect(getTextExportPayload({ id: "item-1", content: "hello" }, "pdf")).toBeNull();
+  });
+
+  it("builds audio export filenames from attachment metadata", () => {
+    const timestamp = new Date(2026, 4, 16, 9, 8, 7).getTime();
+
+    expect(
+      getRecordingExportFilename(
+        { id: "rec-1", name: "Meeting / audio", ext: "webm" },
+        timestamp
+      )
+    ).toBe("tempnotes-audio-Meeting audio-20260516-090807.webm");
   });
 });

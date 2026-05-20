@@ -72,6 +72,7 @@ describe("import/export storage helpers", () => {
         pinnedAt: undefined,
         favorite: false,
         tags: [],
+        attachments: [],
       },
     ]);
   });
@@ -134,6 +135,44 @@ describe("import/export storage helpers", () => {
       favorite: true,
       tags: ["Work", "想法"],
     });
+  });
+
+  it("preserves audio attachment metadata and keeps attachment-only entries", () => {
+    const result = normalizeImportedData({
+      items: [
+        {
+          id: "audio-only",
+          content: "",
+          attachments: [
+            {
+              id: "recording-1",
+              type: "audio",
+              name: "Meeting",
+              mimeType: "audio/webm",
+              ext: "webm",
+              size: 12,
+              durationMs: 345,
+              createdAt: 99,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].tags).toEqual(["录音"]);
+    expect(result.items[0].attachments).toEqual([
+      {
+        id: "recording-1",
+        type: "audio",
+        name: "Meeting",
+        mimeType: "audio/webm",
+        ext: "webm",
+        size: 12,
+        durationMs: 345,
+        createdAt: 99,
+      },
+    ]);
   });
 
   it("builds stable item signatures and export envelopes", () => {

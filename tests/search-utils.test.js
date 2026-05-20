@@ -63,6 +63,17 @@ describe("search utils", () => {
     expect(getItemSearchFields(item)).toContain("Work");
   });
 
+  it("searches the automatic recording tag for audio entries", () => {
+    const item = {
+      id: "audio",
+      content: "",
+      attachments: [{ id: "rec", type: "audio", mimeType: "audio/webm", createdAt: 4 }],
+    };
+
+    expect(itemMatchesSearch(item, "录音")).toBe(true);
+    expect(getItemSearchFields(item)).toContain("录音");
+  });
+
   it("filters item lists without cloning the original entries", () => {
     const first = { id: "a", title: "Daily", content: "breakfast" };
     const second = { id: "b", title: "Work", content: "meeting" };
