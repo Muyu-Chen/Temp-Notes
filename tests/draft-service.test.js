@@ -190,6 +190,7 @@ describe("DraftService saved draft behavior", () => {
     expect(app.items[0]).toMatchObject({
       id: "new-item",
       content: "fresh draft",
+      tags: ["录音"],
       attachments: [
         {
           id: "rec-1",
@@ -249,6 +250,7 @@ describe("DraftService saved draft behavior", () => {
     expect(app.items[0]).toMatchObject({
       id: "item-1",
       content: "changed",
+      tags: ["录音"],
       attachments: [
         {
           id: "rec-new",
@@ -281,6 +283,7 @@ describe("DraftService saved draft behavior", () => {
     expect(app.items[0]).toMatchObject({
       id: "new-item",
       content: "",
+      tags: ["录音"],
       attachments: [{ id: "rec-only" }],
     });
     expect(mocks.saveItem).toHaveBeenCalledWith(app.items[0]);

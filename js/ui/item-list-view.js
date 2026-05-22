@@ -13,6 +13,9 @@ export const getItemMenuActions = (item) =>
     ? ["decrypt", "editTags", "generateTags"]
     : ["exportTxt", "exportMd", "editTags", "generateTags", "encrypt"];
 
+export const getVisibleItemCardTags = (item) =>
+  item?.encrypted === true ? [] : normalizeItemTags(item?.tags, item?.attachments);
+
 export class ItemListView {
   constructor(domManager, handlers) {
     this.dom = domManager;
@@ -163,7 +166,7 @@ export class ItemListView {
 
     const tagList = document.createElement("div");
     tagList.className = "item-tags";
-    const tags = isEncrypted ? [] : normalizeItemTags(item.tags, item.attachments);
+    const tags = getVisibleItemCardTags(item);
     tagList.title = tags.length > 0 ? tags.map((tag) => `#${tag}`).join(" ") : "";
     const visibleTags = tags.slice(0, 3);
     visibleTags.forEach((tag) => {

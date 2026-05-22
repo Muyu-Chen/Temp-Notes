@@ -61,6 +61,8 @@ describe("item metadata utilities", () => {
     expect(normalizeItemTags(["work"], attachments)).toEqual(["work", "录音"]);
     expect(normalizeItemTags(["录音"], attachments)).toEqual(["录音"]);
     expect(normalizeItemTags(["work"], [])).toEqual(["work"]);
+    expect(normalizeItemTags(["录音"], [])).toEqual(["录音"]);
+    expect(normalizeItemTags([], [])).toEqual([]);
     expect(itemHasTag({ tags: [], attachments }, "录音")).toBe(true);
   });
 

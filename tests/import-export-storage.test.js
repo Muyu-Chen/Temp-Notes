@@ -209,6 +209,32 @@ describe("import/export storage helpers", () => {
     ]);
   });
 
+  it("normalizes recording tags for imported recycle items with audio attachments", () => {
+    const result = normalizeImportedData({
+      recycle: [
+        {
+          id: "deleted-audio",
+          content: "old audio",
+          deletedAt: 30,
+          attachments: [
+            {
+              id: "recording-1",
+              type: "audio",
+              mimeType: "audio/webm",
+              createdAt: 99,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.recycle[0]).toMatchObject({
+      id: "deleted-audio",
+      tags: ["录音"],
+      attachments: [expect.objectContaining({ id: "recording-1" })],
+    });
+  });
+
   it("builds stable item signatures and export envelopes", () => {
     const items = [{ id: "a", content: "hello", createdAt: 1, updatedAt: 2 }];
     const exported = exportData("draft", items, {

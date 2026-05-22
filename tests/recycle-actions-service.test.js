@@ -88,6 +88,7 @@ describe("RecycleActionsService recording cleanup", () => {
     expect(app.items[0].attachments).toEqual([
       expect.objectContaining({ id: "rec-1", name: "录音" }),
     ]);
+    expect(app.items[0].tags).toEqual(["录音"]);
     expect(mocks.saveItem).toHaveBeenCalledWith(app.items[0]);
     expect(app.ui.showToast).toHaveBeenCalledWith("录音已恢复到原条目");
   });
@@ -123,6 +124,7 @@ describe("RecycleActionsService recording cleanup", () => {
     expect(app.items[0]).toMatchObject({
       id: "item-1",
       content: "Meeting",
+      tags: ["录音"],
       attachments: [expect.objectContaining({ id: "rec-1" })],
     });
     expect(app.ui.showToast).toHaveBeenCalledWith("条目和录音已恢复");

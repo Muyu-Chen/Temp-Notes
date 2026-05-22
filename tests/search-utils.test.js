@@ -74,6 +74,19 @@ describe("search utils", () => {
     expect(getItemSearchFields(item)).toContain("录音");
   });
 
+  it("searches the recording tag even when the audio entry is encrypted", () => {
+    const item = {
+      id: "secret-audio",
+      encrypted: true,
+      encryptedTitle: "Private audio",
+      content: "encrypted body",
+      attachments: [{ id: "rec", type: "audio", mimeType: "audio/webm", createdAt: 4 }],
+    };
+
+    expect(itemMatchesSearch(item, "录音")).toBe(true);
+    expect(itemMatchesSearch(item, "encrypted body")).toBe(false);
+  });
+
   it("filters item lists without cloning the original entries", () => {
     const first = { id: "a", title: "Daily", content: "breakfast" };
     const second = { id: "b", title: "Work", content: "meeting" };
