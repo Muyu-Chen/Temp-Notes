@@ -2,3 +2,5 @@ rebuild.md
 node_modules/
 dist/
 .DS_Store
+review.md
+temp_*.*

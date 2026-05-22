@@ -24,10 +24,13 @@ export {
   deleteUnreferencedRecordings,
 } from "./storage/recording-storage.js";
 export {
+  collectAttachmentMetadata,
   exportData,
   normalizeImportedData,
   itemSignature,
+  mergeRecycleItems,
   mergeItems,
+  pruneMissingRecordingReferences,
 } from "./storage/import-export-storage.js";
 export { loadRecycleItems, saveRecycleItems } from "./storage/recycle-storage.js";
 export { loadTheme, saveTheme } from "./services/theme-manager.js";

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>临时笔记（第二桌面）</title>
     <script src="./js/crypto-js.min.js"></script>
+    <script src="./js/vendor/jszip.min.js"></script>
     <script src="./js/vendor/purify.min.js"></script>
     <script src="./js/vendor/marked.min.js"></script>
     <script>
@@ -255,13 +256,13 @@
               <div class="import-export-grid">
                 <button class="import-export-btn" id="exportBtn">
                   <div class="btn-icon">📥</div>
-                  <div class="btn-title">导出为 JSON</div>
-                  <div class="btn-desc">将所有数据导出为 JSON 文件</div>
+                  <div class="btn-title">导出为 ZIP</div>
+                  <div class="btn-desc">包含 notes.json 和录音文件</div>
                 </button>
                 <button class="import-export-btn" id="importBtn">
                   <div class="btn-icon">📤</div>
-                  <div class="btn-title">从 JSON 导入</div>
-                  <div class="btn-desc">从 JSON 文件导入数据</div>
+                  <div class="btn-title">导入 JSON / ZIP</div>
+                  <div class="btn-desc">兼容旧 JSON 与新版 ZIP 备份</div>
                 </button>
               </div>
             </div>
@@ -301,7 +302,7 @@
                 <div class="settings-item settings-item-stack">
                   <div class="settings-label">
                     <span class="label-name">大模型配置</span>
-                    <span class="label-desc">默认关闭；只有启用后主动测试或使用未来 AI 功能时才会请求配置的服务。</span>
+                    <span class="label-desc">默认关闭；只有启用后主动测试或使用 AI 功能时才会请求配置的服务。</span>
                   </div>
 
                   <div class="settings-form">

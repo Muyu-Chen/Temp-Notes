@@ -418,8 +418,8 @@ export class AppController {
     return this.recycleActionsService.clearRecycleBin();
   }
 
-  exportAll() {
-    this.importExportService.exportAll();
+  async exportAll() {
+    await this.importExportService.exportAll();
   }
 
   exportItem(id, format) {

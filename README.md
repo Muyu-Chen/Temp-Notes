@@ -1,17 +1,17 @@
 # Temp Notes - A Default-Offline Private Draft App 📝
 
-这是一个 **默认完全离线** 运行的临时笔记应用，支持快速草稿、条目存档、Markdown 预览、导入导出。所有笔记数据默认仅保存在本地浏览器；只有用户主动启用大模型功能并点击测试连接或使用未来 AI 功能时，才会请求用户自己配置的服务。随手的草稿、临时信息都可以在这里安全地记录和管理，无需打开臃肿的笔记应用。
+这是一个 **默认完全离线** 运行的临时笔记应用，支持快速草稿、条目存档、Markdown 预览、录音附件、ZIP 备份和可选 AI 标签。所有笔记数据默认仅保存在本地浏览器；只有用户主动启用大模型功能并点击测试连接或使用 AI 功能时，才会请求用户自己配置的服务。随手的草稿、临时信息都可以在这里安全地记录和管理，无需打开臃肿的笔记应用。
 
-A **default-offline** temporary note app supporting quick drafts, entry archiving, Markdown preview, and data import/export. Notes stay in your local browser by default; network requests only happen when you explicitly enable LLM features and click the connection test or use future AI actions against your own configured service.
+A **default-offline** temporary note app supporting quick drafts, entry archiving, Markdown preview, recording attachments, ZIP backup, and optional AI tagging. Notes stay in your local browser by default; network requests only happen when you explicitly enable LLM features and click the connection test or use AI actions against your own configured service.
 
 When you need to quickly capture ideas, inspiration, or to-dos, Temp Notes provides a fast and secure environment to record and manage your notes without opening a bloated note app. For temporary text pasting or storing ephemeral information, it's a lightweight tool that opens instantly, helping you efficiently manage temporary information.
 
-> Your notes, your data, always in your control: JSON import/export makes it easy to backup, migrate, or recover your data anytime, anywhere.
+> Your notes, your data, always in your control: ZIP import/export makes it easy to backup, migrate, or recover your text and recordings anytime.
 
 - Repository: [https://github.com/Muyu-Chen/Temp-Notes](https://github.com/Muyu-Chen/Temp-Notes)
 - 中文 README: [Read the Chinese version](https://github.com/Muyu-Chen/Temp-Notes/blob/master/README-CHINESE.md)
 
-> Your notes, your data, always under your control. JSON import/export makes backup, migration, and recovery simple anytime.
+> Your notes, your data, always under your control. ZIP import/export makes backup, migration, and recovery simple anytime.
 
 ## 🌐 Online Demo
 
@@ -39,7 +39,7 @@ You can run it locally after cloning, clone directly on a server, or upload the 
 - Local storage only: notes are stored in LocalStorage/IndexedDB
 - Never uploaded by default: your notes are not sent anywhere unless you explicitly enable and use user-configured LLM features
 - No tracking: no analytics, no cookies, no hidden connections
-- LLM features are disabled by default. The connection test sends `GET {base_url}/models` only after you enable LLM settings and click the test button; `base_url`, `api_key`, and `model` are user-provided and user-stored.
+- LLM features are disabled by default. The connection test sends `GET {base_url}/models` only after you enable LLM settings and click the test button. AI tag generation sends the selected entry text only after you click `AI 生成标签`; `base_url`, `api_key`, and `model` are user-provided and user-stored.
 
 ### Privacy Details
 
@@ -128,8 +128,8 @@ Temp-Notes/
 | `services/encryption-service.js` | Entry encryption/decryption flow | `EncryptionService` |
 | `services/recycle-service.js` | Recycle bin data state | `RecycleService` |
 | `services/recycle-actions-service.js` | Recycle bin restore/delete/clear actions | `RecycleActionsService` |
-| `services/import-export-service.js` | JSON import/export flow | `ImportExportService` |
-| `services/llm-service.js` | Optional LLM configuration test | `LLMService` |
+| `services/import-export-service.js` | JSON/ZIP import/export flow | `ImportExportService` |
+| `services/llm-service.js` | Optional LLM connection and AI tag requests | `LLMService` |
 | `services/settings-service.js` | Font size, LLM settings, data clearing | Settings helpers |
 | `services/theme-manager.js` | Theme load/apply/toggle | Theme helpers |
 | `storage/idb.js` | IndexedDB setup | `getDB`, store constants |
@@ -146,7 +146,7 @@ Temp-Notes/
 | `lib/download-utils.js` | Single-entry text export helpers | File payload and filename helpers |
 | `ui/modal.js` | Modal UI | `Modal` class |
 | `lib/*` | Focused utility helpers | Text/time/bytes/id/platform helpers |
-| `vendor/*` | Local third-party libraries | Marked, DOMPurify |
+| `vendor/*` | Local third-party libraries | JSZip, Marked, DOMPurify |
 | `constants.js` | Stable constants | `STORAGE_KEYS` |
 | `crypto.js` | Encryption primitives | Encrypt/decrypt/verify helpers |
 
@@ -196,10 +196,10 @@ The current suite covers regression behavior for:
 - item operations: title rename fallbacks, encrypted title metadata, delete-to-recycle behavior
 - recycle bin state: load-once init, add, delete, restore, and clear
 - recycle bin auto-clean rules: never/7/30/90-day retention and setting-triggered cleanup
-- import/export helpers: payload normalization, empty item filtering, deduplication, sorting, and export envelope shape
+- import/export helpers: payload normalization, empty item filtering, deduplication, sorting, ZIP wrapper behavior, recording import/export, and export envelope shape
 - single-entry TXT/MD export helpers: filename cleanup, timestamp format, MIME type, and encrypted-menu visibility
 - settings: Markdown mode persistence, recycle retention, and LLM settings persistence
-- LLM connection service: no request when disabled/incomplete, correct OpenAI-compatible `/models` request, success/failure states
+- LLM connection and AI tag service: no request when disabled/incomplete, correct OpenAI-compatible `/models` and `/chat/completions` requests, success/failure states, and local failure logs
 - Markdown rendering: fallback escaping and local `marked` + `DOMPurify` integration
 - text utilities: title resolution, first-line fallback, clamping, and mixed-language word count
 
@@ -235,11 +235,13 @@ User receives feedback
 - 🔍 Full-text search
 - 📊 Real-time word/storage stats
 - 🌓 Dark/light theme switching
-- 💾 Export to JSON
+- 💾 Export full backup to ZIP, including `notes.json` and local recordings
 - 📄 Export a single archived entry as TXT or Markdown
-- 📥 Import from JSON (merge + dedup supported)
+- 📥 Import from legacy JSON or ZIP (merge + dedup supported)
 - 👀 Local Markdown preview with persistent edit/preview mode
 - 🧹 Optional recycle bin auto-cleanup
+- 🏷️ Entry pinning, favorites, tags, tag filtering, and optional AI tag generation
+- 🎙️ Local draft recording attachments with playback, rename, export, recycle, and restore
 - 🔌 Optional OpenAI-compatible LLM connection test
 - ⌨️ Rich keyboard shortcuts
 
@@ -257,7 +259,7 @@ User receives feedback
 - [x] Built recycle bin UI with single delete, bulk clear, and confirmation dialogs.
 - [x] Changed delete flow to move entries into recycle bin first.
 - [x] Implemented recycle bin management with double confirmation for destructive actions.
-- [x] Added JSON import/export with deduplication and format compatibility.
+- [x] Added legacy JSON import/export with deduplication and format compatibility.
 - [x] Implemented a hard break logic: if draft becomes empty, next save must create a new entry ID.
 - [x] Set default encryption password to `password` when input is empty; default-password notes can auto-decrypt.
 - [x] Retained password hint after decryption for quick re-encryption.
@@ -274,6 +276,10 @@ User receives feedback
 - [x] Persist Markdown edit/preview mode across entries and reloads.
 - [x] Add configurable recycle bin auto-cleanup.
 - [x] Add optional OpenAI-compatible LLM settings and connection test.
+- [x] Add entry pinning, favorites, tags, and tag filtering.
+- [x] Add manual AI tag generation through the optional OpenAI-compatible configuration.
+- [x] Add local draft recording attachments with playback, rename, export, recycle, and restore.
+- [x] Upgrade full backup to ZIP with `notes.json` plus recording files, while keeping legacy JSON import.
 
 ### TODO - Planned
 
@@ -281,17 +287,13 @@ User receives feedback
 
 - [ ] Upgrade `Ctrl+K` into a global quick switcher that can search archived entries, recycle bin entries, and the current draft, with keyboard navigation and enter-to-open.
 - [ ] Add batch actions for archived entries, including multi-select delete, batch export, and batch encryption/decryption where safe.
-- [ ] Add entry pinning and favorites so frequently used temporary notes stay at the top without affecting normal update order.
-- [ ] Add lightweight entry tags and tag filters; keep tag data local and include it in JSON import/export.
 - [ ] Add draft version history for recent edits, with simple restore support for accidental overwrites.
 - [ ] Improve first-load performance and add a restrained loading state for large local databases.
 
 #### Recording and Attachments
 
-- [ ] Add local voice recording for drafts using the browser recording API, with start/pause/resume/stop, duration display, and local-only storage by default.
-- [ ] Attach recordings to archived entries, export them through JSON backup, and show attachment size in storage stats.
 - [ ] Add recording playback controls inside entries, including seek, speed, and rename/remove attachment actions.
-- [ ] Add image attachment support with local previews, size warnings, and JSON backup compatibility.
+- [ ] Add image attachment support with local previews, size warnings, and ZIP backup compatibility.
 - [ ] Add an attachment manager that lists large files and helps users clean storage without deleting the whole entry.
 - [ ] Plan optional audio transcription as a future LLM action; transcription must only run after explicit user action and use the user-configured provider.
 
@@ -313,7 +315,7 @@ User receives feedback
 
 #### Optional LLM Features
 
-- [ ] Add AI-assisted draft actions such as summarize, polish, continue writing, extract tasks, and generate tags using the optional LLM configuration.
+- [ ] Add AI-assisted draft actions such as summarize, polish, continue writing, and extract tasks using the optional LLM configuration.
 - [ ] Add per-action confirmation showing which text will be sent before any LLM request.
 - [ ] Add model capability notes in Settings so users understand which configured models are suitable for summarization, rewriting, or transcription.
 - [ ] Keep all LLM features default-off, user-triggered, and routed only through the user-configured OpenAI-compatible provider.

@@ -1,7 +1,7 @@
 {
   "name": "tempnotes",
   "version": "1.2.0",
-  "description": "一个基于 LocalStorage 的临时笔记应用，支持自动保存、条目存档、数据导入导出",
+  "description": "一个默认离线的临时笔记应用，支持自动保存、条目存档、录音附件和 ZIP 备份",
   "type": "module",
   "main": "src/index.html",
   "scripts": {
