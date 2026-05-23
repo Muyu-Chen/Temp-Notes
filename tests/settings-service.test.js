@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STORAGE_KEYS } from "../js/constants.js";
 import {
   clearLLMDebugLog,
+  getColumnLayoutPreference,
   getDraftMode,
+  getLayoutWidthPreference,
   getLLMDebugLog,
   getLLMSettings,
   getRecordingFormatPreference,
@@ -11,7 +13,9 @@ import {
   getRecycleRetentionText,
   saveLLMSettings,
   saveLLMDebugLog,
+  setColumnLayoutPreference,
   setDraftMode,
+  setLayoutWidthPreference,
   setRecordingFormatPreference,
   setRecycleRetentionDays,
 } from "../js/services/settings-service.js";
@@ -73,6 +77,21 @@ describe("settings service", () => {
 
     expect(setRecordingFormatPreference("wav")).toBe("m4a");
     expect(getRecordingFormatPreference()).toBe("m4a");
+  });
+
+  it("persists layout width and column layout preferences", () => {
+    expect(getLayoutWidthPreference()).toBe("standard");
+    expect(getColumnLayoutPreference()).toBe("default");
+
+    expect(setLayoutWidthPreference("wide")).toBe("wide");
+    expect(setColumnLayoutPreference("archive")).toBe("archive");
+    expect(getLayoutWidthPreference()).toBe("wide");
+    expect(getColumnLayoutPreference()).toBe("archive");
+
+    expect(setLayoutWidthPreference("tiny")).toBe("standard");
+    expect(setColumnLayoutPreference("sideways")).toBe("default");
+    expect(getLayoutWidthPreference()).toBe("standard");
+    expect(getColumnLayoutPreference()).toBe("default");
   });
 
   it("persists LLM settings with disabled as the default", () => {
