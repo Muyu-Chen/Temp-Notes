@@ -8,8 +8,11 @@ import { AppController } from "../app-controller.js";
 import { initializeFirstRun } from "./first-run.js";
 import { bindAppEvents } from "./bind-events.js";
 import { applyTheme, loadTheme } from "../services/theme-manager.js";
+import { loadHtmlPartial } from "./load-partials.js";
 
 export const bootstrapApp = async () => {
+  await loadHtmlPartial("#settingsPanelMount");
+
   const domManager = new DOMManager();
   const uiController = new UIController(domManager);
   const appController = new AppController(uiController, domManager);
