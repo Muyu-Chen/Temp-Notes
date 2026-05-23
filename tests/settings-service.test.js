@@ -6,11 +6,13 @@ import {
   getDraftMode,
   getLLMDebugLog,
   getLLMSettings,
+  getRecordingFormatPreference,
   getRecycleRetentionDays,
   getRecycleRetentionText,
   saveLLMSettings,
   saveLLMDebugLog,
   setDraftMode,
+  setRecordingFormatPreference,
   setRecycleRetentionDays,
 } from "../js/services/settings-service.js";
 
@@ -58,6 +60,19 @@ describe("settings service", () => {
 
     expect(setRecycleRetentionDays("14")).toBeNull();
     expect(getRecycleRetentionDays()).toBe(30);
+  });
+
+  it("persists recording format preference with m4a as the default", () => {
+    expect(getRecordingFormatPreference()).toBe("m4a");
+
+    expect(setRecordingFormatPreference("webm")).toBe("webm");
+    expect(getRecordingFormatPreference()).toBe("webm");
+
+    expect(setRecordingFormatPreference("mp3")).toBe("mp3");
+    expect(getRecordingFormatPreference()).toBe("mp3");
+
+    expect(setRecordingFormatPreference("wav")).toBe("m4a");
+    expect(getRecordingFormatPreference()).toBe("m4a");
   });
 
   it("persists LLM settings with disabled as the default", () => {

@@ -13,6 +13,7 @@ import {
 
 const FONT_SIZE_KEY = "font_size";
 const VALID_DRAFT_MODES = new Set(["edit", "preview"]);
+const VALID_RECORDING_FORMATS = new Set(["m4a", "mp3", "webm"]);
 export const RECYCLE_RETENTION_OPTIONS = [0, 7, 30, 90];
 
 export const getFontSize = () => {
@@ -89,6 +90,25 @@ export const setRecycleRetentionDays = (days) => {
 export const getRecycleRetentionText = (days) =>
   Number(days) > 0 ? `超过 ${days} 天自动清理` : "自动清理：永不";
 
+export const getRecordingFormatPreference = () => {
+  try {
+    const format = localStorage.getItem(STORAGE_KEYS.RECORDING_FORMAT);
+    return VALID_RECORDING_FORMATS.has(format) ? format : "m4a";
+  } catch {
+    return "m4a";
+  }
+};
+
+export const setRecordingFormatPreference = (format) => {
+  const nextFormat = VALID_RECORDING_FORMATS.has(format) ? format : "m4a";
+  try {
+    localStorage.setItem(STORAGE_KEYS.RECORDING_FORMAT, nextFormat);
+  } catch (err) {
+    console.error("Failed to save recording format:", err);
+  }
+  return nextFormat;
+};
+
 export const getLLMSettings = () => {
   try {
     const enabled = localStorage.getItem(STORAGE_KEYS.LLM_ENABLED) === "true";
@@ -148,6 +168,7 @@ export const clearPersistentData = async () => {
     STORAGE_KEYS.LLM_API_KEY,
     STORAGE_KEYS.LLM_MODEL,
     STORAGE_KEYS.LLM_DEBUG_LOG,
+    STORAGE_KEYS.RECORDING_FORMAT,
     "draft",
     STORAGE_KEYS.THEME,
     STORAGE_KEYS.FIRST_OPEN,
