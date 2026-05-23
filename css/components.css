@@ -672,44 +672,12 @@ textarea {
   overflow: visible;
 }
 
-.archive-panel-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: stretch;
-  gap: 9px;
-}
-
-.archive-summary {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  min-width: 0;
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.3;
-}
-
-.archive-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.archive-search-area {
-  width: 100%;
-  min-width: 0;
-}
-
 .archive-search-tools {
   position: relative;
   width: 100%;
-  min-width: 0;
 }
 
 .archive-search-tools .search {
-  min-width: 0;
   padding-right: 42px;
 }
 
