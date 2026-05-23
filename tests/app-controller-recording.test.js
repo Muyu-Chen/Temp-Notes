@@ -43,8 +43,14 @@ const createRecordingController = ({
     timerId: null,
   };
   controller.recordingDrag = null;
+  controller.attachmentPlayerDrag = null;
   controller.draftAttachmentPlayback = null;
   controller.playingDraftAttachmentId = null;
+  controller.expandedDraftAttachmentId = null;
+  controller.draftAttachmentPlaybackRate = 1;
+  controller.draftAttachmentPlaybackProgress = { id: null, currentTime: 0, duration: 0 };
+  controller.draftAttachmentPlaybackFrame = null;
+  controller.draftAttachmentWaveforms = new Map();
   controller.currentDraftAttachments = [];
   controller.currentLoadedItemId = null;
   controller.items = [];
@@ -61,6 +67,7 @@ const createRecordingController = ({
     setRecordingPanelVisible: vi.fn(),
     setRecordingPanelState: vi.fn(),
     setRecordingPanelPosition: vi.fn(),
+    setAttachmentPlayerPosition: vi.fn(),
     recordingFloatingPanel: {
       getBoundingClientRect: () => ({ left: 20, top: 30, width: 220, height: 100 }),
     },
@@ -68,9 +75,20 @@ const createRecordingController = ({
       setPointerCapture: vi.fn(),
       releasePointerCapture: vi.fn(),
     },
+    attachmentPlayerPanel: {
+      hidden: false,
+      contains: vi.fn((target) => target?.insideAttachmentPlayer === true),
+      focus: vi.fn(),
+      getBoundingClientRect: () => ({ left: 35, top: 45, width: 300, height: 180 }),
+    },
+    attachmentPlayerDragHandle: {
+      setPointerCapture: vi.fn(),
+      releasePointerCapture: vi.fn(),
+    },
   };
   controller.ui = {
     showToast: vi.fn(),
+    renderDraftAttachmentPlayer: vi.fn(),
   };
   controller.startRecording = vi.fn(() => Promise.resolve(startResult));
   controller.pauseRecording = vi.fn(() => pauseResult);
@@ -207,6 +225,44 @@ describe("AppController recording UI flow", () => {
     expect(controller.recordingDrag).toBeNull();
   });
 
+  it("drags the expanded attachment player with the same floating-panel behavior", () => {
+    const controller = createRecordingController();
+    const startEvent = {
+      button: 0,
+      pointerId: 11,
+      clientX: 75,
+      clientY: 100,
+      preventDefault: vi.fn(),
+    };
+
+    controller.startAttachmentPlayerDrag(startEvent);
+    controller.dragAttachmentPlayer({ pointerId: 11, clientX: 260, clientY: 280 });
+    controller.endAttachmentPlayerDrag({ pointerId: 11 });
+
+    expect(controller.dom.attachmentPlayerDragHandle.setPointerCapture).toHaveBeenCalledWith(11);
+    expect(controller.dom.setAttachmentPlayerPosition).toHaveBeenCalledWith(220, 225);
+    expect(controller.dom.attachmentPlayerDragHandle.releasePointerCapture).toHaveBeenCalledWith(11);
+    expect(controller.attachmentPlayerDrag).toBeNull();
+  });
+
+  it("does not start dragging the attachment player from inner controls", () => {
+    const controller = createRecordingController();
+    const startEvent = {
+      button: 0,
+      pointerId: 12,
+      clientX: 75,
+      clientY: 100,
+      target: { closest: vi.fn(() => true) },
+      preventDefault: vi.fn(),
+    };
+
+    controller.startAttachmentPlayerDrag(startEvent);
+
+    expect(controller.attachmentPlayerDrag).toBeNull();
+    expect(controller.dom.attachmentPlayerDragHandle.setPointerCapture).not.toHaveBeenCalled();
+    expect(startEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
   it("renames a draft recording attachment and persists metadata", async () => {
     const controller = createRecordingController();
     controller.currentDraftAttachments = [
@@ -321,10 +377,75 @@ describe("AppController recording UI flow", () => {
 
     expect(mocks.loadRecording).toHaveBeenCalledWith("rec-1");
     expect(mocks.getRecordingExportFilename).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "rec-1", name: "Meeting" })
+      expect.objectContaining({ id: "rec-1", name: "Meeting" }),
+      expect.any(Number),
+      expect.objectContaining({ preferredFormat: "m4a" })
     );
     expect(mocks.downloadBlobFile).toHaveBeenCalledWith(blob, "recording.webm");
-    expect(controller.ui.showToast).toHaveBeenCalledWith("已导出录音");
+    expect(controller.ui.showToast).toHaveBeenCalledWith("已按原格式导出录音");
+  });
+
+  it("opens the expanded draft recording player and cycles playback speed", async () => {
+    const controller = createRecordingController();
+    controller.currentDraftAttachments = [
+      { id: "rec-1", type: "audio", name: "Meeting", mimeType: "audio/webm", durationMs: 2000 },
+    ];
+    controller.draftAttachmentWaveforms.set("rec-1", [0.2, 1]);
+
+    await controller.expandDraftAttachment("rec-1");
+
+    expect(controller.expandedDraftAttachmentId).toBe("rec-1");
+    expect(controller.ui.renderDraftAttachmentPlayer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "rec-1" }),
+      expect.objectContaining({ waveform: [0.2, 1] })
+    );
+
+    controller.draftAttachmentPlayback = {
+      id: "rec-1",
+      audio: { playbackRate: 1, paused: true },
+      url: "blob:rec-1",
+    };
+    controller.cycleDraftAttachmentPlaybackRate();
+
+    expect(controller.draftAttachmentPlaybackRate).toBe(1.25);
+    expect(controller.draftAttachmentPlayback.audio.playbackRate).toBe(1.25);
+  });
+
+  it("toggles attachment playback with Space when focus is inside the player", () => {
+    const controller = createRecordingController();
+    controller.expandedDraftAttachmentId = "rec-1";
+    controller.toggleDraftAttachmentPlayback = vi.fn();
+    const event = {
+      key: " ",
+      code: "Space",
+      target: { insideAttachmentPlayer: true },
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    };
+
+    controller.onAttachmentPlayerKeyDown(event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(controller.toggleDraftAttachmentPlayback).toHaveBeenCalledWith("rec-1");
+  });
+
+  it("ignores Space playback shortcuts when focus is outside the player", () => {
+    const controller = createRecordingController();
+    controller.expandedDraftAttachmentId = "rec-1";
+    controller.toggleDraftAttachmentPlayback = vi.fn();
+    const event = {
+      key: " ",
+      code: "Space",
+      target: { insideAttachmentPlayer: false },
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    };
+
+    controller.onAttachmentPlayerKeyDown(event);
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(controller.toggleDraftAttachmentPlayback).not.toHaveBeenCalled();
   });
 
   it("shows a clear placeholder for draft recording transcription", () => {

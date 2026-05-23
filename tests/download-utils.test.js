@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatExportTimestamp,
+  getRecordingExportExtension,
   getRecordingExportFilename,
   getTextExportPayload,
   sanitizeFilePart,
@@ -58,8 +59,43 @@ describe("download utilities", () => {
     expect(
       getRecordingExportFilename(
         { id: "rec-1", name: "Meeting / audio", ext: "webm" },
-        timestamp
+        timestamp,
+        { preferredFormat: "webm" }
       )
     ).toBe("tempnotes-audio-Meeting audio-20260516-090807.webm");
+  });
+
+  it("keeps existing audio containers when export preference cannot transcode", () => {
+    expect(
+      getRecordingExportExtension(
+        { id: "rec-1", ext: "webm", mimeType: "audio/webm" },
+        { mimeType: "audio/webm" },
+        "m4a"
+      )
+    ).toBe("webm");
+
+    expect(
+      getRecordingExportExtension(
+        { id: "rec-2", ext: "m4a", mimeType: "audio/mp4" },
+        { mimeType: "audio/mp4" },
+        "m4a"
+      )
+    ).toBe("m4a");
+
+    expect(
+      getRecordingExportExtension(
+        { id: "rec-3", ext: "mp3", mimeType: "audio/mpeg" },
+        { mimeType: "audio/mpeg" },
+        "mp3"
+      )
+    ).toBe("mp3");
+
+    expect(
+      getRecordingExportExtension(
+        { id: "rec-4", ext: "m4a", mimeType: "audio/mp4" },
+        { mimeType: "audio/mp4" },
+        "mp3"
+      )
+    ).toBe("m4a");
   });
 });

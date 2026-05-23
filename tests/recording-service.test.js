@@ -131,6 +131,55 @@ describe("RecordingService", () => {
     dateNow.mockRestore();
   });
 
+  it("prefers m4a when the browser supports mp4 audio recording", async () => {
+    MockMediaRecorder.isTypeSupported.mockImplementation(
+      (mimeType) => mimeType === "audio/mp4;codecs=mp4a.40.2"
+    );
+    const stream = createStream();
+    const service = new RecordingService({
+      navigatorRef: { mediaDevices: { getUserMedia: vi.fn(() => Promise.resolve(stream)) } },
+      MediaRecorderCtor: MockMediaRecorder,
+    });
+
+    await service.start({ preferredFormat: "m4a" });
+    const attachment = await service.stop();
+
+    expect(attachment).toMatchObject({
+      mimeType: "audio/mp4;codecs=mp4a.40.2",
+      ext: "m4a",
+    });
+  });
+
+  it("can prefer webm for future recordings", async () => {
+    const stream = createStream();
+    const service = new RecordingService({
+      navigatorRef: { mediaDevices: { getUserMedia: vi.fn(() => Promise.resolve(stream)) } },
+      MediaRecorderCtor: MockMediaRecorder,
+    });
+
+    await service.start({ preferredFormat: "webm" });
+
+    expect(service.recorder.mimeType).toBe("audio/webm;codecs=opus");
+    await service.cancel();
+  });
+
+  it("can prefer mp3 when native MediaRecorder support exists", async () => {
+    MockMediaRecorder.isTypeSupported.mockImplementation((mimeType) => mimeType === "audio/mpeg");
+    const stream = createStream();
+    const service = new RecordingService({
+      navigatorRef: { mediaDevices: { getUserMedia: vi.fn(() => Promise.resolve(stream)) } },
+      MediaRecorderCtor: MockMediaRecorder,
+    });
+
+    await service.start({ preferredFormat: "mp3" });
+    const attachment = await service.stop();
+
+    expect(attachment).toMatchObject({
+      mimeType: "audio/mpeg",
+      ext: "mp3",
+    });
+  });
+
   it("cancels an active recording without saving a blob", async () => {
     const stream = createStream();
     const service = new RecordingService({
