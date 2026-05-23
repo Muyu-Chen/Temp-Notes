@@ -205,9 +205,10 @@
       id="attachmentPlayerPanel"
       class="attachment-player-panel"
       aria-label="录音播放器"
+      tabindex="-1"
       hidden
     >
-      <div class="attachment-player-head">
+      <div id="attachmentPlayerDragHandle" class="attachment-player-head">
         <div class="attachment-player-title-wrap">
           <div id="attachmentPlayerName" class="attachment-player-name">录音</div>
           <div id="attachmentPlayerMeta" class="attachment-player-meta">00:00 · 0 B</div>
@@ -237,9 +238,9 @@
           ▶
         </button>
         <button id="attachmentPlayerSpeed" class="attachment-player-speed" type="button">1x</button>
-        <button id="attachmentPlayerMenu" class="attachment-player-menu-btn" type="button" title="录音操作">
-          ⋯
-        </button>
+        <button id="attachmentPlayerTranscribe" type="button">转录</button>
+        <button id="attachmentPlayerExport" type="button">导出</button>
+        <button id="attachmentPlayerMore" class="attachment-player-more" type="button">更多</button>
       </div>
     </section>
 
@@ -343,12 +344,13 @@
                 </div>
                 <div class="settings-item">
                   <div class="settings-label">
-                    <span class="label-name">录音格式</span>
-                    <span class="label-desc">优先保存为 M4A；浏览器不支持时会自动回退到可用格式。</span>
+                    <span class="label-name">录音与导出格式</span>
+                    <span class="label-desc">优先使用 M4A/MP3；已有录音不转码，必要时自动回退。</span>
                   </div>
                   <div class="setting-control">
                     <select id="recordingFormatSelect" class="settings-select">
                       <option value="m4a">M4A</option>
+                      <option value="mp3">MP3（浏览器支持时）</option>
                       <option value="webm">WebM</option>
                     </select>
                   </div>

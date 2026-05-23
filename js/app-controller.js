@@ -10,6 +10,7 @@ import {
 import { loadItems } from "./storage/item-storage.js";
 import { deleteUnreferencedRecordings, loadRecording } from "./storage/recording-storage.js";
 import { normalizeAttachments } from "./lib/attachment-utils.js";
+import { buildWaveformBuckets, cyclePlaybackRate } from "./lib/audio-waveform-utils.js";
 import { downloadBlobFile, getRecordingExportFilename } from "./lib/download-utils.js";
 import { sortItemsForDisplay } from "./lib/item-utils.js";
 import { getRecycleEntryAttachmentIds, isRecordingRecycleEntry } from "./lib/recycle-utils.js";
@@ -33,11 +34,13 @@ import {
   getLLMDebugLog as readLLMDebugLog,
   getLLMSettings as readLLMSettings,
   getRecycleRetentionDays as readRecycleRetentionDays,
+  getRecordingFormatPreference as readRecordingFormatPreference,
   getRecycleRetentionText,
   clearLLMDebugLog as removeLLMDebugLog,
   saveLLMSettings as persistLLMSettings,
   setDraftMode as persistDraftMode,
   setFontSize as persistFontSize,
+  setRecordingFormatPreference as persistRecordingFormatPreference,
   setRecycleRetentionDays as persistRecycleRetentionDays,
 } from "./services/settings-service.js";
 import { toggleTheme } from "./services/theme-manager.js";
@@ -68,8 +71,14 @@ export class AppController {
       timerId: null,
     };
     this.recordingDrag = null;
+    this.attachmentPlayerDrag = null;
     this.draftAttachmentPlayback = null;
     this.playingDraftAttachmentId = null;
+    this.expandedDraftAttachmentId = null;
+    this.draftAttachmentPlaybackRate = 1;
+    this.draftAttachmentPlaybackProgress = { id: null, currentTime: 0, duration: 0 };
+    this.draftAttachmentPlaybackFrame = null;
+    this.draftAttachmentWaveforms = new Map();
     this.modal = new Modal();
 
     this.recycleService = new RecycleService();
@@ -146,6 +155,11 @@ export class AppController {
     this.ui.renderDraftAttachments(this.currentDraftAttachments, {
       playingId: this.playingDraftAttachmentId,
     });
+    const expandedAttachment = this.getExpandedDraftAttachment();
+    this.ui.renderDraftAttachmentPlayer?.(
+      expandedAttachment,
+      this.getDraftAttachmentPlayerState(expandedAttachment?.id)
+    );
     this.ui.updateDraftPreview();
     const draft = this.dom.getDraftValue();
     this.ui.updateMeta(
@@ -255,6 +269,7 @@ export class AppController {
     this.dom.setLLMSettings(this.getLLMSettings());
     this.dom.setLLMStatus("未测试", "pending");
     this.dom.setLLMDebugLog(this.getLLMDebugLog());
+    this.dom.setRecordingFormatPreference(this.getRecordingFormatPreference());
     this.updateRecycleRetentionUI();
   }
 
@@ -268,6 +283,17 @@ export class AppController {
 
   getRecycleRetentionDays() {
     return readRecycleRetentionDays();
+  }
+
+  getRecordingFormatPreference() {
+    return readRecordingFormatPreference();
+  }
+
+  setRecordingFormatPreference(format) {
+    const nextFormat = persistRecordingFormatPreference(format);
+    this.dom.setRecordingFormatPreference(nextFormat);
+    const label = nextFormat === "mp3" ? "MP3" : nextFormat === "webm" ? "WebM" : "M4A";
+    this.ui.showToast(`新录音将优先使用 ${label}`);
   }
 
   updateRecycleRetentionUI() {
@@ -446,7 +472,7 @@ export class AppController {
   }
 
   async startRecording() {
-    return this.recordingService.start();
+    return this.recordingService.start({ preferredFormat: this.getRecordingFormatPreference() });
   }
 
   pauseRecording() {
@@ -468,10 +494,120 @@ export class AppController {
     return attachment;
   }
 
+  getExpandedDraftAttachment() {
+    if (!this.expandedDraftAttachmentId) return null;
+    const attachment = this.currentDraftAttachments.find(
+      (item) => item.id === this.expandedDraftAttachmentId
+    );
+    if (!attachment) {
+      this.expandedDraftAttachmentId = null;
+      return null;
+    }
+    return attachment;
+  }
+
+  getDraftAttachmentPlayerState(id) {
+    if (!id) {
+      return {
+        playing: false,
+        currentTime: 0,
+        duration: 0,
+        playbackRate: this.draftAttachmentPlaybackRate,
+      };
+    }
+
+    const playback = this.draftAttachmentPlayback?.id === id ? this.draftAttachmentPlayback : null;
+    const audio = playback?.audio;
+    const attachment = this.currentDraftAttachments.find((item) => item.id === id);
+    const duration =
+      Number.isFinite(audio?.duration) && audio.duration > 0
+        ? audio.duration
+        : Number(attachment?.durationMs || 0) / 1000;
+    const progress =
+      this.draftAttachmentPlaybackProgress.id === id ? this.draftAttachmentPlaybackProgress : {};
+
+    return {
+      playing: Boolean(audio && !audio.paused && this.playingDraftAttachmentId === id),
+      currentTime: Number.isFinite(audio?.currentTime)
+        ? audio.currentTime
+        : Number(progress.currentTime || 0),
+      duration: duration || Number(progress.duration || 0),
+      playbackRate: this.draftAttachmentPlaybackRate,
+      waveform: this.draftAttachmentWaveforms.get(id) || [],
+    };
+  }
+
+  renderExpandedDraftAttachmentPlayer() {
+    const attachment = this.getExpandedDraftAttachment();
+    this.ui.renderDraftAttachmentPlayer?.(
+      attachment,
+      this.getDraftAttachmentPlayerState(attachment?.id)
+    );
+  }
+
+  async expandDraftAttachment(id) {
+    const attachment = this.currentDraftAttachments.find((item) => item.id === id);
+    if (!attachment) return;
+
+    this.expandedDraftAttachmentId = id;
+    this.renderExpandedDraftAttachmentPlayer();
+    this.dom.attachmentPlayerPanel.focus?.({ preventScroll: true });
+    await this.loadDraftAttachmentWaveform(id);
+  }
+
+  closeDraftAttachmentPlayer() {
+    this.expandedDraftAttachmentId = null;
+    this.attachmentPlayerDrag = null;
+    this.renderExpandedDraftAttachmentPlayer();
+  }
+
+  startAttachmentPlayerDrag(event) {
+    if (event.button !== 0 || this.dom.attachmentPlayerPanel.hidden) return;
+    if (event.target?.closest?.("button, input, textarea, select, [contenteditable='true']")) {
+      return;
+    }
+
+    const rect = this.dom.attachmentPlayerPanel.getBoundingClientRect();
+    this.attachmentPlayerDrag = {
+      pointerId: event.pointerId,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+    };
+    this.dom.attachmentPlayerDragHandle.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  }
+
+  dragAttachmentPlayer(event) {
+    if (
+      !this.attachmentPlayerDrag ||
+      event.pointerId !== this.attachmentPlayerDrag.pointerId
+    ) {
+      return;
+    }
+
+    this.dom.setAttachmentPlayerPosition(
+      event.clientX - this.attachmentPlayerDrag.offsetX,
+      event.clientY - this.attachmentPlayerDrag.offsetY
+    );
+  }
+
+  endAttachmentPlayerDrag(event) {
+    if (
+      !this.attachmentPlayerDrag ||
+      event.pointerId !== this.attachmentPlayerDrag.pointerId
+    ) {
+      return;
+    }
+
+    this.dom.attachmentPlayerDragHandle.releasePointerCapture?.(event.pointerId);
+    this.attachmentPlayerDrag = null;
+  }
+
   stopDraftAttachmentPlayback(id = null, { render = false } = {}) {
     const playback = this.draftAttachmentPlayback;
     if (!playback || (id && playback.id !== id)) return;
 
+    this.stopDraftAttachmentProgressLoop();
     playback.audio.pause();
     playback.audio.removeAttribute?.("src");
     playback.audio.load?.();
@@ -481,58 +617,199 @@ export class AppController {
 
     this.draftAttachmentPlayback = null;
     this.playingDraftAttachmentId = null;
+    this.draftAttachmentPlaybackProgress = { id: playback.id, currentTime: 0, duration: 0 };
     if (render) this.render();
+    else this.renderExpandedDraftAttachmentPlayer();
   }
 
-  async toggleDraftAttachmentPlayback(id) {
-    const playback = this.draftAttachmentPlayback;
+  stopDraftAttachmentProgressLoop() {
+    if (this.draftAttachmentPlaybackFrame && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(this.draftAttachmentPlaybackFrame);
+    }
+    this.draftAttachmentPlaybackFrame = null;
+  }
 
-    if (playback?.id === id) {
-      if (playback.audio.paused) {
-        try {
-          await playback.audio.play();
-          this.playingDraftAttachmentId = id;
-        } catch (error) {
-          console.error("播放录音失败", error);
-          this.stopDraftAttachmentPlayback(id);
-          this.ui.showToast("播放录音失败");
-        }
-      } else {
-        playback.audio.pause();
-        this.playingDraftAttachmentId = null;
+  startDraftAttachmentProgressLoop(id) {
+    if (typeof requestAnimationFrame !== "function") return;
+    this.stopDraftAttachmentProgressLoop();
+
+    const tick = () => {
+      const playback = this.draftAttachmentPlayback;
+      if (!playback || playback.id !== id || playback.audio.paused) {
+        this.draftAttachmentPlaybackFrame = null;
+        return;
       }
-      this.render();
-      return;
+
+      this.updateDraftAttachmentPlaybackProgress(id);
+      this.draftAttachmentPlaybackFrame = requestAnimationFrame(tick);
+    };
+
+    this.draftAttachmentPlaybackFrame = requestAnimationFrame(tick);
+  }
+
+  updateDraftAttachmentPlaybackProgress(id) {
+    const playback = this.draftAttachmentPlayback?.id === id ? this.draftAttachmentPlayback : null;
+    if (!playback) return;
+
+    const audio = playback.audio;
+    const attachment = this.currentDraftAttachments.find((item) => item.id === id);
+    const duration =
+      Number.isFinite(audio.duration) && audio.duration > 0
+        ? audio.duration
+        : Number(attachment?.durationMs || 0) / 1000;
+
+    this.draftAttachmentPlaybackProgress = {
+      id,
+      currentTime: Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
+      duration,
+    };
+    this.renderExpandedDraftAttachmentPlayer();
+  }
+
+  async ensureDraftAttachmentAudio(id) {
+    if (this.draftAttachmentPlayback?.id === id) {
+      return this.draftAttachmentPlayback.audio;
     }
 
     this.stopDraftAttachmentPlayback();
 
+    const record = await loadRecording(id);
+    if (!record?.blob) {
+      this.ui.showToast("录音文件不存在");
+      return null;
+    }
+
+    const url = URL.createObjectURL(record.blob);
+    const audio = new Audio(url);
+    audio.playbackRate = this.draftAttachmentPlaybackRate;
+    this.draftAttachmentPlayback = { id, audio, url };
+
+    audio.onloadedmetadata = () => {
+      this.updateDraftAttachmentPlaybackProgress(id);
+    };
+    audio.ontimeupdate = () => {
+      this.updateDraftAttachmentPlaybackProgress(id);
+    };
+    audio.onended = () => {
+      this.stopDraftAttachmentPlayback(id, { render: true });
+    };
+    audio.onerror = () => {
+      this.stopDraftAttachmentPlayback(id, { render: true });
+      this.ui.showToast("播放录音失败");
+    };
+
+    return audio;
+  }
+
+  async toggleDraftAttachmentPlayback(id) {
     try {
-      const record = await loadRecording(id);
-      if (!record?.blob) {
-        this.ui.showToast("录音文件不存在");
+      const playback = this.draftAttachmentPlayback;
+      if (playback?.id === id) {
+        if (playback.audio.paused) {
+          try {
+            await playback.audio.play();
+            this.playingDraftAttachmentId = id;
+            this.updateDraftAttachmentPlaybackProgress(id);
+            this.startDraftAttachmentProgressLoop(id);
+          } catch (error) {
+            console.error("播放录音失败", error);
+            this.stopDraftAttachmentPlayback(id);
+            this.ui.showToast("播放录音失败");
+          }
+        } else {
+          playback.audio.pause();
+          this.playingDraftAttachmentId = null;
+          this.stopDraftAttachmentProgressLoop();
+          this.updateDraftAttachmentPlaybackProgress(id);
+        }
+        this.render();
         return;
       }
 
-      const url = URL.createObjectURL(record.blob);
-      const audio = new Audio(url);
-      this.draftAttachmentPlayback = { id, audio, url };
-
-      audio.onended = () => {
-        this.stopDraftAttachmentPlayback(id, { render: true });
-      };
-      audio.onerror = () => {
-        this.stopDraftAttachmentPlayback(id, { render: true });
-        this.ui.showToast("播放录音失败");
-      };
-
+      const audio = await this.ensureDraftAttachmentAudio(id);
+      if (!audio) return;
       await audio.play();
       this.playingDraftAttachmentId = id;
+      this.updateDraftAttachmentPlaybackProgress(id);
+      this.startDraftAttachmentProgressLoop(id);
       this.render();
     } catch (error) {
       console.error("播放录音失败", error);
       this.stopDraftAttachmentPlayback(id);
       this.ui.showToast("播放录音失败");
+    }
+  }
+
+  async seekDraftAttachmentPlayback(progress) {
+    const id = this.expandedDraftAttachmentId;
+    if (!id) return;
+
+    try {
+      const audio = await this.ensureDraftAttachmentAudio(id);
+      if (!audio) return;
+      const attachment = this.currentDraftAttachments.find((item) => item.id === id);
+      const duration =
+        Number.isFinite(audio.duration) && audio.duration > 0
+          ? audio.duration
+          : Number(attachment?.durationMs || 0) / 1000;
+      if (duration > 0) {
+        audio.currentTime = Math.min(Math.max(Number(progress || 0), 0), 1) * duration;
+      }
+      this.updateDraftAttachmentPlaybackProgress(id);
+      this.render();
+    } catch (error) {
+      console.error("跳转录音失败", error);
+      this.ui.showToast("跳转录音失败");
+    }
+  }
+
+  cycleDraftAttachmentPlaybackRate() {
+    this.draftAttachmentPlaybackRate = cyclePlaybackRate(this.draftAttachmentPlaybackRate);
+    if (this.draftAttachmentPlayback?.audio) {
+      this.draftAttachmentPlayback.audio.playbackRate = this.draftAttachmentPlaybackRate;
+    }
+    this.renderExpandedDraftAttachmentPlayer();
+  }
+
+  onAttachmentPlayerKeyDown(e) {
+    if (!this.expandedDraftAttachmentId || (e.key !== " " && e.code !== "Space")) return;
+    if (!this.dom.attachmentPlayerPanel.contains?.(e.target)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    this.toggleDraftAttachmentPlayback(this.expandedDraftAttachmentId);
+  }
+
+  async loadDraftAttachmentWaveform(id) {
+    if (this.draftAttachmentWaveforms.has(id)) {
+      this.renderExpandedDraftAttachmentPlayer();
+      return this.draftAttachmentWaveforms.get(id);
+    }
+
+    try {
+      const record = await loadRecording(id);
+      const blob = record?.blob;
+      const AudioContextCtor = globalThis.AudioContext || globalThis.webkitAudioContext;
+      if (!blob?.arrayBuffer || typeof AudioContextCtor !== "function") {
+        this.draftAttachmentWaveforms.set(id, []);
+        this.renderExpandedDraftAttachmentPlayer();
+        return [];
+      }
+
+      const context = new AudioContextCtor();
+      const buffer = await blob.arrayBuffer();
+      const audioBuffer = await context.decodeAudioData(buffer.slice(0));
+      const channelData = audioBuffer.getChannelData(0);
+      const waveform = buildWaveformBuckets(channelData);
+      await context.close?.();
+      this.draftAttachmentWaveforms.set(id, waveform);
+      this.renderExpandedDraftAttachmentPlayer();
+      return waveform;
+    } catch (error) {
+      console.warn("生成录音波形失败", error);
+      this.draftAttachmentWaveforms.set(id, []);
+      this.renderExpandedDraftAttachmentPlayer();
+      return [];
     }
   }
 
@@ -577,8 +854,15 @@ export class AppController {
         record.blob.type || !record.mimeType
           ? record.blob
           : new Blob([record.blob], { type: record.mimeType });
-      downloadBlobFile(blob, getRecordingExportFilename(attachment));
-      this.ui.showToast("已导出录音");
+      const filename = getRecordingExportFilename(attachment, Date.now(), {
+        record,
+        preferredFormat: this.getRecordingFormatPreference(),
+      });
+      downloadBlobFile(blob, filename);
+      const exportedExt = filename.split(".").pop();
+      this.ui.showToast(
+        exportedExt === this.getRecordingFormatPreference() ? "已导出录音" : "已按原格式导出录音"
+      );
     } catch (error) {
       console.error("导出录音失败", error);
       this.ui.showToast("导出录音失败");
@@ -772,6 +1056,9 @@ export class AppController {
     this.currentDraftAttachments = this.currentDraftAttachments.filter(
       (attachment) => attachment.id !== id
     );
+    if (this.expandedDraftAttachmentId === id) {
+      this.expandedDraftAttachmentId = null;
+    }
     await saveDraftAttachments(this.currentDraftAttachments);
     this.render();
     this.recycleListView.render(this.recycleService.getRecycleItems());

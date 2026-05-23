@@ -3,6 +3,7 @@
  */
 
 import { pad2 } from "./time-utils.js";
+import { getAudioExtension } from "./attachment-utils.js";
 
 export const TEXT_EXPORT_FORMATS = {
   txt: {
@@ -48,10 +49,37 @@ export const getTextExportPayload = (item, format, timestamp = Date.now()) => {
   };
 };
 
-export const getRecordingExportFilename = (attachment, timestamp = Date.now()) => {
+export const getRecordingExportExtension = (attachment, record, preferredFormat = "m4a") => {
+  const sourceMime = String(record?.mimeType || record?.blob?.type || attachment?.mimeType || "");
+  const sourceExt =
+    sanitizeFilePart(attachment?.ext) || (sourceMime ? getAudioExtension(sourceMime) : "webm");
+  const normalizedPreference = ["m4a", "mp3", "webm"].includes(preferredFormat)
+    ? preferredFormat
+    : "m4a";
+
+  if (normalizedPreference === "webm") {
+    return sourceMime.includes("webm") || sourceExt === "webm" ? "webm" : sourceExt;
+  }
+
+  if (normalizedPreference === "mp3") {
+    return sourceMime.includes("mpeg") || sourceMime.includes("mp3") || sourceExt === "mp3"
+      ? "mp3"
+      : sourceExt;
+  }
+
+  return sourceMime.includes("mp4") || sourceMime.includes("m4a") || sourceExt === "m4a"
+    ? "m4a"
+    : sourceExt;
+};
+
+export const getRecordingExportFilename = (
+  attachment,
+  timestamp = Date.now(),
+  { record = null, preferredFormat = "m4a" } = {}
+) => {
   const namePart =
     sanitizeFilePart(attachment?.name) || sanitizeFilePart(attachment?.id) || "recording";
-  const ext = sanitizeFilePart(attachment?.ext) || "webm";
+  const ext = getRecordingExportExtension(attachment, record, preferredFormat);
   return `tempnotes-audio-${namePart}-${formatExportTimestamp(timestamp)}.${ext}`;
 };
 

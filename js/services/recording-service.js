@@ -7,7 +7,11 @@ import { uid } from "../lib/id-utils.js";
 import { now } from "../lib/time-utils.js";
 import { saveRecording } from "../storage/recording-storage.js";
 
-const MIME_CANDIDATES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+const MIME_CANDIDATES = {
+  m4a: ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm"],
+  mp3: ["audio/mpeg", "audio/mp3", "audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm"],
+  webm: ["audio/webm;codecs=opus", "audio/webm", "audio/mp4;codecs=mp4a.40.2", "audio/mp4"],
+};
 
 const stopStream = (stream) => {
   stream?.getTracks?.().forEach((track) => track.stop());
@@ -38,15 +42,17 @@ export class RecordingService {
     );
   }
 
-  getSupportedMimeType() {
+  getSupportedMimeType(preferredFormat = "m4a") {
+    const candidates = MIME_CANDIDATES[preferredFormat] || MIME_CANDIDATES.m4a;
     const isTypeSupported = this.MediaRecorderCtor?.isTypeSupported;
     if (typeof isTypeSupported !== "function") {
-      return "audio/webm";
+      if (preferredFormat === "mp3") return "audio/mpeg";
+      return preferredFormat === "webm" ? "audio/webm" : "audio/mp4";
     }
-    return MIME_CANDIDATES.find((mimeType) => isTypeSupported(mimeType)) || "";
+    return candidates.find((mimeType) => isTypeSupported(mimeType)) || "";
   }
 
-  async start() {
+  async start({ preferredFormat = "m4a" } = {}) {
     if (!this.isSupported()) {
       return { ok: false, message: "当前浏览器不支持录音" };
     }
@@ -56,7 +62,7 @@ export class RecordingService {
     }
 
     this.stream = await this.navigatorRef.mediaDevices.getUserMedia({ audio: true });
-    this.mimeType = this.getSupportedMimeType();
+    this.mimeType = this.getSupportedMimeType(preferredFormat);
     const options = this.mimeType ? { mimeType: this.mimeType } : undefined;
     this.recorder = new this.MediaRecorderCtor(this.stream, options);
     this.chunks = [];
