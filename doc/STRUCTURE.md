@@ -1,483 +1,98 @@
-# 📁 完整项目结构
+# 项目结构详解 (Project Structure)
 
-```
-临时笔记/ (项目根目录)
-│
-├─ 📁 src/                          # 应用源代码目录
-│  └─ index.html                    # ⭐ 打开这个文件使用应用
-│
-├─ 📁 css/                          # 样式文件目录
-│  ├─ theme.css                     # 主题系统（颜色变量、深/浅色）
-│  ├─ base.css                      # 基础样式（全局重置、工具类）
-│  ├─ layout.css                    # 布局组件（容器、栅格、响应式）
-│  └─ components.css                # UI组件（按钮、卡片、输入框）
-│
-├─ 📁 js/                           # JavaScript 模块目录
-│  ├─ main.js                       # ⭐ 应用入口（启动 + 事件绑定）
-│  ├─ app-controller.js             # 业务逻辑核心（所有功能实现）
-│  ├─ ui-controller.js              # UI 控制层（渲染 + 反馈）
-│  ├─ dom-manager.js                # DOM 操作抽象（元素管理）
-│  ├─ storage.js                    # 数据存储管理（LocalStorage）
-│  ├─ utils.js                      # 工具函数库（通用函数）
-│  └─ constants.js                  # 常量定义（配置值）
-│
-├─ 📄 index.html                    # 原始单文件版本（备份）
-│
-├─ 📋 文档文件
-│  ├─ INDEX.md                      # 📍 项目文件索引（快速导航）
-│  ├─ CHECKLIST.md                  # ✅ 项目完成清单（交付物）
-│  ├─ README.md                     # 📖 项目总览（功能 + 结构）
-│  ├─ QUICK_START.md                # 🚀 快速开始指南（用户向）
-│  ├─ ARCHITECTURE.md               # 🏗️ 架构设计详解（深度）
-│  └─ DEVELOPER.md                  # 👨‍💻 开发者指南（规范 + 工作流）
-│
-└─ 📦 package.json                  # 项目配置（元数据 + 脚本）
+Temp Notes 采用了清晰的、模块化的目录结构，便于维护和扩展。
 
-```
+## 完整目录树
 
----
-
-## 📊 目录详解
-
-### 📂 src/ - 应用启动目录
-```
-src/
-└─ index.html (120 行)
-   ├─ <head>
-   │  ├─ Meta 标签（字符集、视口）
-   │  ├─ 标题
-   │  └─ CSS 引入 (4个文件)
-   │     ├─ css/theme.css
-   │     ├─ css/base.css
-   │     ├─ css/layout.css
-   │     └─ css/components.css
-   │
-   └─ <body>
-      ├─ 应用容器 (.app)
-      │  ├─ 头部 (header)
-      │  │  ├─ 标题区
-      │  │  ├─ 信息区（统计信息）
-      │  │  └─ 操作区（按钮）
-      │  │
-      │  └─ 主内容 (.main)
-      │     ├─ 左侧：草稿区
-      │     └─ 右侧：条目列表
-      │
-      ├─ Toast 提示容器
-      └─ JS 入口引入
-         └─ js/main.js (type="module")
-```
-
-### 📂 css/ - 样式分层
-```
-css/
-├─ theme.css (70 行)
-│  ├─ :root { --bg, --text, --accent, ... }
-│  └─ [data-theme="light"] { 浅色变量 }
-│
-├─ base.css (30 行)
-│  ├─ 全局 CSS 重置
-│  └─ 工具类 (.muted, .small, .mono)
-│
-├─ layout.css (90 行)
-│  ├─ .app { 主容器 }
-│  ├─ header { 头部布局 }
-│  ├─ .main { 两列栅格 }
-│  ├─ .panel { 面板容器 }
-│  └─ @media 响应式规则
-│
-└─ components.css (180 行)
-   ├─ button 按钮族
-   ├─ textarea 编辑器
-   ├─ .search 搜索框
-   ├─ .item 条目卡片
-   ├─ .pill 标签
-   ├─ .kbd 键盘提示
-   ├─ .list 列表容器
-   ├─ .toast 提示框
-   └─ 其他 UI 组件
-```
-
-### 📂 js/ - 模块化架构
-```
-js/
-├─ main.js (60 行) 
-│  ├─ 导入所有模块
-│  ├─ 创建控制器实例
-│  ├─ 绑定事件监听器
-│  └─ 初始化应用
-│
-├─ app-controller.js (200 行) 业务逻辑核心
-│  ├─ constructor() { this.items, this.saveTimer }
-│  ├─ init() 初始化
-│  ├─ archiveDraft() 存档
-│  ├─ loadToDraft() 加载
-│  ├─ deleteItem() 删除
-│  ├─ clearDraft() 清空草稿
-│  ├─ clearArchive() 清空存档
-│  ├─ exportAll() 导出
-│  ├─ importAll() 导入
-│  ├─ render() 渲染列表
-│  ├─ scheduleDraftSave() 防抖保存
-│  └─ 事件处理方法 (on*)
-│
-├─ ui-controller.js (140 行) UI 控制层
-│  ├─ constructor() 初始化
-│  ├─ showToast() 显示消息
-│  ├─ updateTheme() 更新主题
-│  ├─ updateMeta() 更新统计
-│  ├─ renderItemsList() 渲染列表
-│  ├─ copyText() 复制文本
-│  └─ 回调方法 (onItem*)
-│
-├─ dom-manager.js (80 行) DOM 管理
-│  ├─ constructor() 获取所有 DOM 元素
-│  ├─ getDraftValue() 获取草稿
-│  ├─ setDraftValue() 设置草稿
-│  ├─ focusDraft() 聚焦
-│  ├─ updateXxx() 更新显示
-│  └─ 其他 DOM 操作方法
-│
-├─ storage.js (120 行) 数据持久化
-│  ├─ loadTheme() 读主题
-│  ├─ saveTheme() 存主题
-│  ├─ loadDraft() 读草稿
-│  ├─ saveDraft() 存草稿
-│  ├─ loadItems() 读条目
-│  ├─ saveItems() 存条目
-│  ├─ exportData() 导出数据
-│  ├─ normalizeImportedData() 规范导入
-│  └─ mergeItems() 合并去重
-│
-├─ utils.js (140 行) 工具函数库
-│  ├─ now() 时间戳
-│  ├─ pad2() 数字补零
-│  ├─ fmt() 格式化时间
-│  ├─ uid() 生成 ID
-│  ├─ safeJsonParse() 安全解析
-│  ├─ clamp() 截断字符串
-│  ├─ firstLine() 获取首行
-│  ├─ wordCount() 字数统计
-│  ├─ storageBytes() 计算存储占用
-│  ├─ humanBytes() 格式化字节
-│  └─ isMac() 检测平台
-│
-└─ constants.js (10 行) 常量定义
-   ├─ STORAGE_KEYS 存储键
-   ├─ THEMES 主题枚举
-   └─ DEFAULT_THEME 默认主题
+```text
+Temp-Notes/
+├── css/                    # 样式目录 (Vanilla CSS)
+│   ├── theme.css           # 主题系统 (颜色变量、明暗模式)
+│   ├── base.css            # 基础样式 (Reset, Utilities)
+│   ├── layout.css          # 布局结构 (Grid, Flexbox, App Containers)
+│   └── components.css      # UI 组件样式 (Buttons, Inputs, Cards)
+├── js/                     # JavaScript 源代码 (ES Modules)
+│   ├── main.js             # 应用入口点
+│   ├── app-controller.js   # 顶级控制器，协调各服务
+│   ├── constants.js        # 全局常量
+│   ├── crypto.js           # 加密基础方法
+│   ├── storage.js          # 数据存储统一导出入口
+│   ├── utils.js            # 工具函数统一导出入口
+│   ├── bootstrap/          # 引导与初始化逻辑
+│   │   ├── app-bootstrap.js # 应用启动编排
+│   │   ├── bind-events.js   # DOM 事件绑定
+│   │   └── first-run.js     # 首次运行检查与引导
+│   ├── services/           # 核心业务逻辑服务
+│   │   ├── draft-service.js # 草稿与存档管理
+│   │   ├── item-service.js  # 条目管理 (删除、重命名)
+│   │   ├── encryption-service.js # 加密流程
+│   │   ├── recycle-service.js # 回收站状态管理
+│   │   ├── llm-service.js   # AI 增强功能
+│   │   └── ...              # 其他服务
+│   ├── storage/            # 数据持久化层 (IndexedDB)
+│   │   ├── idb.js           # IndexedDB 基础连接
+│   │   ├── draft-storage.js # 草稿存储
+│   │   ├── item-storage.js  # 条目存储
+│   │   └── ...              # 其他存储模块
+│   ├── ui/                 # 表现层 (DOM 操作与视图)
+│   │   ├── dom-manager.js   # DOM 引用管理
+│   │   ├── ui-controller.js # 通用 UI 反馈 (Toast, Meta)
+│   │   ├── item-list-view.js# 条目列表渲染
+│   │   └── modal.js         # 模态框组件
+│   ├── lib/                # 聚焦的辅助工具集
+│   │   ├── text-utils.js    # 文本处理
+│   │   ├── time-utils.js    # 时间格式化
+│   │   └── ...              # 其他工具
+│   └── vendor/             # 第三方依赖 (本地化)
+│       ├── jszip.min.js     # ZIP 导出支持
+│       └── marked.min.js    # Markdown 渲染
+├── tests/                  # 测试目录 (Vitest)
+│   └── ...                 # 单元测试与集成测试
+├── index.html              # 应用主页面
+├── README.md               # 项目主文档
+└── package.json            # NPM 配置与依赖管理
 ```
 
 ---
 
-## 📚 文档目录
+## 🏗️ 核心模块职责
 
-### 用户向文档
-```
-QUICK_START.md (300 行)
-├─ 🎯 项目概览
-├─ 📂 项目结构
-├─ 🎯 使用方式
-├─ ⌨️ 快捷键
-├─ 🎨 功能列表
-├─ 🏗️ 架构亮点
-├─ 🔧 开发工作流
-├─ 💾 数据结构
-├─ 🧪 测试清单
-└─ 🚨 常见问题
-```
+### 1. 引导层 (Bootstrap)
+*   `main.js`: 监听 `DOMContentLoaded` 并调用 `bootstrapApp`。
+*   `app-bootstrap.js`: 创建核心对象实例，按序启动服务和绑定事件。
 
-### 架构师向文档
-```
-ARCHITECTURE.md (400 行)
-├─ 整体架构图
-├─ 数据流向
-├─ 模块职责分解
-├─ CSS 模块化策略
-├─ 扩展建议
-└─ 性能优化清单
-```
+### 2. 控制器层 (Controllers)
+*   `app-controller.js`: 作为“指挥官”，持有所有服务引用，处理跨服务的逻辑。
+*   `ui-controller.js`: 管理应用级 UI 状态（如 Toast 提示、元数据统计）。
 
-### 开发者向文档
-```
-DEVELOPER.md (500 行)
-├─ 📖 文档导航
-├─ 🛠️ 环境设置
-├─ 🎯 核心概念
-├─ 📝 编码规范
-├─ 🔄 工作流示例
-├─ 🐛 调试技巧
-├─ 🚀 构建部署
-├─ 🧪 测试
-├─ 📊 性能优化
-└─ 🔐 安全性
-```
+### 3. 服务层 (Services)
+*   每个服务（如 `DraftService`）都遵循单一职责原则。
+*   服务层不直接操作 DOM，而是通过回调或更新状态由表现层渲染。
 
-### 导航文档
-```
-INDEX.md (300 行)
-├─ 🎯 快速导航
-├─ 📂 文件结构详解
-├─ 🔗 文件关系图
-├─ 🎯 文件功能速查表
-├─ 🔍 快速查找
-├─ 📊 代码行数统计
-├─ 🚀 文件修改指南
-└─ 🆘 快速查找指南
-```
-
-### 项目清单
-```
-CHECKLIST.md (400 行)
-├─ ✅ 项目重构完成
-├─ 📦 交付物清单
-├─ 🎯 架构改进
-├─ 🔄 功能保留情况
-├─ 📊 项目规模
-├─ 🏗️ 架构特点
-├─ 🚀 立即开始
-├─ 💡 扩展方向
-├─ 🎓 学习路径
-└─ 🎉 项目完成
-```
-
-### 项目总览
-```
-README.md (200 行)
-├─ 项目介绍
-├─ 📂 项目结构
-├─ 🎯 架构设计
-├─ 📝 主要功能
-├─ 🔧 扩展指南
-├─ 💡 最佳实践
-├─ 📦 浏览器兼容
-└─ 📄 许可证
-```
+### 4. 存储层 (Storage)
+*   基于 **IndexedDB** 实现，克服了 LocalStorage 的容量限制（5-10MB）。
+*   `idb.js` 统一管理数据库连接和 Object Stores。
 
 ---
 
-## 🎯 快速导航表
+## 样式规范 (CSS)
 
-| 我想... | 打开文件 | 行数 |
-|--------|--------|------|
-| 快速使用应用 | [src/index.html](src/index.html) | 120 |
-| 5分钟快速了解 | [QUICK_START.md](QUICK_START.md) | 300 |
-| 深入理解架构 | [ARCHITECTURE.md](ARCHITECTURE.md) | 400 |
-| 开始开发功能 | [DEVELOPER.md](DEVELOPER.md) | 500 |
-| 查找文件位置 | [INDEX.md](INDEX.md) | 300 |
-| 查看交付物 | [CHECKLIST.md](CHECKLIST.md) | 400 |
-| 项目总体介绍 | [README.md](README.md) | 200 |
-| 修改样式 | [css/](css/) | 370 |
-| 修改逻辑 | [js/](js/) | 750 |
-| 项目配置 | [package.json](package.json) | 30 |
+使用原生的 Vanilla CSS 以保持轻量化：
+*   **变量优先**: 所有颜色和间距均定义在 `theme.css` 中。
+*   **组件化**: 每个 UI 元素在 `components.css` 中都有对应的独立类名。
 
 ---
 
-## 📈 项目统计
+## 🧪 扩展指引
 
-### 文件数量
-```
-HTML:        2 个  (src/index.html + index.html)
-CSS:         4 个  (theme/base/layout/components.css)
-JavaScript:  7 个  (main + 6个模块)
-文档:        7 个  (INDEX/CHECKLIST/README/QUICK_START/ARCHITECTURE/DEVELOPER + 本文件)
-配置:        1 个  (package.json)
-────────────────
-总计:       21 个文件
-```
-
-### 代码行数
-```
-CSS:         370 行
-JavaScript:  750 行  
-HTML:        120 行
-────────────────
-代码总计:  1,240 行
-```
-
-### 文档行数
-```
-README:              200 行
-QUICK_START:         300 行
-ARCHITECTURE:        400 行
-DEVELOPER:           500 行
-INDEX:               300 行
-CHECKLIST:           400 行
-本文件:              200 行
-────────────────
-文档总计:         2,300 行
-```
-
-### 总体规模
-```
-代码:   1,240 行
-文档:   2,300 行
-────────
-总计:   3,540 行
-
-代码注释率: ~25%
-文档完整度: 非常高 ⭐⭐⭐⭐⭐
-```
+如果你想添加一个新功能：
+1.  **UI**: 在 `js/ui/` 添加新的 View 模块。
+2.  **逻辑**: 在 `js/services/` 添加新的 Service。
+3.  **持久化**: 在 `js/storage/` 添加对应的存储逻辑。
+4.  **注入**: 在 `app-bootstrap.js` 中实例化并在 `bind-events.js` 中绑定。
 
 ---
 
-## 🔄 文件依赖关系
+**更新时间**: 2026-05-22  
+**状态**: ✅ 完整同步
 
-### HTML 依赖
-```
-src/index.html
-├─ depends on → css/theme.css
-├─ depends on → css/base.css
-├─ depends on → css/layout.css
-├─ depends on → css/components.css
-└─ depends on → js/main.js
-                 └─ depends on → (all 7 JS modules)
-```
-
-### JS 依赖
-```
-js/main.js
-├─ imports → dom-manager.js
-├─ imports → ui-controller.js
-│             └─ imports → utils.js
-│                         └─ imports → constants.js
-├─ imports → app-controller.js
-│             ├─ imports → storage.js
-│             │             └─ imports → utils.js, constants.js
-│             ├─ imports → utils.js
-│             └─ imports → dom-manager.js
-├─ imports → storage.js
-└─ imports → constants.js
-```
-
-### CSS 继承
-```
-theme.css
-├─ defines → CSS variables (--bg, --text, etc)
-└─ base.css uses these variables
-    └─ layout.css uses these variables
-        └─ components.css uses these variables
-```
-
----
-
-## 💾 存储结构
-
-### LocalStorage 数据
-```
-tempnotes:draft:v1
-└─ string: "当前草稿内容..."
-
-tempnotes:items:v1
-└─ JSON string:
-   [
-     {
-       id: "string",
-       content: "string",
-       createdAt: number,
-       updatedAt: number
-     },
-     ...
-   ]
-
-tempnotes:theme:v1
-└─ string: "dark" | "light"
-```
-
----
-
-## 🚀 启动流程
-
-```
-1. 浏览器加载 src/index.html
-                │
-2. 解析 HTML 标签和引入资源
-   ├─ 加载 4 个 CSS 文件
-   │  └─ 样式表生效
-   │
-3. 执行 <script type="module" src="js/main.js">
-   ├─ 导入所有 JS 模块
-   ├─ 创建 DOMManager 实例
-   ├─ 创建 UIController 实例
-   ├─ 创建 AppController 实例
-   ├─ 加载初始主题
-   ├─ 绑定事件监听器
-   ├─ 调用 appController.init()
-   │  ├─ 加载 LocalStorage 中的草稿和条目
-   │  ├─ 初始化 UI 显示
-   │  └─ 聚焦草稿框
-   │
-4. 应用准备就绪，等待用户操作
-
-用户操作触发事件 → 事件处理器 → 业务逻辑 → 数据更新 → UI 渲染 → 用户反馈
-```
-
----
-
-## 📝 文件命名规范
-
-### HTML
-```
-index.html          应用主文件
-```
-
-### CSS
-```
-theme.css           设计系统（颜色/主题）
-base.css            基础样式（重置/工具）
-layout.css          布局系统（容器/栅格）
-components.css      组件库（UI元素）
-```
-
-### JavaScript
-```
-main.js             应用启动入口
-*-controller.js     控制器类 (MVC 模式)
-*-manager.js        管理器类 (管理和抽象)
-*.js                工具/常量 (模块导出)
-```
-
-### 文档
-```
-README.md           项目总览
-QUICK_START.md      快速开始
-ARCHITECTURE.md     架构详解
-DEVELOPER.md        开发指南
-INDEX.md            文件索引
-CHECKLIST.md        完成清单
-```
-
----
-
-## ✨ 项目亮点
-
-### ✅ 架构
-- [x] 模块化设计
-- [x] 清晰的职责分工
-- [x] 易于扩展
-- [x] 可维护性强
-
-### ✅ 代码
-- [x] 无循环依赖
-- [x] 统一的命名规范
-- [x] 完整的注释
-- [x] 错误处理完善
-
-### ✅ 样式
-- [x] 主题系统
-- [x] 响应式设计
-- [x] 组件化
-- [x] 易于定制
-
-### ✅ 文档
-- [x] 完整的指南
-- [x] 清晰的示例
-- [x] 深度的解释
-- [x] 便捷的导航
-
----
-
-**项目版本**: 1.0.0  
-**创建时间**: 2026-01-18  
-**架构版本**: 模块化  
-**状态**: ✅ 生产就绪
