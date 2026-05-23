@@ -28,9 +28,13 @@ import { LLMService } from "./services/llm-service.js";
 import { RecordingService } from "./services/recording-service.js";
 import {
   applyFontSize,
+  applyColumnLayoutPreference,
+  applyLayoutWidthPreference,
   clearPersistentData,
+  getColumnLayoutPreference as readColumnLayoutPreference,
   getDraftMode as readDraftMode,
   getFontSize as readFontSize,
+  getLayoutWidthPreference as readLayoutWidthPreference,
   getLLMDebugLog as readLLMDebugLog,
   getLLMSettings as readLLMSettings,
   getRecycleRetentionDays as readRecycleRetentionDays,
@@ -38,8 +42,10 @@ import {
   getRecycleRetentionText,
   clearLLMDebugLog as removeLLMDebugLog,
   saveLLMSettings as persistLLMSettings,
+  setColumnLayoutPreference as persistColumnLayoutPreference,
   setDraftMode as persistDraftMode,
   setFontSize as persistFontSize,
+  setLayoutWidthPreference as persistLayoutWidthPreference,
   setRecordingFormatPreference as persistRecordingFormatPreference,
   setRecycleRetentionDays as persistRecycleRetentionDays,
 } from "./services/settings-service.js";
@@ -109,6 +115,8 @@ export class AppController {
     try {
       const fontSize = this.getFontSize();
       applyFontSize(fontSize);
+      applyLayoutWidthPreference(this.getLayoutWidthPreference());
+      applyColumnLayoutPreference(this.getColumnLayoutPreference());
       this.draftMode = this.getDraftMode();
 
       const draft = await loadDraft();
@@ -270,6 +278,10 @@ export class AppController {
     this.dom.setLLMStatus("未测试", "pending");
     this.dom.setLLMDebugLog(this.getLLMDebugLog());
     this.dom.setRecordingFormatPreference(this.getRecordingFormatPreference());
+    this.dom.setLayoutPreferences({
+      layoutWidth: this.getLayoutWidthPreference(),
+      columnLayout: this.getColumnLayoutPreference(),
+    });
     this.updateRecycleRetentionUI();
   }
 
@@ -287,6 +299,32 @@ export class AppController {
 
   getRecordingFormatPreference() {
     return readRecordingFormatPreference();
+  }
+
+  getLayoutWidthPreference() {
+    return readLayoutWidthPreference();
+  }
+
+  getColumnLayoutPreference() {
+    return readColumnLayoutPreference();
+  }
+
+  setLayoutWidthPreference(value) {
+    const nextValue = persistLayoutWidthPreference(value);
+    this.dom.setLayoutPreferences({
+      layoutWidth: nextValue,
+      columnLayout: this.getColumnLayoutPreference(),
+    });
+    this.ui.showToast("界面宽度已更新");
+  }
+
+  setColumnLayoutPreference(value) {
+    const nextValue = persistColumnLayoutPreference(value);
+    this.dom.setLayoutPreferences({
+      layoutWidth: this.getLayoutWidthPreference(),
+      columnLayout: nextValue,
+    });
+    this.ui.showToast("左右分栏已更新");
   }
 
   setRecordingFormatPreference(format) {
@@ -413,6 +451,9 @@ export class AppController {
 
       this.dom.fontSizeSlider.value = "16";
       this.dom.fontSizeValue.textContent = "16px";
+      applyLayoutWidthPreference("standard");
+      applyColumnLayoutPreference("default");
+      this.dom.setLayoutPreferences({ layoutWidth: "standard", columnLayout: "default" });
       this.dom.setRecycleRetention(0, getRecycleRetentionText(0));
       this.dom.setLLMSettings({ enabled: false, baseUrl: "", apiKey: "", model: "" });
       this.dom.setLLMStatus("未测试", "pending");

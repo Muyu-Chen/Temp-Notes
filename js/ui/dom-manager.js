@@ -78,6 +78,8 @@ export class DOMManager {
     // 设置相关的DOM元素
     this.fontSizeSlider = document.getElementById("fontSizeSlider");
     this.fontSizeValue = document.getElementById("fontSizeValue");
+    this.layoutWidthSelect = document.getElementById("layoutWidthSelect");
+    this.columnLayoutSelect = document.getElementById("columnLayoutSelect");
     this.recycleRetentionSelect = document.getElementById("recycleRetentionSelect");
     this.recycleRetentionDesc = document.getElementById("recycleRetentionDesc");
     this.recordingFormatSelect = document.getElementById("recordingFormatSelect");
@@ -302,5 +304,14 @@ export class DOMManager {
 
   setRecordingFormatPreference(format) {
     this.recordingFormatSelect.value = ["m4a", "mp3", "webm"].includes(format) ? format : "m4a";
+  }
+
+  setLayoutPreferences({ layoutWidth, columnLayout }) {
+    this.layoutWidthSelect.value = ["auto", "standard", "wide", "ultrawide"].includes(layoutWidth)
+      ? layoutWidth
+      : "standard";
+    this.columnLayoutSelect.value = ["default", "editor", "archive"].includes(columnLayout)
+      ? columnLayout
+      : "default";
   }
 }

@@ -19,6 +19,16 @@
           if (storedTheme === "dark" || storedTheme === "light") {
             theme = storedTheme;
           }
+
+          const layoutWidth = localStorage.getItem("tempnotes:layout-width:v1");
+          if (["auto", "standard", "wide", "ultrawide"].includes(layoutWidth)) {
+            root.dataset.layoutWidth = layoutWidth;
+          }
+
+          const columnLayout = localStorage.getItem("tempnotes:column-layout:v1");
+          if (["default", "editor", "archive"].includes(columnLayout)) {
+            root.dataset.columnLayout = columnLayout;
+          }
         } catch {}
 
         root.setAttribute("data-theme", root.getAttribute("data-theme") || theme);

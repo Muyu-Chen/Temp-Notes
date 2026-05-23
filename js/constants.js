@@ -10,6 +10,8 @@ export const STORAGE_KEYS = {
   DRAFT_MODE: "tempnotes:draft-mode:v1",
   RECYCLE_RETENTION_DAYS: "tempnotes:recycle-retention-days:v1",
   THEME: "tempnotes:theme:v1",
+  LAYOUT_WIDTH: "tempnotes:layout-width:v1",
+  COLUMN_LAYOUT: "tempnotes:column-layout:v1",
   LLM_ENABLED: "llm_enabled",
   LLM_BASE_URL: "llm_base_url",
   LLM_API_KEY: "llm_api_key",

@@ -22,8 +22,12 @@ const MIN_FONT_SIZE = 12;
 const MAX_FONT_SIZE = 20;
 const DEFAULT_DRAFT_MODE = "edit";
 const DEFAULT_RECORDING_FORMAT = "m4a";
+const DEFAULT_LAYOUT_WIDTH = "standard";
+const DEFAULT_COLUMN_LAYOUT = "default";
 const VALID_DRAFT_MODES = new Set(["edit", "preview"]);
 const VALID_RECORDING_FORMATS = new Set(["m4a", "mp3", "webm"]);
+const VALID_LAYOUT_WIDTHS = new Set(["auto", "standard", "wide", "ultrawide"]);
+const VALID_COLUMN_LAYOUTS = new Set(["default", "editor", "archive"]);
 export const RECYCLE_RETENTION_OPTIONS = [0, 7, 30, 90];
 const EMPTY_LLM_SETTINGS = {
   enabled: false,
@@ -116,6 +120,50 @@ export const setRecordingFormatPreference = (format) => {
   return nextFormat;
 };
 
+const setRootDatasetValue = (name, value) => {
+  if (typeof document === "undefined") return;
+
+  document.documentElement.dataset[name] = value;
+};
+
+export const getLayoutWidthPreference = () =>
+  readEnumPreference(STORAGE_KEYS.LAYOUT_WIDTH, VALID_LAYOUT_WIDTHS, DEFAULT_LAYOUT_WIDTH);
+
+export const applyLayoutWidthPreference = (value) => {
+  const nextValue = VALID_LAYOUT_WIDTHS.has(value) ? value : DEFAULT_LAYOUT_WIDTH;
+  setRootDatasetValue("layoutWidth", nextValue);
+  return nextValue;
+};
+
+export const setLayoutWidthPreference = (value) => {
+  const nextValue = applyLayoutWidthPreference(value);
+  setLocalStorageItem(
+    STORAGE_KEYS.LAYOUT_WIDTH,
+    nextValue,
+    "Failed to save layout width:"
+  );
+  return nextValue;
+};
+
+export const getColumnLayoutPreference = () =>
+  readEnumPreference(STORAGE_KEYS.COLUMN_LAYOUT, VALID_COLUMN_LAYOUTS, DEFAULT_COLUMN_LAYOUT);
+
+export const applyColumnLayoutPreference = (value) => {
+  const nextValue = VALID_COLUMN_LAYOUTS.has(value) ? value : DEFAULT_COLUMN_LAYOUT;
+  setRootDatasetValue("columnLayout", nextValue);
+  return nextValue;
+};
+
+export const setColumnLayoutPreference = (value) => {
+  const nextValue = applyColumnLayoutPreference(value);
+  setLocalStorageItem(
+    STORAGE_KEYS.COLUMN_LAYOUT,
+    nextValue,
+    "Failed to save column layout:"
+  );
+  return nextValue;
+};
+
 export const getLLMSettings = () => {
   return {
     ...EMPTY_LLM_SETTINGS,
@@ -176,6 +224,8 @@ export const clearPersistentData = async () => {
     STORAGE_KEYS.LLM_MODEL,
     STORAGE_KEYS.LLM_DEBUG_LOG,
     STORAGE_KEYS.RECORDING_FORMAT,
+    STORAGE_KEYS.LAYOUT_WIDTH,
+    STORAGE_KEYS.COLUMN_LAYOUT,
     "draft",
     STORAGE_KEYS.THEME,
     STORAGE_KEYS.FIRST_OPEN,

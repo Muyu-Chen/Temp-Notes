@@ -134,6 +134,14 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.setFontSize(e.target.value);
   });
 
+  domManager.layoutWidthSelect.addEventListener("change", (e) => {
+    appController.setLayoutWidthPreference(e.target.value);
+  });
+
+  domManager.columnLayoutSelect.addEventListener("change", (e) => {
+    appController.setColumnLayoutPreference(e.target.value);
+  });
+
   domManager.recycleRetentionSelect.addEventListener("change", (e) => {
     appController.setRecycleRetentionDays(e.target.value);
   });

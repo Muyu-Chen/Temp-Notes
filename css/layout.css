@@ -2,8 +2,42 @@
    布局组件
    ======================================== */
 
+:root {
+  --app-max-width: 1200px;
+  --editor-column-width: 63.04347826%;
+  --editor-column-gap-offset: 8.82608696px;
+  --archive-column-width: 36.95652174%;
+  --archive-column-gap-offset: 5.17391304px;
+}
+
+:root[data-layout-width="auto"] {
+  --app-max-width: clamp(1200px, 88vw, 1440px);
+}
+
+:root[data-layout-width="wide"] {
+  --app-max-width: 1360px;
+}
+
+:root[data-layout-width="ultrawide"] {
+  --app-max-width: 1520px;
+}
+
+:root[data-column-layout="editor"] {
+  --editor-column-width: 70%;
+  --editor-column-gap-offset: 9.8px;
+  --archive-column-width: 30%;
+  --archive-column-gap-offset: 4.2px;
+}
+
+:root[data-column-layout="archive"] {
+  --editor-column-width: 56%;
+  --editor-column-gap-offset: 7.84px;
+  --archive-column-width: 44%;
+  --archive-column-gap-offset: 6.16px;
+}
+
 .app {
-  max-width: 1200px;
+  max-width: var(--app-max-width);
   margin: 0 auto;
   padding: 18px 18px 26px;
   display: flex;
@@ -82,8 +116,8 @@ header .sub {
   display: grid;
   gap: 14px;
   grid-template-columns:
-    minmax(0, calc(63.04347826% - 8.82608696px))
-    minmax(0, calc(36.95652174% - 5.17391304px));
+    minmax(0, calc(var(--editor-column-width) - var(--editor-column-gap-offset)))
+    minmax(0, calc(var(--archive-column-width) - var(--archive-column-gap-offset)));
 }
 
 /* Panel */
