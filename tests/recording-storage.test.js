@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  delete: vi.fn(),
-  put: vi.fn(),
-  get: vi.fn(),
-  transaction: null,
-  getDB: vi.fn(),
+  deleteStoreRecords: vi.fn(),
+  getStoreRecord: vi.fn(),
+  putStoreRecord: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("../js/storage/idb.js", () => ({
   STORE_RECORDINGS: "recordings",
-  getDB: mocks.getDB,
+  deleteStoreRecords: mocks.deleteStoreRecords,
+  getStoreRecord: mocks.getStoreRecord,
+  putStoreRecord: mocks.putStoreRecord,
 }));
 
 const {
@@ -20,30 +20,11 @@ const {
   saveRecording,
 } = await import("../js/storage/recording-storage.js");
 
-const createTransaction = () => {
-  const transaction = {
-    objectStore: vi.fn(() => ({
-      delete: mocks.delete,
-      put: mocks.put,
-      get: mocks.get,
-    })),
-    oncomplete: null,
-    onerror: null,
-    onabort: null,
-    error: null,
-  };
-  queueMicrotask(() => transaction.oncomplete?.());
-  return transaction;
-};
-
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.getDB.mockImplementation(() => ({
-    transaction: vi.fn(() => {
-      mocks.transaction = createTransaction();
-      return mocks.transaction;
-    }),
-  }));
+  mocks.putStoreRecord.mockResolvedValue();
+  mocks.getStoreRecord.mockResolvedValue(null);
+  mocks.deleteStoreRecords.mockImplementation((storeName, ids) => Promise.resolve(ids.length));
 });
 
 describe("recording storage", () => {
@@ -59,7 +40,7 @@ describe("recording storage", () => {
       createdAt: 200,
     });
 
-    expect(mocks.put).toHaveBeenCalledWith({
+    expect(mocks.putStoreRecord).toHaveBeenCalledWith("recordings", {
       id: "rec-1",
       blob,
       mimeType: "audio/webm",
@@ -71,14 +52,7 @@ describe("recording storage", () => {
 
   it("loads recording records", async () => {
     const record = { id: "rec-1" };
-    mocks.get.mockImplementation(() => {
-      const request = {};
-      queueMicrotask(() => {
-        request.result = record;
-        request.onsuccess?.();
-      });
-      return request;
-    });
+    mocks.getStoreRecord.mockResolvedValue(record);
 
     await expect(loadRecording("rec-1")).resolves.toBe(record);
   });
@@ -89,12 +63,12 @@ describe("recording storage", () => {
       { attachment: { id: "recycle-keep", type: "audio", mimeType: "audio/webm", createdAt: 2 } },
     ]);
 
-    expect(mocks.delete).toHaveBeenCalledTimes(1);
-    expect(mocks.delete).toHaveBeenCalledWith("remove");
+    expect(mocks.deleteStoreRecords).toHaveBeenCalledTimes(1);
+    expect(mocks.deleteStoreRecords).toHaveBeenCalledWith("recordings", ["remove"]);
   });
 
   it("skips storage work when there are no ids to delete", async () => {
     await expect(deleteRecordings([])).resolves.toBe(0);
-    expect(mocks.getDB).not.toHaveBeenCalled();
+    expect(mocks.deleteStoreRecords).toHaveBeenCalledWith("recordings", []);
   });
 });

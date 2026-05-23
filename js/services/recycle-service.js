@@ -27,12 +27,26 @@ export class RecycleService {
     }
   }
 
+  async prependRecycleEntry(entry) {
+    this.deletedItems.unshift(entry);
+    await this.saveToStorage();
+    return entry;
+  }
+
+  removeRecycleItemAt(index) {
+    if (index < 0 || index >= this.deletedItems.length) {
+      return null;
+    }
+
+    const [removedItem] = this.deletedItems.splice(index, 1);
+    return removedItem || null;
+  }
+
   async addToRecycle(item) {
-    this.deletedItems.unshift({
+    return this.prependRecycleEntry({
       ...item,
       deletedAt: Date.now(),
     });
-    await this.saveToStorage();
   }
 
   async addRecordingToRecycle(entry) {
@@ -42,9 +56,7 @@ export class RecycleService {
     });
     if (!recycleEntry) return null;
 
-    this.deletedItems.unshift(recycleEntry);
-    await this.saveToStorage();
-    return recycleEntry;
+    return this.prependRecycleEntry(recycleEntry);
   }
 
   getRecycleItems() {
@@ -52,12 +64,11 @@ export class RecycleService {
   }
 
   async deleteFromRecycle(index) {
-    if (index >= 0 && index < this.deletedItems.length) {
-      const [removedItem] = this.deletedItems.splice(index, 1);
-      await this.saveToStorage();
-      return removedItem || null;
-    }
-    return null;
+    const removedItem = this.removeRecycleItemAt(index);
+    if (!removedItem) return null;
+
+    await this.saveToStorage();
+    return removedItem;
   }
 
   async clearRecycle() {
@@ -95,12 +106,10 @@ export class RecycleService {
   }
 
   async restoreItem(index) {
-    if (index >= 0 && index < this.deletedItems.length) {
-      const item = this.deletedItems[index];
-      this.deletedItems.splice(index, 1);
-      await this.saveToStorage();
-      return item;
-    }
-    return null;
+    const item = this.removeRecycleItemAt(index);
+    if (!item) return null;
+
+    await this.saveToStorage();
+    return item;
   }
 }

@@ -3,14 +3,7 @@
  */
 
 import { normalizeAttachments } from "../lib/attachment-utils.js";
-import { getDB, STORE_RECORDINGS } from "./idb.js";
-
-const finishTransaction = (transaction) =>
-  new Promise((resolve, reject) => {
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error);
-  });
+import { deleteStoreRecords, getStoreRecord, putStoreRecord, STORE_RECORDINGS } from "./idb.js";
 
 const collectReferencedIds = (references, ids = new Set()) => {
   if (!references) return ids;
@@ -38,9 +31,7 @@ const collectReferencedIds = (references, ids = new Set()) => {
 };
 
 export const saveRecording = async (record) => {
-  const db = await getDB();
-  const transaction = db.transaction(STORE_RECORDINGS, "readwrite");
-  transaction.objectStore(STORE_RECORDINGS).put({
+  await putStoreRecord(STORE_RECORDINGS, {
     id: String(record.id),
     blob: record.blob,
     mimeType: String(record.mimeType || record.blob?.type || "audio/webm"),
@@ -48,30 +39,12 @@ export const saveRecording = async (record) => {
     durationMs: Number(record.durationMs || 0),
     createdAt: Number(record.createdAt || Date.now()),
   });
-  await finishTransaction(transaction);
 };
 
-export const loadRecording = async (id) => {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_RECORDINGS, "readonly");
-    const request = transaction.objectStore(STORE_RECORDINGS).get(String(id));
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result || null);
-  });
-};
+export const loadRecording = async (id) =>
+  (await getStoreRecord(STORE_RECORDINGS, String(id))) || null;
 
-export const deleteRecordings = async (ids) => {
-  const normalizedIds = [...new Set((Array.isArray(ids) ? ids : []).filter(Boolean).map(String))];
-  if (!normalizedIds.length) return 0;
-
-  const db = await getDB();
-  const transaction = db.transaction(STORE_RECORDINGS, "readwrite");
-  const store = transaction.objectStore(STORE_RECORDINGS);
-  normalizedIds.forEach((id) => store.delete(id));
-  await finishTransaction(transaction);
-  return normalizedIds.length;
-};
+export const deleteRecordings = async (ids) => deleteStoreRecords(STORE_RECORDINGS, ids);
 
 export const deleteUnreferencedRecordings = async (ids, references) => {
   const referencedIds = collectReferencedIds(references);

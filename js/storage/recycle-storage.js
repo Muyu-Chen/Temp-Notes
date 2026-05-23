@@ -3,29 +3,18 @@
  */
 
 import { normalizeRecycleEntry, toStoredRecycleEntry } from "../lib/recycle-utils.js";
-import { getDB, STORE_RECYCLE } from "./idb.js";
+import { getAllStoreRecords, replaceStoreRecords, STORE_RECYCLE } from "./idb.js";
+
+const isStoredObject = (value) => value && typeof value === "object";
+const sortByDeletedAtDescending = (items) =>
+  items.sort((a, b) => Number(b.deletedAt || 0) - Number(a.deletedAt || 0));
 
 export const loadRecycleItems = async () => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_RECYCLE, "readonly");
-      const store = transaction.objectStore(STORE_RECYCLE);
-      const index = store.index("deletedAt");
-      const request = index.getAll();
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const items = request.result || [];
-        resolve(
-          items
-            .filter((x) => x && typeof x === "object")
-            .map(normalizeRecycleEntry)
-            .filter(Boolean)
-            .sort((a, b) => b.deletedAt - a.deletedAt)
-        );
-      };
-    });
+    const items = await getAllStoreRecords(STORE_RECYCLE, "deletedAt");
+    return sortByDeletedAtDescending(
+      items.filter(isStoredObject).map(normalizeRecycleEntry).filter(Boolean)
+    );
   } catch (err) {
     console.error("Failed to load recycle items:", err);
     return [];
@@ -34,25 +23,10 @@ export const loadRecycleItems = async () => {
 
 export const saveRecycleItems = async (items) => {
   try {
-    const db = await getDB();
-    const transaction = db.transaction(STORE_RECYCLE, "readwrite");
-    const store = transaction.objectStore(STORE_RECYCLE);
-
-    await new Promise((resolve, reject) => {
-      const clearRequest = store.clear();
-      clearRequest.onerror = () => reject(clearRequest.error);
-      clearRequest.onsuccess = () => resolve();
-    });
-
-    return new Promise((resolve, reject) => {
-      items.forEach((item) => {
-        const stored = toStoredRecycleEntry(item);
-        if (stored) store.add(stored);
-      });
-
-      transaction.onerror = () => reject(transaction.error);
-      transaction.oncomplete = () => resolve();
-    });
+    await replaceStoreRecords(
+      STORE_RECYCLE,
+      (Array.isArray(items) ? items : []).map(toStoredRecycleEntry).filter(Boolean)
+    );
   } catch (err) {
     console.error("Failed to save recycle items:", err);
   }

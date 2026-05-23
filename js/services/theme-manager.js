@@ -3,6 +3,7 @@
  */
 
 import { STORAGE_KEYS } from "../constants.js";
+import { getLocalStorageItem, setLocalStorageItem } from "../lib/local-storage-utils.js";
 
 export const THEMES = {
   DARK: "dark",
@@ -19,21 +20,12 @@ export const getDefaultTheme = () => {
 };
 
 export const loadTheme = async () => {
-  try {
-    const theme = localStorage.getItem(STORAGE_KEYS.THEME);
-    return theme === THEMES.DARK || theme === THEMES.LIGHT ? theme : getDefaultTheme();
-  } catch (err) {
-    console.error("Failed to load theme:", err);
-    return getDefaultTheme();
-  }
+  const theme = getLocalStorageItem(STORAGE_KEYS.THEME, null, "Failed to load theme:");
+  return theme === THEMES.DARK || theme === THEMES.LIGHT ? theme : getDefaultTheme();
 };
 
 export const saveTheme = async (theme) => {
-  try {
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
-  } catch (err) {
-    console.error("Failed to save theme:", err);
-  }
+  setLocalStorageItem(STORAGE_KEYS.THEME, theme, "Failed to save theme:");
 };
 
 export const applyTheme = (theme) => {

@@ -11,6 +11,12 @@ export const STORE_RECORDINGS = "recordings";
 
 let dbInstance = null;
 
+const openStore = async (storeName, mode = "readonly") => {
+  const db = await getDB();
+  const transaction = db.transaction(storeName, mode);
+  return { transaction, store: transaction.objectStore(storeName) };
+};
+
 export const initDB = () => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -49,6 +55,61 @@ export const getDB = async () => {
   return dbInstance;
 };
 
+export const requestToPromise = (request) =>
+  new Promise((resolve, reject) => {
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+
+export const finishTransaction = (transaction) =>
+  new Promise((resolve, reject) => {
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+
+export const getStoreRecord = async (storeName, key) => {
+  const { store } = await openStore(storeName, "readonly");
+  return requestToPromise(store.get(key));
+};
+
+export const getAllStoreRecords = async (storeName, indexName = "") => {
+  const { store } = await openStore(storeName, "readonly");
+  const source = indexName ? store.index(indexName) : store;
+  return (await requestToPromise(source.getAll())) || [];
+};
+
+export const putStoreRecord = async (storeName, record) => {
+  const { transaction, store } = await openStore(storeName, "readwrite");
+  store.put(record);
+  await finishTransaction(transaction);
+};
+
+export const replaceStoreRecords = async (storeName, records) => {
+  const { transaction, store } = await openStore(storeName, "readwrite");
+  store.clear();
+  (Array.isArray(records) ? records : []).forEach((record) => {
+    if (record !== null && record !== undefined) {
+      store.add(record);
+    }
+  });
+  await finishTransaction(transaction);
+};
+
+export const deleteStoreRecords = async (storeName, keys) => {
+  const normalizedKeys = [
+    ...new Set((Array.isArray(keys) ? keys : []).filter((key) => key !== null && key !== undefined)),
+  ];
+  if (!normalizedKeys.length) {
+    return 0;
+  }
+
+  const { transaction, store } = await openStore(storeName, "readwrite");
+  normalizedKeys.forEach((key) => store.delete(key));
+  await finishTransaction(transaction);
+  return normalizedKeys.length;
+};
+
 export const clearObjectStores = async (storeNames) => {
   const db = await getDB();
   const transaction = db.transaction(storeNames, "readwrite");
@@ -57,8 +118,5 @@ export const clearObjectStores = async (storeNames) => {
     transaction.objectStore(storeName).clear();
   });
 
-  await new Promise((resolve, reject) => {
-    transaction.oncomplete = resolve;
-    transaction.onerror = () => reject(transaction.error);
-  });
+  await finishTransaction(transaction);
 };

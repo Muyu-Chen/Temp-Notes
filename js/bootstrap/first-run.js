@@ -3,6 +3,11 @@
  */
 
 import { STORAGE_KEYS } from "../constants.js";
+import {
+  getLocalStorageItem,
+  getLocalStorageLength,
+  setLocalStorageItem,
+} from "../lib/local-storage-utils.js";
 import { loadDraft, saveDraft } from "../storage/draft-storage.js";
 
 const USAGE_NOTICE = `GitHub链接：https://github.com/Muyu-Chen/Temp-Notes\n
@@ -15,12 +20,12 @@ const USAGE_NOTICE = `GitHub链接：https://github.com/Muyu-Chen/Temp-Notes\n
 该应用完全免费，开源在GitHub上，欢迎star、贡献和反馈！`;
 
 const ensureFirstOpenFlag = () => {
-  if (localStorage.length === 0) {
-    localStorage.setItem(STORAGE_KEYS.FIRST_OPEN, "false");
+  if (getLocalStorageLength() === 0) {
+    setLocalStorageItem(STORAGE_KEYS.FIRST_OPEN, "false");
     return false;
   }
 
-  return localStorage.getItem(STORAGE_KEYS.FIRST_OPEN) === null;
+  return getLocalStorageItem(STORAGE_KEYS.FIRST_OPEN) === null;
 };
 
 const buildUsageNotice = (draft) => {
@@ -50,7 +55,7 @@ export const initializeFirstRun = async () => {
     }
 
     const result = await ensureUsageNoticeInserted();
-    localStorage.setItem(STORAGE_KEYS.FIRST_OPEN, "false");
+    setLocalStorageItem(STORAGE_KEYS.FIRST_OPEN, "false");
     return result;
   } catch (err) {
     console.error("Failed to initialize first run:", err);

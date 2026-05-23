@@ -4,6 +4,11 @@
 
 import { STORAGE_KEYS } from "../constants.js";
 import {
+  getLocalStorageItem,
+  removeLocalStorageItem,
+  setLocalStorageItem,
+} from "../lib/local-storage-utils.js";
+import {
   clearObjectStores,
   STORE_ITEMS,
   STORE_RECORDINGS,
@@ -12,17 +17,42 @@ import {
 } from "../storage/idb.js";
 
 const FONT_SIZE_KEY = "font_size";
+const DEFAULT_FONT_SIZE = 16;
+const MIN_FONT_SIZE = 12;
+const MAX_FONT_SIZE = 20;
+const DEFAULT_DRAFT_MODE = "edit";
+const DEFAULT_RECORDING_FORMAT = "m4a";
 const VALID_DRAFT_MODES = new Set(["edit", "preview"]);
 const VALID_RECORDING_FORMATS = new Set(["m4a", "mp3", "webm"]);
 export const RECYCLE_RETENTION_OPTIONS = [0, 7, 30, 90];
+const EMPTY_LLM_SETTINGS = {
+  enabled: false,
+  baseUrl: "",
+  apiKey: "",
+  model: "",
+};
+
+const normalizeFontSize = (size) => {
+  const nextSize = parseInt(size, 10);
+  return nextSize >= MIN_FONT_SIZE && nextSize <= MAX_FONT_SIZE ? nextSize : null;
+};
+
+const readEnumPreference = (key, validValues, fallback) => {
+  const value = getLocalStorageItem(key);
+  return validValues.has(value) ? value : fallback;
+};
+
+const readNumberPreference = (key, validValues, fallback) => {
+  const value = Number(getLocalStorageItem(key));
+  return validValues.includes(value) ? value : fallback;
+};
+
+const readStringPreference = (key) => getLocalStorageItem(key, "") || "";
+
+const trimStoredText = (value) => String(value || "").trim();
 
 export const getFontSize = () => {
-  try {
-    const size = localStorage.getItem(FONT_SIZE_KEY);
-    return size ? parseInt(size, 10) : 16;
-  } catch {
-    return 16;
-  }
+  return normalizeFontSize(getLocalStorageItem(FONT_SIZE_KEY)) ?? DEFAULT_FONT_SIZE;
 };
 
 export const applyFontSize = (size) => {
@@ -30,47 +60,27 @@ export const applyFontSize = (size) => {
 };
 
 export const setFontSize = (size) => {
-  try {
-    const nextSize = parseInt(size, 10);
-    if (nextSize >= 12 && nextSize <= 20) {
-      localStorage.setItem(FONT_SIZE_KEY, nextSize);
-      applyFontSize(nextSize);
-      return nextSize;
-    }
-  } catch (err) {
-    console.error("Failed to set font size:", err);
+  const nextSize = normalizeFontSize(size);
+  if (nextSize === null) {
+    return null;
   }
 
-  return null;
+  setLocalStorageItem(FONT_SIZE_KEY, nextSize, "Failed to set font size:");
+  applyFontSize(nextSize);
+  return nextSize;
 };
 
-export const getDraftMode = () => {
-  try {
-    const mode = localStorage.getItem(STORAGE_KEYS.DRAFT_MODE);
-    return VALID_DRAFT_MODES.has(mode) ? mode : "edit";
-  } catch {
-    return "edit";
-  }
-};
+export const getDraftMode = () =>
+  readEnumPreference(STORAGE_KEYS.DRAFT_MODE, VALID_DRAFT_MODES, DEFAULT_DRAFT_MODE);
 
 export const setDraftMode = (mode) => {
-  const nextMode = VALID_DRAFT_MODES.has(mode) ? mode : "edit";
-  try {
-    localStorage.setItem(STORAGE_KEYS.DRAFT_MODE, nextMode);
-  } catch (err) {
-    console.error("Failed to save draft mode:", err);
-  }
+  const nextMode = VALID_DRAFT_MODES.has(mode) ? mode : DEFAULT_DRAFT_MODE;
+  setLocalStorageItem(STORAGE_KEYS.DRAFT_MODE, nextMode, "Failed to save draft mode:");
   return nextMode;
 };
 
-export const getRecycleRetentionDays = () => {
-  try {
-    const value = Number(localStorage.getItem(STORAGE_KEYS.RECYCLE_RETENTION_DAYS));
-    return RECYCLE_RETENTION_OPTIONS.includes(value) ? value : 0;
-  } catch {
-    return 0;
-  }
-};
+export const getRecycleRetentionDays = () =>
+  readNumberPreference(STORAGE_KEYS.RECYCLE_RETENTION_DAYS, RECYCLE_RETENTION_OPTIONS, 0);
 
 export const setRecycleRetentionDays = (days) => {
   const value = Number(days);
@@ -78,82 +88,79 @@ export const setRecycleRetentionDays = (days) => {
     return null;
   }
 
-  try {
-    localStorage.setItem(STORAGE_KEYS.RECYCLE_RETENTION_DAYS, String(value));
-  } catch (err) {
-    console.error("Failed to save recycle retention:", err);
-  }
-
+  setLocalStorageItem(
+    STORAGE_KEYS.RECYCLE_RETENTION_DAYS,
+    value,
+    "Failed to save recycle retention:"
+  );
   return value;
 };
 
 export const getRecycleRetentionText = (days) =>
   Number(days) > 0 ? `超过 ${days} 天自动清理` : "自动清理：永不";
 
-export const getRecordingFormatPreference = () => {
-  try {
-    const format = localStorage.getItem(STORAGE_KEYS.RECORDING_FORMAT);
-    return VALID_RECORDING_FORMATS.has(format) ? format : "m4a";
-  } catch {
-    return "m4a";
-  }
-};
+export const getRecordingFormatPreference = () =>
+  readEnumPreference(
+    STORAGE_KEYS.RECORDING_FORMAT,
+    VALID_RECORDING_FORMATS,
+    DEFAULT_RECORDING_FORMAT
+  );
 
 export const setRecordingFormatPreference = (format) => {
-  const nextFormat = VALID_RECORDING_FORMATS.has(format) ? format : "m4a";
-  try {
-    localStorage.setItem(STORAGE_KEYS.RECORDING_FORMAT, nextFormat);
-  } catch (err) {
-    console.error("Failed to save recording format:", err);
-  }
+  const nextFormat = VALID_RECORDING_FORMATS.has(format) ? format : DEFAULT_RECORDING_FORMAT;
+  setLocalStorageItem(
+    STORAGE_KEYS.RECORDING_FORMAT,
+    nextFormat,
+    "Failed to save recording format:"
+  );
   return nextFormat;
 };
 
 export const getLLMSettings = () => {
-  try {
-    const enabled = localStorage.getItem(STORAGE_KEYS.LLM_ENABLED) === "true";
-    const baseUrl = localStorage.getItem(STORAGE_KEYS.LLM_BASE_URL) || "";
-    const apiKey = localStorage.getItem(STORAGE_KEYS.LLM_API_KEY) || "";
-    const model = localStorage.getItem(STORAGE_KEYS.LLM_MODEL) || "";
-    return { enabled, baseUrl, apiKey, model };
-  } catch {
-    return { enabled: false, baseUrl: "", apiKey: "", model: "" };
-  }
+  return {
+    ...EMPTY_LLM_SETTINGS,
+    enabled: getLocalStorageItem(STORAGE_KEYS.LLM_ENABLED) === "true",
+    baseUrl: readStringPreference(STORAGE_KEYS.LLM_BASE_URL),
+    apiKey: readStringPreference(STORAGE_KEYS.LLM_API_KEY),
+    model: readStringPreference(STORAGE_KEYS.LLM_MODEL),
+  };
 };
 
 export const saveLLMSettings = (settings) => {
-  try {
-    localStorage.setItem(STORAGE_KEYS.LLM_ENABLED, settings.enabled ? "true" : "false");
-    localStorage.setItem(STORAGE_KEYS.LLM_BASE_URL, String(settings.baseUrl || "").trim());
-    localStorage.setItem(STORAGE_KEYS.LLM_API_KEY, String(settings.apiKey || "").trim());
-    localStorage.setItem(STORAGE_KEYS.LLM_MODEL, String(settings.model || "").trim());
-  } catch (err) {
-    console.error("Failed to save LLM settings:", err);
-  }
+  setLocalStorageItem(
+    STORAGE_KEYS.LLM_ENABLED,
+    settings.enabled ? "true" : "false",
+    "Failed to save LLM settings:"
+  );
+  setLocalStorageItem(
+    STORAGE_KEYS.LLM_BASE_URL,
+    trimStoredText(settings.baseUrl),
+    "Failed to save LLM settings:"
+  );
+  setLocalStorageItem(
+    STORAGE_KEYS.LLM_API_KEY,
+    trimStoredText(settings.apiKey),
+    "Failed to save LLM settings:"
+  );
+  setLocalStorageItem(
+    STORAGE_KEYS.LLM_MODEL,
+    trimStoredText(settings.model),
+    "Failed to save LLM settings:"
+  );
 };
 
-export const getLLMDebugLog = () => {
-  try {
-    return localStorage.getItem(STORAGE_KEYS.LLM_DEBUG_LOG) || "";
-  } catch {
-    return "";
-  }
-};
+export const getLLMDebugLog = () => readStringPreference(STORAGE_KEYS.LLM_DEBUG_LOG);
 
 export const saveLLMDebugLog = (logText) => {
-  try {
-    localStorage.setItem(STORAGE_KEYS.LLM_DEBUG_LOG, String(logText || ""));
-  } catch (err) {
-    console.error("Failed to save LLM debug log:", err);
-  }
+  setLocalStorageItem(
+    STORAGE_KEYS.LLM_DEBUG_LOG,
+    String(logText || ""),
+    "Failed to save LLM debug log:"
+  );
 };
 
 export const clearLLMDebugLog = () => {
-  try {
-    localStorage.removeItem(STORAGE_KEYS.LLM_DEBUG_LOG);
-  } catch (err) {
-    console.error("Failed to clear LLM debug log:", err);
-  }
+  removeLocalStorageItem(STORAGE_KEYS.LLM_DEBUG_LOG, "Failed to clear LLM debug log:");
 };
 
 export const clearPersistentData = async () => {
@@ -173,6 +180,6 @@ export const clearPersistentData = async () => {
     STORAGE_KEYS.THEME,
     STORAGE_KEYS.FIRST_OPEN,
   ].forEach((key) => {
-    localStorage.removeItem(key);
+    removeLocalStorageItem(key);
   });
 };
