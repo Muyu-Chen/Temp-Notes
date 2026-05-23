@@ -4,6 +4,7 @@
 
 import { humanBytes } from "../lib/bytes-utils.js";
 import { wordCount } from "../lib/text-utils.js";
+import { getPlaybackProgress } from "../lib/audio-waveform-utils.js";
 import { ItemListView } from "./item-list-view.js";
 import { renderMarkdown } from "./markdown-renderer.js";
 
@@ -107,9 +108,23 @@ export class UIController {
         this.showDraftAttachmentMenu(attachment, menuBtn);
       });
 
+      const expandBtn = document.createElement("button");
+      expandBtn.className = "draft-attachment-expand-btn";
+      expandBtn.type = "button";
+      expandBtn.textContent = "";
+      expandBtn.title = "展开播放器";
+      expandBtn.setAttribute("aria-label", "展开播放器");
+      expandBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.onDraftAttachmentExpand(attachment.id);
+      });
+
       const footer = document.createElement("div");
       footer.className = "draft-attachment-footer";
-      footer.append(meta, menuBtn);
+      const footerActions = document.createElement("div");
+      footerActions.className = "draft-attachment-footer-actions";
+      footerActions.append(menuBtn, expandBtn);
+      footer.append(meta, footerActions);
 
       body.append(name, footer);
 
@@ -118,8 +133,110 @@ export class UIController {
     });
   }
 
+  renderDraftAttachmentPlayer(attachment, state = {}) {
+    const panel = this.dom.attachmentPlayerPanel;
+    if (!attachment) {
+      panel.hidden = true;
+      panel.dataset.waveformKey = "";
+      return;
+    }
+
+    const currentTime = Number(state.currentTime || 0);
+    const duration = Number(state.duration || attachment.durationMs / 1000 || 0);
+    const progress = getPlaybackProgress(currentTime, duration);
+    const waveform = Array.isArray(state.waveform) && state.waveform.length > 0
+      ? state.waveform
+      : Array.from({ length: 56 }, () => 0);
+
+    panel.hidden = false;
+    panel.dataset.attachmentId = attachment.id;
+    this.dom.attachmentPlayerName.textContent = attachment.name || "录音";
+    this.dom.attachmentPlayerName.title = attachment.name || "录音";
+    this.dom.attachmentPlayerMeta.textContent = `${formatDuration(attachment.durationMs)} · ${humanBytes(
+      attachment.size || 0
+    )}`;
+    this.dom.attachmentPlayerPlay.textContent = state.playing ? "Ⅱ" : "▶";
+    this.dom.attachmentPlayerPlay.title = state.playing ? "暂停录音" : "播放录音";
+    this.dom.attachmentPlayerPlay.setAttribute("aria-label", this.dom.attachmentPlayerPlay.title);
+    this.dom.attachmentPlayerSpeed.textContent = `${state.playbackRate || 1}x`;
+    this.dom.attachmentPlayerSeek.value = String(Math.round(progress * 1000));
+    this.dom.attachmentPlayerSeek.style.setProperty("--progress", `${Math.round(progress * 100)}%`);
+    this.dom.attachmentPlayerCurrentTime.textContent = formatDuration(currentTime * 1000);
+    this.dom.attachmentPlayerDuration.textContent = formatDuration(duration * 1000);
+
+    const waveformKey = `${attachment.id}:${waveform.map((value) => Math.round(value * 100)).join(",")}`;
+    if (panel.dataset.waveformKey !== waveformKey) {
+      panel.dataset.waveformKey = waveformKey;
+      this.renderAttachmentWaveform(waveform);
+    }
+    this.updateAttachmentWaveformProgress(progress);
+  }
+
+  renderAttachmentWaveform(waveform) {
+    const root = this.dom.attachmentPlayerWaveform;
+    root.replaceChildren();
+    waveform.forEach((value, index) => {
+      const bar = document.createElement("button");
+      bar.type = "button";
+      bar.className = "attachment-player-waveform-bar";
+      bar.style.height = `${Math.max(14, Math.round(12 + Number(value || 0) * 40))}px`;
+      bar.title = "跳转到此处";
+      bar.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const nextProgress = index / Math.max(1, waveform.length - 1);
+        this.onDraftAttachmentSeek(nextProgress);
+      });
+      root.appendChild(bar);
+    });
+  }
+
+  updateAttachmentWaveformProgress(progress) {
+    const bars = Array.from(this.dom.attachmentPlayerWaveform.children);
+    if (!bars.length) return;
+
+    const playedCount = Math.floor(Math.min(Math.max(progress, 0), 1) * bars.length);
+    bars.forEach((bar, index) => {
+      bar.classList.toggle("played", index < playedCount);
+    });
+  }
+
   closeDraftAttachmentMenu() {
     document.querySelector(".draft-attachment-menu")?.remove();
+  }
+
+  showAttachmentPlayerMoreMenu(attachment, buttonElement) {
+    this.closeDraftAttachmentMenu();
+
+    const menu = document.createElement("div");
+    menu.className = "draft-attachment-menu";
+
+    const deleteItem = document.createElement("button");
+    deleteItem.className = "draft-attachment-menu-item menu-danger";
+    deleteItem.type = "button";
+    deleteItem.textContent = "删除";
+    deleteItem.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.remove();
+      this.onDraftAttachmentDelete(attachment.id);
+    });
+    menu.appendChild(deleteItem);
+
+    document.body.appendChild(menu);
+
+    const rect = buttonElement.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    menu.style.left = `${Math.min(rect.right - menuRect.width, window.innerWidth - menuRect.width - 8)}px`;
+    menu.style.top = `${Math.min(rect.bottom + 6, window.innerHeight - menuRect.height - 8)}px`;
+
+    setTimeout(() => {
+      const closeOnOutside = (e) => {
+        if (!menu.contains(e.target)) {
+          menu.remove();
+          document.removeEventListener("click", closeOnOutside);
+        }
+      };
+      document.addEventListener("click", closeOnOutside);
+    }, 0);
   }
 
   showDraftAttachmentMenu(attachment, buttonElement) {
@@ -274,5 +391,7 @@ export class UIController {
   onDraftAttachmentRename(id, name) {}
   onDraftAttachmentExport(id) {}
   onDraftAttachmentTranscribe(id) {}
+  onDraftAttachmentExpand(id) {}
+  onDraftAttachmentSeek(progress) {}
   onArchiveFiltersClear() {}
 }

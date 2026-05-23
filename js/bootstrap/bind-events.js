@@ -72,12 +72,18 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.startRecordingPanelDrag(e);
   });
 
+  domManager.attachmentPlayerDragHandle.addEventListener("pointerdown", (e) => {
+    appController.startAttachmentPlayerDrag(e);
+  });
+
   document.addEventListener("pointermove", (e) => {
     appController.dragRecordingPanel(e);
+    appController.dragAttachmentPlayer(e);
   });
 
   document.addEventListener("pointerup", (e) => {
     appController.endRecordingPanelDrag(e);
+    appController.endAttachmentPlayerDrag(e);
   });
 
   domManager.draftPreview.addEventListener("click", (e) => {
@@ -130,6 +136,10 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
 
   domManager.recycleRetentionSelect.addEventListener("change", (e) => {
     appController.setRecycleRetentionDays(e.target.value);
+  });
+
+  domManager.recordingFormatSelect.addEventListener("change", (e) => {
+    appController.setRecordingFormatPreference(e.target.value);
   });
 
   domManager.recycleSearch.addEventListener("input", () => {
@@ -229,9 +239,64 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.transcribeDraftAttachment(id);
   };
 
+  uiController.onDraftAttachmentExpand = (id) => {
+    appController.expandDraftAttachment(id);
+  };
+
+  uiController.onDraftAttachmentSeek = (progress) => {
+    appController.seekDraftAttachmentPlayback(progress);
+  };
+
   uiController.onArchiveFiltersClear = () => {
     appController.clearArchiveFilters();
   };
+
+  domManager.attachmentPlayerClose.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+  });
+
+  domManager.attachmentPlayerClose.addEventListener("click", (e) => {
+    e.stopPropagation();
+    appController.closeDraftAttachmentPlayer();
+  });
+
+  domManager.attachmentPlayerPlay.addEventListener("click", () => {
+    if (appController.expandedDraftAttachmentId) {
+      appController.toggleDraftAttachmentPlayback(appController.expandedDraftAttachmentId);
+    }
+  });
+
+  domManager.attachmentPlayerSeek.addEventListener("input", (e) => {
+    appController.seekDraftAttachmentPlayback(Number(e.target.value || 0) / 1000);
+  });
+
+  domManager.attachmentPlayerSpeed.addEventListener("click", () => {
+    appController.cycleDraftAttachmentPlaybackRate();
+  });
+
+  domManager.attachmentPlayerTranscribe.addEventListener("click", () => {
+    if (appController.expandedDraftAttachmentId) {
+      appController.transcribeDraftAttachment(appController.expandedDraftAttachmentId);
+    }
+  });
+
+  domManager.attachmentPlayerExport.addEventListener("click", () => {
+    if (appController.expandedDraftAttachmentId) {
+      appController.exportDraftAttachment(appController.expandedDraftAttachmentId);
+    }
+  });
+
+  domManager.attachmentPlayerMore.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const attachment = appController.getExpandedDraftAttachment();
+    if (attachment) {
+      uiController.showAttachmentPlayerMoreMenu(attachment, domManager.attachmentPlayerMore);
+    }
+  });
+
+  domManager.attachmentPlayerPanel.addEventListener("keydown", (e) => {
+    appController.onAttachmentPlayerKeyDown(e);
+  });
 
   document.addEventListener("keydown", (e) => {
     appController.onKeyDown(e);

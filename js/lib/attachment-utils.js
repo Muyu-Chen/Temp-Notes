@@ -2,12 +2,12 @@
  * 附件 metadata 规范化
  */
 
-const VALID_AUDIO_EXTENSIONS = new Set(["webm", "m4a", "mp4"]);
+const VALID_AUDIO_EXTENSIONS = new Set(["webm", "m4a", "mp3", "mp4"]);
 
 export const getAudioExtension = (mimeType) => {
   const value = String(mimeType || "").toLowerCase();
-  if (value.includes("mp4") || value.includes("mpeg-4")) return "mp4";
-  if (value.includes("m4a")) return "m4a";
+  if (value.includes("mpeg") || value.includes("mp3")) return "mp3";
+  if (value.includes("mp4") || value.includes("mpeg-4") || value.includes("m4a")) return "m4a";
   return "webm";
 };
 

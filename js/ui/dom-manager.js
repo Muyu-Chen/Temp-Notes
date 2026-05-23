@@ -17,6 +17,20 @@ export class DOMManager {
     this.recordingTimer = document.getElementById("recordingTimer");
     this.btnRecordingPause = document.getElementById("btnRecordingPause");
     this.btnRecordingStop = document.getElementById("btnRecordingStop");
+    this.attachmentPlayerPanel = document.getElementById("attachmentPlayerPanel");
+    this.attachmentPlayerDragHandle = document.getElementById("attachmentPlayerDragHandle");
+    this.attachmentPlayerName = document.getElementById("attachmentPlayerName");
+    this.attachmentPlayerMeta = document.getElementById("attachmentPlayerMeta");
+    this.attachmentPlayerWaveform = document.getElementById("attachmentPlayerWaveform");
+    this.attachmentPlayerSeek = document.getElementById("attachmentPlayerSeek");
+    this.attachmentPlayerCurrentTime = document.getElementById("attachmentPlayerCurrentTime");
+    this.attachmentPlayerDuration = document.getElementById("attachmentPlayerDuration");
+    this.attachmentPlayerPlay = document.getElementById("attachmentPlayerPlay");
+    this.attachmentPlayerSpeed = document.getElementById("attachmentPlayerSpeed");
+    this.attachmentPlayerTranscribe = document.getElementById("attachmentPlayerTranscribe");
+    this.attachmentPlayerExport = document.getElementById("attachmentPlayerExport");
+    this.attachmentPlayerMore = document.getElementById("attachmentPlayerMore");
+    this.attachmentPlayerClose = document.getElementById("attachmentPlayerClose");
     this.list = document.getElementById("list");
     this.search = document.getElementById("search");
     this.archiveSearchTools = document.getElementById("archiveSearchTools");
@@ -66,6 +80,7 @@ export class DOMManager {
     this.fontSizeValue = document.getElementById("fontSizeValue");
     this.recycleRetentionSelect = document.getElementById("recycleRetentionSelect");
     this.recycleRetentionDesc = document.getElementById("recycleRetentionDesc");
+    this.recordingFormatSelect = document.getElementById("recordingFormatSelect");
     this.llmEnabled = document.getElementById("llmEnabled");
     this.llmBaseUrl = document.getElementById("llmBaseUrl");
     this.llmApiKey = document.getElementById("llmApiKey");
@@ -131,6 +146,25 @@ export class DOMManager {
 
   setRecordingPanelPosition(left, top) {
     const panel = this.recordingFloatingPanel;
+    const rect = panel.getBoundingClientRect();
+    const margin = 12;
+    const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
+    const maxTop = Math.max(margin, window.innerHeight - rect.height - margin);
+    const nextLeft = Math.min(Math.max(left, margin), maxLeft);
+    const nextTop = Math.min(Math.max(top, margin), maxTop);
+
+    panel.style.left = `${nextLeft}px`;
+    panel.style.top = `${nextTop}px`;
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
+  }
+
+  setAttachmentPlayerVisible(visible) {
+    this.attachmentPlayerPanel.hidden = !visible;
+  }
+
+  setAttachmentPlayerPosition(left, top) {
+    const panel = this.attachmentPlayerPanel;
     const rect = panel.getBoundingClientRect();
     const margin = 12;
     const maxLeft = Math.max(margin, window.innerWidth - rect.width - margin);
@@ -264,5 +298,9 @@ export class DOMManager {
     this.recycleRetentionSelect.value = String(days);
     this.recycleRetentionDesc.textContent = text;
     this.recycleRetentionStatus.textContent = text;
+  }
+
+  setRecordingFormatPreference(format) {
+    this.recordingFormatSelect.value = ["m4a", "mp3", "webm"].includes(format) ? format : "m4a";
   }
 }

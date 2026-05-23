@@ -5,6 +5,7 @@
 import { clearDraftItemId } from "../storage/draft-storage.js";
 import { saveItem } from "../storage/item-storage.js";
 import { decryptContent, encryptContent, verifyPassword } from "../crypto.js";
+import { hasAudioAttachments } from "../lib/item-utils.js";
 import { cleanTitle, firstLine } from "../lib/text-utils.js";
 import { now } from "../lib/time-utils.js";
 
@@ -23,10 +24,18 @@ export class EncryptionService {
       return;
     }
 
+    const warnings = [];
     if (Array.isArray(item.tags) && item.tags.length > 0) {
+      warnings.push("标签会继续以明文保存并用于检索。");
+    }
+    if (hasAudioAttachments(item.attachments)) {
+      warnings.push("正文加密不会加密录音附件，录音仍是本地明文文件。");
+    }
+
+    if (warnings.length > 0) {
       const warning = await app.modal.show({
-        title: "标签会保持明文",
-        message: "当前条目已有标签。加密只会保护正文内容，标签会继续以明文保存并用于检索。",
+        title: "加密范围提示",
+        message: `加密只会保护正文内容。\n\n${warnings.join("\n")}`,
         okText: "继续加密",
         cancelText: "取消",
       });
