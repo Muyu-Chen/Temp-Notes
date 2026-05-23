@@ -80,8 +80,10 @@ header .sub {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1.45fr 0.85fr;
   gap: 14px;
+  grid-template-columns:
+    minmax(0, calc(63.04347826% - 8.82608696px))
+    minmax(0, calc(36.95652174% - 5.17391304px));
 }
 
 /* Panel */
