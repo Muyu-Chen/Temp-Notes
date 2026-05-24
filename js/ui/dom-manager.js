@@ -92,6 +92,7 @@ export class DOMManager {
     this.llmDebugLog = document.getElementById("llmDebugLog");
     this.llmCopyLogBtn = document.getElementById("llmCopyLogBtn");
     this.llmClearLogBtn = document.getElementById("llmClearLogBtn");
+    this.btnForceRefresh = document.getElementById("btnForceRefresh");
     this.btnClearAllData = document.getElementById("btnClearAllData");
   }
 

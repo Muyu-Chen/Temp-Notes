@@ -1993,6 +1993,14 @@ textarea {
   cursor: not-allowed;
 }
 
+.settings-refresh-button {
+  width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
 .llm-toggle-row {
   display: inline-flex;
   align-items: center;

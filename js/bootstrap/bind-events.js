@@ -179,6 +179,10 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.clearLLMDebugLog();
   });
 
+  domManager.btnForceRefresh.addEventListener("click", () => {
+    appController.forceRefresh();
+  });
+
   domManager.btnClearAllData.addEventListener("click", () => {
     appController.clearAllData();
   });

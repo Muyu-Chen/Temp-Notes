@@ -292,7 +292,7 @@ User receives feedback
 
 #### Recording and Attachments
 
-- [ ] Add recording playback controls inside entries, including seek, speed, and rename/remove attachment actions.
+- [x] Add recording playback controls inside entries, including seek, speed, and rename/remove attachment actions.
 - [ ] Add image attachment support with local previews, size warnings, and ZIP backup compatibility.
 - [ ] Add an attachment manager that lists large files and helps users clean storage without deleting the whole entry.
 - [ ] Plan optional audio transcription as a future LLM action; transcription must only run after explicit user action and use the user-configured provider.

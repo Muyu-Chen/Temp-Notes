@@ -406,6 +406,10 @@ export class AppController {
     this.ui.showToast("AI 失败日志已清除");
   }
 
+  forceRefresh() {
+    location.reload();
+  }
+
   setFontSize(size) {
     const nextSize = persistFontSize(size);
     if (nextSize !== null) {
