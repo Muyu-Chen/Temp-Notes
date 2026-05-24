@@ -210,6 +210,25 @@ export class UIController {
     const menu = document.createElement("div");
     menu.className = "draft-attachment-menu";
 
+    const actions = [
+      { label: "插入转录文本", handler: () => this.onDraftAttachmentInsertTranscription(attachment.id) },
+      { label: "生成摘要", handler: () => this.onDraftAttachmentGenerateSummary(attachment.id) },
+      { label: "插入摘要文本", handler: () => this.onDraftAttachmentInsertSummary(attachment.id) },
+    ];
+
+    actions.forEach((action) => {
+      const item = document.createElement("button");
+      item.className = "draft-attachment-menu-item";
+      item.type = "button";
+      item.textContent = action.label;
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.remove();
+        action.handler();
+      });
+      menu.appendChild(item);
+    });
+
     const deleteItem = document.createElement("button");
     deleteItem.className = "draft-attachment-menu-item menu-danger";
     deleteItem.type = "button";
@@ -247,6 +266,9 @@ export class UIController {
 
     const actions = [
       { label: "转录", handler: () => this.onDraftAttachmentTranscribe(attachment.id) },
+      { label: "插入转录文本", handler: () => this.onDraftAttachmentInsertTranscription(attachment.id) },
+      { label: "生成摘要", handler: () => this.onDraftAttachmentGenerateSummary(attachment.id) },
+      { label: "插入摘要文本", handler: () => this.onDraftAttachmentInsertSummary(attachment.id) },
       { label: "导出", handler: () => this.onDraftAttachmentExport(attachment.id) },
       {
         label: "删除",
@@ -391,6 +413,9 @@ export class UIController {
   onDraftAttachmentRename(id, name) {}
   onDraftAttachmentExport(id) {}
   onDraftAttachmentTranscribe(id) {}
+  onDraftAttachmentInsertTranscription(id) {}
+  onDraftAttachmentGenerateSummary(id) {}
+  onDraftAttachmentInsertSummary(id) {}
   onDraftAttachmentExpand(id) {}
   onDraftAttachmentSeek(progress) {}
   onArchiveFiltersClear() {}

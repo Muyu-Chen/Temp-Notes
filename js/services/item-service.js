@@ -191,4 +191,58 @@ export class ItemService {
     app.render();
     app.ui.showToast(`已添加 ${nextTags.length - currentTags.length} 个标签`);
   }
+
+  async generateTagsForDraft() {
+    const { app } = this;
+    if (!app.currentLoadedItemId) {
+      app.ui.showToast("请先把草稿存档或加载一个存档条目");
+      return;
+    }
+
+    const itemIndex = app.items.findIndex((x) => x.id === app.currentLoadedItemId);
+    if (itemIndex === -1) {
+      app.ui.showToast("当前草稿未关联有效条目");
+      return;
+    }
+
+    const item = app.items[itemIndex];
+    if (item.encrypted) {
+      app.ui.showToast("请先解密后再生成标签");
+      return;
+    }
+
+    const draftItem = {
+      ...item,
+      content: app.dom.getDraftValue(),
+      attachments: app.currentDraftAttachments,
+    };
+    app.ui.showToast("正在生成标签...");
+    const result = await app.llmService.generateTags(app.getLLMSettings(), draftItem);
+    if (!result.ok) {
+      if (result.debugLog) {
+        saveLLMDebugLog(result.debugLog);
+        app.dom.setLLMDebugLog(result.debugLog);
+        app.ui.showToast(`${result.message}（日志已保存）`);
+        return;
+      }
+      app.ui.showToast(result.message);
+      return;
+    }
+
+    const currentTags = normalizeTags(item.tags);
+    const nextTags = normalizeTags([...currentTags, ...result.tags]);
+    if (nextTags.join("\n").toLowerCase() === currentTags.join("\n").toLowerCase()) {
+      app.ui.showToast("没有新增标签");
+      return;
+    }
+
+    app.items[itemIndex] = {
+      ...item,
+      tags: nextTags,
+    };
+
+    await saveItem(app.items[itemIndex]);
+    app.render();
+    app.ui.showToast(`已添加 ${nextTags.length - currentTags.length} 个标签`);
+  }
 }

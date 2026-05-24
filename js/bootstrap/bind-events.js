@@ -56,6 +56,10 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.setDraftMode("preview");
   });
 
+  domManager.btnDraftGenerateTags.addEventListener("click", () => {
+    appController.generateDraftTags();
+  });
+
   domManager.btnRecordDraft.addEventListener("click", () => {
     appController.beginDraftRecording();
   });
@@ -159,9 +163,25 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
     appController.saveLLMSettings(settings);
   };
 
+  domManager.llmProfileSelect.addEventListener("change", (e) => {
+    appController.selectLLMProfile(e.target.value);
+  });
+
+  domManager.llmAddProfileBtn.addEventListener("click", () => {
+    appController.addLLMProfile();
+  });
+
+  domManager.llmSetDefaultBtn.addEventListener("click", () => {
+    appController.setActiveLLMProfileDefault();
+  });
+
+  domManager.llmDeleteProfileBtn.addEventListener("click", () => {
+    appController.deleteActiveLLMProfile();
+  });
+
   domManager.llmEnabled.addEventListener("change", saveLLMSettings);
 
-  [domManager.llmBaseUrl, domManager.llmApiKey, domManager.llmModel].forEach((input) => {
+  [domManager.llmProfileName, domManager.llmBaseUrl, domManager.llmApiKey, domManager.llmModel].forEach((input) => {
     input.addEventListener("input", () => {
       saveLLMSettings();
     });
@@ -177,6 +197,22 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
 
   domManager.llmClearLogBtn.addEventListener("click", () => {
     appController.clearLLMDebugLog();
+  });
+
+  [
+    domManager.transcriptionProviderSelect,
+    domManager.transcriptionLanguage,
+    domManager.openaiSttApiKey,
+    domManager.openaiSttFileModel,
+    domManager.realtimeCaptionsEnabled,
+    domManager.realtimeDraftEnabled,
+  ].forEach((input) => {
+    input.addEventListener("change", () => {
+      appController.saveTranscriptionSettings(domManager.getTranscriptionSettings());
+    });
+    input.addEventListener("input", () => {
+      appController.saveTranscriptionSettings(domManager.getTranscriptionSettings());
+    });
   });
 
   domManager.btnForceRefresh.addEventListener("click", () => {
@@ -249,6 +285,18 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
 
   uiController.onDraftAttachmentTranscribe = (id) => {
     appController.transcribeDraftAttachment(id);
+  };
+
+  uiController.onDraftAttachmentInsertTranscription = (id) => {
+    appController.insertDraftAttachmentTranscription(id);
+  };
+
+  uiController.onDraftAttachmentGenerateSummary = (id) => {
+    appController.generateDraftAttachmentSummary(id);
+  };
+
+  uiController.onDraftAttachmentInsertSummary = (id) => {
+    appController.insertDraftAttachmentSummary(id);
   };
 
   uiController.onDraftAttachmentExpand = (id) => {

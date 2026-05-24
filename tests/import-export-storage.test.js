@@ -244,11 +244,12 @@ describe("import/export storage helpers", () => {
 
     expect(itemSignature(items[0])).toBe("1|hello|");
     expect(exported).toMatchObject({
-      version: 2,
+      version: 3,
       draft: "draft",
       draftAttachments: [expect.objectContaining({ id: "rec-1" })],
       items: [expect.objectContaining({ id: "a", content: "hello" })],
       recycle: [expect.objectContaining({ id: "deleted", deletedAt: 6 })],
+      recordings: [],
     });
     expect(Number.isNaN(Date.parse(exported.exportedAt))).toBe(false);
   });

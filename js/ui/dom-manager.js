@@ -10,11 +10,13 @@ export class DOMManager {
     this.draftModeToggle = document.getElementById("draftModeToggle");
     this.btnMarkdownEdit = document.getElementById("btnMarkdownEdit");
     this.btnMarkdownPreview = document.getElementById("btnMarkdownPreview");
+    this.btnDraftGenerateTags = document.getElementById("btnDraftGenerateTags");
     this.btnRecordDraft = document.getElementById("btnRecordDraft");
     this.recordingFloatingPanel = document.getElementById("recordingFloatingPanel");
     this.recordingDragHandle = document.getElementById("recordingDragHandle");
     this.recordingStatusText = document.getElementById("recordingStatusText");
     this.recordingTimer = document.getElementById("recordingTimer");
+    this.recordingLiveText = document.getElementById("recordingLiveText");
     this.btnRecordingPause = document.getElementById("btnRecordingPause");
     this.btnRecordingStop = document.getElementById("btnRecordingStop");
     this.attachmentPlayerPanel = document.getElementById("attachmentPlayerPanel");
@@ -83,6 +85,11 @@ export class DOMManager {
     this.recycleRetentionSelect = document.getElementById("recycleRetentionSelect");
     this.recycleRetentionDesc = document.getElementById("recycleRetentionDesc");
     this.recordingFormatSelect = document.getElementById("recordingFormatSelect");
+    this.llmProfileSelect = document.getElementById("llmProfileSelect");
+    this.llmAddProfileBtn = document.getElementById("llmAddProfileBtn");
+    this.llmSetDefaultBtn = document.getElementById("llmSetDefaultBtn");
+    this.llmDeleteProfileBtn = document.getElementById("llmDeleteProfileBtn");
+    this.llmProfileName = document.getElementById("llmProfileName");
     this.llmEnabled = document.getElementById("llmEnabled");
     this.llmBaseUrl = document.getElementById("llmBaseUrl");
     this.llmApiKey = document.getElementById("llmApiKey");
@@ -92,6 +99,12 @@ export class DOMManager {
     this.llmDebugLog = document.getElementById("llmDebugLog");
     this.llmCopyLogBtn = document.getElementById("llmCopyLogBtn");
     this.llmClearLogBtn = document.getElementById("llmClearLogBtn");
+    this.transcriptionProviderSelect = document.getElementById("transcriptionProviderSelect");
+    this.transcriptionLanguage = document.getElementById("transcriptionLanguage");
+    this.openaiSttApiKey = document.getElementById("openaiSttApiKey");
+    this.openaiSttFileModel = document.getElementById("openaiSttFileModel");
+    this.realtimeCaptionsEnabled = document.getElementById("realtimeCaptionsEnabled");
+    this.realtimeDraftEnabled = document.getElementById("realtimeDraftEnabled");
     this.btnForceRefresh = document.getElementById("btnForceRefresh");
     this.btnClearAllData = document.getElementById("btnClearAllData");
   }
@@ -124,6 +137,11 @@ export class DOMManager {
     this.draft.value = content;
   }
 
+  setDraftInputLocked(locked) {
+    this.draft.readOnly = Boolean(locked);
+    this.draft.classList.toggle("draft-locked", Boolean(locked));
+  }
+
   setDraftPreview(content) {
     this.draftPreview.innerHTML = content;
   }
@@ -145,6 +163,13 @@ export class DOMManager {
     this.btnRecordingPause.textContent = paused ? "继续" : "暂停";
     this.btnRecordingPause.disabled = Boolean(stopping);
     this.btnRecordingStop.disabled = Boolean(stopping);
+  }
+
+  setRecordingLiveText(text) {
+    if (!this.recordingLiveText) return;
+    const value = String(text || "").trim();
+    this.recordingLiveText.hidden = !value;
+    this.recordingLiveText.textContent = value;
   }
 
   setRecordingPanelPosition(left, top) {
@@ -261,6 +286,8 @@ export class DOMManager {
 
   getLLMSettings() {
     return {
+      id: this.llmProfileSelect.value || "default",
+      name: this.llmProfileName.value || "",
       enabled: this.llmEnabled.checked,
       baseUrl: this.llmBaseUrl.value || "",
       apiKey: this.llmApiKey.value || "",
@@ -269,11 +296,35 @@ export class DOMManager {
   }
 
   setLLMSettings(settings) {
+    this.llmProfileName.value = settings.name || "";
     this.llmEnabled.checked = settings.enabled === true;
     this.llmBaseUrl.value = settings.baseUrl || "";
     this.llmApiKey.value = settings.apiKey || "";
     this.llmModel.value = settings.model || "";
     this.setLLMInputsEnabled(settings.enabled === true);
+  }
+
+  setLLMProfilesSettings({ profiles = [], defaultProfileId = "" } = {}) {
+    const activeId = this.llmProfileSelect.value || defaultProfileId || profiles[0]?.id || "";
+    this.llmProfileSelect.replaceChildren();
+    profiles.forEach((profile) => {
+      const option = document.createElement("option");
+      option.value = profile.id;
+      option.textContent = profile.id === defaultProfileId
+        ? `${profile.name || "未命名模型"}（默认）`
+        : profile.name || "未命名模型";
+      this.llmProfileSelect.appendChild(option);
+    });
+
+    const nextActiveId = profiles.some((profile) => profile.id === activeId)
+      ? activeId
+      : defaultProfileId || profiles[0]?.id || "";
+    this.llmProfileSelect.value = nextActiveId;
+    const activeProfile =
+      profiles.find((profile) => profile.id === nextActiveId) || profiles[0] || {};
+    this.setLLMSettings(activeProfile);
+    this.llmSetDefaultBtn.disabled = activeProfile.id === defaultProfileId;
+    this.llmDeleteProfileBtn.disabled = profiles.length <= 1;
   }
 
   setLLMInputsEnabled(enabled) {
@@ -305,6 +356,36 @@ export class DOMManager {
 
   setRecordingFormatPreference(format) {
     this.recordingFormatSelect.value = ["m4a", "mp3", "webm"].includes(format) ? format : "m4a";
+  }
+
+  getTranscriptionSettings() {
+    return {
+      provider: this.transcriptionProviderSelect.value || "local-whisper",
+      language: this.transcriptionLanguage.value || "",
+      openaiApiKey: this.openaiSttApiKey.value || "",
+      openaiFileModel: this.openaiSttFileModel.value || "gpt-4o-mini-transcribe",
+      openaiRealtimeModel: "gpt-realtime-whisper",
+      realtimeDelay: "medium",
+      realtimeCaptionsEnabled: this.realtimeCaptionsEnabled.checked,
+      realtimeDraftEnabled: this.realtimeDraftEnabled.checked,
+    };
+  }
+
+  setTranscriptionSettings(settings = {}) {
+    this.transcriptionProviderSelect.value = ["local-whisper", "openai"].includes(settings.provider)
+      ? settings.provider
+      : "local-whisper";
+    this.transcriptionLanguage.value = settings.language || "";
+    this.openaiSttApiKey.value = settings.openaiApiKey || "";
+    this.openaiSttFileModel.value = [
+      "gpt-4o-mini-transcribe",
+      "gpt-4o-transcribe",
+      "whisper-1",
+    ].includes(settings.openaiFileModel)
+      ? settings.openaiFileModel
+      : "gpt-4o-mini-transcribe";
+    this.realtimeCaptionsEnabled.checked = settings.realtimeCaptionsEnabled === true;
+    this.realtimeDraftEnabled.checked = settings.realtimeDraftEnabled === true;
   }
 
   setLayoutPreferences({ layoutWidth, columnLayout }) {

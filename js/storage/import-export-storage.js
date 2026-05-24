@@ -3,6 +3,7 @@
  */
 
 import { normalizeAttachments } from "../lib/attachment-utils.js";
+import { normalizeTranscription } from "../lib/transcription-utils.js";
 import { isRecordingRecycleEntry, normalizeRecycleEntry } from "../lib/recycle-utils.js";
 import { normalizeItem, sortItemsForDisplay } from "../lib/item-utils.js";
 
@@ -22,15 +23,27 @@ const sortByDeletedAtDescending = (items) =>
 export const exportData = (
   draft,
   items,
-  { recycle = [], draftAttachments = [] } = {}
+  { recycle = [], draftAttachments = [], recordings = [] } = {}
 ) => ({
-  version: 2,
+  version: 3,
   exportedAt: new Date().toISOString(),
   draft: String(draft || ""),
   draftAttachments: normalizeAttachments(draftAttachments),
   items: normalizeItemCollection(items),
   recycle: normalizeRecycleCollection(recycle),
+  recordings: normalizeRecordingMetadataCollection(recordings),
 });
+
+export const normalizeRecordingMetadata = (recording = {}) => {
+  if (!recording?.id) return null;
+  return {
+    id: String(recording.id),
+    transcription: normalizeTranscription(recording.transcription),
+  };
+};
+
+export const normalizeRecordingMetadataCollection = (recordings) =>
+  normalizeCollection(recordings, normalizeRecordingMetadata);
 
 export const normalizeImportedData = (data) => {
   if (!data || typeof data !== "object") {
@@ -41,8 +54,9 @@ export const normalizeImportedData = (data) => {
   const draftAttachments = normalizeAttachments(data.draftAttachments);
   const items = normalizeItemCollection(data.items);
   const recycle = normalizeRecycleCollection(data.recycle);
+  const recordings = normalizeRecordingMetadataCollection(data.recordings);
 
-  return { draft, draftAttachments, items, recycle, valid: true };
+  return { draft, draftAttachments, items, recycle, recordings, valid: true };
 };
 
 export const itemSignature = (item) =>
@@ -133,5 +147,8 @@ export const pruneMissingRecordingReferences = (data, availableRecordingIds) => 
     draftAttachments: filterAttachmentsByAvailableIds(data?.draftAttachments, availableIds),
     items: normalizeItemCollection(itemsWithAvailableAttachments),
     recycle: sortByDeletedAtDescending(normalizeRecycleCollection(recycleWithAvailableAttachments)),
+    recordings: normalizeRecordingMetadataCollection(data?.recordings).filter((recording) =>
+      availableIds.has(recording.id)
+    ),
   };
 };

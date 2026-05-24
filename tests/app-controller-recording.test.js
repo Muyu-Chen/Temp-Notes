@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   deleteUnreferencedRecordings: vi.fn(() => Promise.resolve(0)),
   loadRecording: vi.fn(() => Promise.resolve(null)),
+  updateRecordingTranscription: vi.fn(() => Promise.resolve(null)),
   loadDraftAttachments: vi.fn(() => Promise.resolve([])),
   saveDraftAttachments: vi.fn(() => Promise.resolve()),
   downloadBlobFile: vi.fn(),
@@ -12,6 +13,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../js/storage/recording-storage.js", () => ({
   deleteUnreferencedRecordings: mocks.deleteUnreferencedRecordings,
   loadRecording: mocks.loadRecording,
+  updateRecordingTranscription: mocks.updateRecordingTranscription,
 }));
 
 vi.mock("../js/storage/draft-attachments-storage.js", () => ({
@@ -66,6 +68,8 @@ const createRecordingController = ({
     setRecordingLauncherDisabled: vi.fn(),
     setRecordingPanelVisible: vi.fn(),
     setRecordingPanelState: vi.fn(),
+    setRecordingLiveText: vi.fn(),
+    setDraftInputLocked: vi.fn(),
     setRecordingPanelPosition: vi.fn(),
     setAttachmentPlayerPosition: vi.fn(),
     recordingFloatingPanel: {
@@ -95,6 +99,12 @@ const createRecordingController = ({
   controller.resumeRecording = vi.fn(() => resumeResult);
   controller.stopRecording = vi.fn(() => Promise.resolve(stopResult));
   controller.render = vi.fn();
+  controller.liveTranscription = {
+    enabled: false,
+    insertToDraft: false,
+    text: "",
+    queue: Promise.resolve(),
+  };
   return controller;
 };
 
@@ -448,12 +458,12 @@ describe("AppController recording UI flow", () => {
     expect(controller.toggleDraftAttachmentPlayback).not.toHaveBeenCalled();
   });
 
-  it("shows a clear placeholder for draft recording transcription", () => {
+  it("requires an existing draft recording before transcription", async () => {
     const controller = createRecordingController();
 
-    controller.transcribeDraftAttachment("rec-1");
+    await controller.transcribeDraftAttachment("rec-1");
 
-    expect(controller.ui.showToast).toHaveBeenCalledWith("转录功能待接入");
+    expect(controller.ui.showToast).toHaveBeenCalledWith("录音附件不存在");
   });
 
   it("clears archive search and filter state together", () => {

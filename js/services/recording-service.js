@@ -52,7 +52,7 @@ export class RecordingService {
     return candidates.find((mimeType) => isTypeSupported(mimeType)) || "";
   }
 
-  async start({ preferredFormat = "m4a" } = {}) {
+  async start({ preferredFormat = "m4a", timesliceMs = 0, onChunk = null } = {}) {
     if (!this.isSupported()) {
       return { ok: false, message: "当前浏览器不支持录音" };
     }
@@ -74,10 +74,13 @@ export class RecordingService {
     this.recorder.ondataavailable = (event) => {
       if (event.data && Number(event.data.size || 0) > 0) {
         this.chunks.push(event.data);
+        if (typeof onChunk === "function") {
+          onChunk(event.data);
+        }
       }
     };
 
-    this.recorder.start();
+    this.recorder.start(Number(timesliceMs || 0) > 0 ? Number(timesliceMs) : undefined);
     return { ok: true, message: "录音已开始" };
   }
 

@@ -45,9 +45,9 @@ export class ImportExportService {
         recycle: app.recycleService.getRecycleItems(),
         draftAttachments: app.currentDraftAttachments,
       });
-      const json = JSON.stringify(payload, null, 2);
-      const entries = [{ name: NOTES_JSON_PATH, data: json }];
+      const entries = [{ name: NOTES_JSON_PATH, data: "" }];
       let missingRecordingCount = 0;
+      const recordings = [];
 
       for (const attachment of collectAttachmentMetadata(payload)) {
         const record = await loadRecording(attachment.id);
@@ -55,12 +55,20 @@ export class ImportExportService {
           missingRecordingCount += 1;
           continue;
         }
+        recordings.push({
+          id: attachment.id,
+          transcription: record.transcription,
+        });
 
         entries.push({
           name: getRecordingZipPath(attachment),
           data: record.blob,
         });
       }
+
+      payload.recordings = recordings;
+      const json = JSON.stringify(payload, null, 2);
+      entries[0].data = json;
 
       const zipBlob = await createZipBlob(entries);
       downloadBlobFile(
@@ -133,6 +141,12 @@ export class ImportExportService {
 
   async importRecordingsFromZip(zipEntries, normalizedData) {
     const importedIds = [];
+    const transcriptionById = new Map(
+      (Array.isArray(normalizedData.recordings) ? normalizedData.recordings : []).map((recording) => [
+        recording.id,
+        recording.transcription,
+      ])
+    );
 
     for (const attachment of collectAttachmentMetadata(normalizedData)) {
       const entry = zipEntries.get(getRecordingZipPath(attachment));
@@ -146,6 +160,7 @@ export class ImportExportService {
         size: blob.size,
         durationMs: attachment.durationMs,
         createdAt: attachment.createdAt,
+        transcription: transcriptionById.get(attachment.id),
       });
       importedIds.push(attachment.id);
     }

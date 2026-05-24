@@ -7,12 +7,16 @@ import {
   getDraftMode,
   getLayoutWidthPreference,
   getLLMDebugLog,
+  getLLMProfilesSettings,
   getLLMSettings,
   getRecordingFormatPreference,
   getRecycleRetentionDays,
   getRecycleRetentionText,
+  getTranscriptionSettings,
+  saveLLMProfilesSettings,
   saveLLMSettings,
   saveLLMDebugLog,
+  saveTranscriptionSettings,
   setColumnLayoutPreference,
   setDraftMode,
   setLayoutWidthPreference,
@@ -96,6 +100,8 @@ describe("settings service", () => {
 
   it("persists LLM settings with disabled as the default", () => {
     expect(getLLMSettings()).toEqual({
+      id: "default",
+      name: "默认模型",
       enabled: false,
       baseUrl: "",
       apiKey: "",
@@ -110,10 +116,58 @@ describe("settings service", () => {
     });
 
     expect(getLLMSettings()).toEqual({
+      id: "default",
+      name: "默认模型",
       enabled: true,
       baseUrl: "https://api.example.com/v1",
       apiKey: "test-key",
       model: "model-a",
+    });
+  });
+
+  it("persists multiple LLM profiles and the selected default", () => {
+    saveLLMProfilesSettings({
+      profiles: [
+        { id: "a", name: "Model A", enabled: true, baseUrl: " https://a.test/v1 ", apiKey: " a ", model: " ma " },
+        { id: "b", name: "Model B", enabled: true, baseUrl: "https://b.test/v1", apiKey: "b", model: "mb" },
+      ],
+      defaultProfileId: "b",
+    });
+
+    expect(getLLMProfilesSettings()).toEqual({
+      defaultProfileId: "b",
+      profiles: [
+        { id: "a", name: "Model A", enabled: true, baseUrl: "https://a.test/v1", apiKey: "a", model: "ma" },
+        { id: "b", name: "Model B", enabled: true, baseUrl: "https://b.test/v1", apiKey: "b", model: "mb" },
+      ],
+    });
+    expect(getLLMSettings()).toMatchObject({ id: "b", model: "mb" });
+  });
+
+  it("persists transcription settings with local whisper as the default", () => {
+    expect(getTranscriptionSettings()).toMatchObject({
+      provider: "local-whisper",
+      openaiFileModel: "gpt-4o-mini-transcribe",
+      realtimeCaptionsEnabled: false,
+      realtimeDraftEnabled: false,
+    });
+
+    saveTranscriptionSettings({
+      provider: "openai",
+      openaiApiKey: " sk-test ",
+      openaiFileModel: "whisper-1",
+      language: " zh ",
+      realtimeCaptionsEnabled: true,
+      realtimeDraftEnabled: true,
+    });
+
+    expect(getTranscriptionSettings()).toMatchObject({
+      provider: "openai",
+      openaiApiKey: "sk-test",
+      openaiFileModel: "whisper-1",
+      language: "zh",
+      realtimeCaptionsEnabled: true,
+      realtimeDraftEnabled: true,
     });
   });
 

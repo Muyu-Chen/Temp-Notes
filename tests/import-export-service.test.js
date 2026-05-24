@@ -102,7 +102,11 @@ describe("ImportExportService", () => {
       createdAt: 20,
     };
     const blob = new Blob(["audio"], { type: "audio/webm" });
-    mocks.loadRecording.mockResolvedValue({ id: "rec-1", blob });
+    mocks.loadRecording.mockResolvedValue({
+      id: "rec-1",
+      blob,
+      transcription: { text: "hello", summary: "summary", status: "done" },
+    });
 
     const app = createApp();
     app.items = [{ id: "item-1", content: "Body", createdAt: 1, updatedAt: 2, attachments: [attachment] }];
@@ -114,7 +118,16 @@ describe("ImportExportService", () => {
       expect.objectContaining({ name: "recordings/rec-1.webm", data: blob }),
     ]);
     const notes = JSON.parse(mocks.createZipBlob.mock.calls[0][0][0].data);
-    expect(notes).toMatchObject({ version: 2, items: [expect.objectContaining({ id: "item-1" })] });
+    expect(notes).toMatchObject({
+      version: 3,
+      items: [expect.objectContaining({ id: "item-1" })],
+      recordings: [
+        expect.objectContaining({
+          id: "rec-1",
+          transcription: expect.objectContaining({ text: "hello", summary: "summary" }),
+        }),
+      ],
+    });
     expect(mocks.downloadBlobFile).toHaveBeenCalledWith(
       expect.any(Blob),
       "tempnotes-export-20260520-120000.zip"

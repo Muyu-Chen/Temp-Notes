@@ -63,6 +63,18 @@ export const getTagGenerationMessages = (item) => [
   },
 ];
 
+export const getSummaryGenerationMessages = (text) => [
+  {
+    role: "system",
+    content:
+      "你是一个笔记摘要助手。请用简洁中文概括录音转录内容，只返回摘要正文，不要返回解释。",
+  },
+  {
+    role: "user",
+    content: String(text || "").slice(0, 12000),
+  },
+];
+
 export const parseGeneratedTags = (value) => {
   const text = String(value ?? "").trim();
   if (!text) return [];
@@ -322,6 +334,71 @@ export class LLMService {
           assistantContent,
           errorMessage: message,
         }),
+      };
+    } finally {
+      request.cleanup();
+    }
+  }
+
+  async generateSummary(settings, text) {
+    const validation = validateTagGenerationSettings(settings);
+    if (!validation.ok) {
+      return { ok: false, requested: false, message: validation.reason, summary: "" };
+    }
+
+    if (!String(text || "").trim()) {
+      return { ok: false, requested: false, message: "暂无可摘要的转录文本", summary: "" };
+    }
+
+    if (typeof this.fetchImpl !== "function") {
+      return { ok: false, requested: false, message: "当前浏览器不支持 fetch", summary: "" };
+    }
+
+    const requestBody = {
+      model: String(settings.model || "").trim(),
+      messages: getSummaryGenerationMessages(text),
+      temperature: 0.2,
+    };
+    const request = this.createRequestOptions({
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${String(settings.apiKey || "").trim()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    try {
+      const response = await this.fetchImpl(
+        getChatCompletionsEndpoint(settings.baseUrl),
+        request.options
+      );
+      request.cleanup();
+      const responseText = await this.readResponseText(response);
+      if (!response.ok) {
+        return {
+          ok: false,
+          requested: true,
+          message: `摘要失败：HTTP ${response.status}`,
+          summary: "",
+        };
+      }
+
+      let data = null;
+      try {
+        data = JSON.parse(responseText);
+      } catch {}
+      const summary = String(data?.choices?.[0]?.message?.content || responseText || "").trim();
+      if (!summary) {
+        return { ok: false, requested: true, message: "未生成摘要", summary: "" };
+      }
+      return { ok: true, requested: true, message: "摘要已生成", summary };
+    } catch (err) {
+      return {
+        ok: false,
+        requested: true,
+        message: this.getErrorMessage("摘要失败", err),
+        summary: "",
       };
     } finally {
       request.cleanup();

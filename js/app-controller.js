@@ -8,7 +8,11 @@ import {
   saveDraftAttachments,
 } from "./storage/draft-attachments-storage.js";
 import { loadItems } from "./storage/item-storage.js";
-import { deleteUnreferencedRecordings, loadRecording } from "./storage/recording-storage.js";
+import {
+  deleteUnreferencedRecordings,
+  loadRecording,
+  updateRecordingTranscription,
+} from "./storage/recording-storage.js";
 import { normalizeAttachments } from "./lib/attachment-utils.js";
 import { buildWaveformBuckets, cyclePlaybackRate } from "./lib/audio-waveform-utils.js";
 import { downloadBlobFile, getRecordingExportFilename } from "./lib/download-utils.js";
@@ -26,6 +30,8 @@ import { RecycleActionsService } from "./services/recycle-actions-service.js";
 import { RecycleService } from "./services/recycle-service.js";
 import { LLMService } from "./services/llm-service.js";
 import { RecordingService } from "./services/recording-service.js";
+import { TranscriptionService } from "./services/transcription-service.js";
+import { TRANSCRIPTION_STATUS } from "./lib/transcription-utils.js";
 import {
   applyFontSize,
   applyColumnLayoutPreference,
@@ -36,12 +42,16 @@ import {
   getFontSize as readFontSize,
   getLayoutWidthPreference as readLayoutWidthPreference,
   getLLMDebugLog as readLLMDebugLog,
+  getLLMProfilesSettings as readLLMProfilesSettings,
   getLLMSettings as readLLMSettings,
   getRecycleRetentionDays as readRecycleRetentionDays,
   getRecordingFormatPreference as readRecordingFormatPreference,
+  getTranscriptionSettings as readTranscriptionSettings,
   getRecycleRetentionText,
   clearLLMDebugLog as removeLLMDebugLog,
-  saveLLMSettings as persistLLMSettings,
+  createLLMProfile,
+  saveLLMProfilesSettings as persistLLMProfilesSettings,
+  saveTranscriptionSettings as persistTranscriptionSettings,
   setColumnLayoutPreference as persistColumnLayoutPreference,
   setDraftMode as persistDraftMode,
   setFontSize as persistFontSize,
@@ -85,6 +95,12 @@ export class AppController {
     this.draftAttachmentPlaybackProgress = { id: null, currentTime: 0, duration: 0 };
     this.draftAttachmentPlaybackFrame = null;
     this.draftAttachmentWaveforms = new Map();
+    this.liveTranscription = {
+      enabled: false,
+      insertToDraft: false,
+      text: "",
+      queue: Promise.resolve(),
+    };
     this.modal = new Modal();
 
     this.recycleService = new RecycleService();
@@ -101,6 +117,7 @@ export class AppController {
     this.recycleActionsService = new RecycleActionsService(this);
     this.llmService = new LLMService();
     this.recordingService = new RecordingService();
+    this.transcriptionService = new TranscriptionService();
   }
 
   getStorageUsageBytes(draftValue = this.dom.getDraftValue()) {
@@ -231,6 +248,10 @@ export class AppController {
     return this.itemService.generateTags(id);
   }
 
+  generateDraftTags() {
+    return this.itemService.generateTagsForDraft();
+  }
+
   deleteItem(id) {
     return this.itemService.deleteItem(id);
   }
@@ -274,9 +295,10 @@ export class AppController {
     const fontSize = this.getFontSize();
     this.dom.fontSizeSlider.value = fontSize;
     this.dom.fontSizeValue.textContent = `${fontSize}px`;
-    this.dom.setLLMSettings(this.getLLMSettings());
+    this.dom.setLLMProfilesSettings(this.getLLMProfilesSettings());
     this.dom.setLLMStatus("未测试", "pending");
     this.dom.setLLMDebugLog(this.getLLMDebugLog());
+    this.dom.setTranscriptionSettings(this.getTranscriptionSettings());
     this.dom.setRecordingFormatPreference(this.getRecordingFormatPreference());
     this.dom.setLayoutPreferences({
       layoutWidth: this.getLayoutWidthPreference(),
@@ -371,14 +393,94 @@ export class AppController {
     return readLLMSettings();
   }
 
+  getLLMProfilesSettings() {
+    return readLLMProfilesSettings();
+  }
+
+  getTranscriptionSettings() {
+    return readTranscriptionSettings();
+  }
+
   getLLMDebugLog() {
     return readLLMDebugLog();
   }
 
   saveLLMSettings(settings) {
-    persistLLMSettings(settings);
+    const current = this.getLLMProfilesSettings();
+    const activeId = settings.id || this.dom.llmProfileSelect.value || current.defaultProfileId;
+    const profile = createLLMProfile({ ...settings, id: activeId });
+    const profiles = current.profiles.some((item) => item.id === activeId)
+      ? current.profiles.map((item) => (item.id === activeId ? profile : item))
+      : [...current.profiles, profile];
+    const normalized = persistLLMProfilesSettings({
+      profiles,
+      defaultProfileId: current.defaultProfileId || profile.id,
+    });
+    this.dom.setLLMProfilesSettings(normalized);
+    this.dom.llmProfileSelect.value = profile.id;
+    this.dom.setLLMSettings(profile);
     this.dom.setLLMInputsEnabled(settings.enabled);
     this.dom.setLLMStatus(settings.enabled ? "未测试" : "已关闭", "pending");
+  }
+
+  saveLLMProfilesSettings(settings) {
+    const normalized = persistLLMProfilesSettings(settings);
+    this.dom.setLLMProfilesSettings(normalized);
+    this.dom.setLLMStatus("未测试", "pending");
+    return normalized;
+  }
+
+  selectLLMProfile(id) {
+    const settings = this.getLLMProfilesSettings();
+    this.dom.setLLMProfilesSettings({ ...settings, defaultProfileId: settings.defaultProfileId });
+    this.dom.llmProfileSelect.value = id;
+    const profile = settings.profiles.find((item) => item.id === id) || settings.profiles[0];
+    this.dom.setLLMSettings(profile || {});
+    this.dom.llmSetDefaultBtn.disabled = profile?.id === settings.defaultProfileId;
+    this.dom.llmDeleteProfileBtn.disabled = settings.profiles.length <= 1;
+    this.dom.setLLMStatus("未测试", "pending");
+  }
+
+  addLLMProfile() {
+    const settings = this.getLLMProfilesSettings();
+    const profile = createLLMProfile({ name: `模型 ${settings.profiles.length + 1}` });
+    const normalized = this.saveLLMProfilesSettings({
+      profiles: [...settings.profiles, profile],
+      defaultProfileId: settings.defaultProfileId,
+    });
+    this.dom.llmProfileSelect.value = profile.id;
+    this.dom.setLLMSettings(profile);
+    this.dom.setLLMProfilesSettings(normalized);
+    this.dom.llmProfileSelect.value = profile.id;
+    this.ui.showToast("已新增模型配置");
+  }
+
+  deleteActiveLLMProfile() {
+    const settings = this.getLLMProfilesSettings();
+    const activeId = this.dom.llmProfileSelect.value;
+    if (settings.profiles.length <= 1) {
+      this.ui.showToast("至少保留一个模型配置");
+      return;
+    }
+
+    const profiles = settings.profiles.filter((profile) => profile.id !== activeId);
+    const defaultProfileId =
+      settings.defaultProfileId === activeId ? profiles[0].id : settings.defaultProfileId;
+    this.saveLLMProfilesSettings({ profiles, defaultProfileId });
+    this.ui.showToast("已删除模型配置");
+  }
+
+  setActiveLLMProfileDefault() {
+    const settings = this.getLLMProfilesSettings();
+    const activeId = this.dom.llmProfileSelect.value;
+    if (!settings.profiles.some((profile) => profile.id === activeId)) return;
+    this.saveLLMProfilesSettings({ ...settings, defaultProfileId: activeId });
+    this.ui.showToast("已设为默认模型");
+  }
+
+  saveTranscriptionSettings(settings) {
+    const nextSettings = persistTranscriptionSettings(settings);
+    this.dom.setTranscriptionSettings(nextSettings);
   }
 
   async testLLMConnection() {
@@ -459,9 +561,10 @@ export class AppController {
       applyColumnLayoutPreference("default");
       this.dom.setLayoutPreferences({ layoutWidth: "standard", columnLayout: "default" });
       this.dom.setRecycleRetention(0, getRecycleRetentionText(0));
-      this.dom.setLLMSettings({ enabled: false, baseUrl: "", apiKey: "", model: "" });
+      this.dom.setLLMProfilesSettings(this.getLLMProfilesSettings());
       this.dom.setLLMStatus("未测试", "pending");
       this.dom.setLLMDebugLog("");
+      this.dom.setTranscriptionSettings(this.getTranscriptionSettings());
 
       this.render();
       this.ui.showToast("所有数据已清除");
@@ -517,7 +620,14 @@ export class AppController {
   }
 
   async startRecording() {
-    return this.recordingService.start({ preferredFormat: this.getRecordingFormatPreference() });
+    const transcriptionSettings = this.getTranscriptionSettings();
+    const realtimeEnabled =
+      transcriptionSettings.realtimeCaptionsEnabled || transcriptionSettings.realtimeDraftEnabled;
+    return this.recordingService.start({
+      preferredFormat: this.getRecordingFormatPreference(),
+      timesliceMs: realtimeEnabled ? 15000 : 0,
+      onChunk: realtimeEnabled ? (chunk) => this.handleRecordingChunk(chunk) : null,
+    });
   }
 
   pauseRecording() {
@@ -914,8 +1024,149 @@ export class AppController {
     }
   }
 
-  transcribeDraftAttachment() {
-    this.ui.showToast("转录功能待接入");
+  async transcribeDraftAttachment(id, { silent = false } = {}) {
+    const attachment = this.currentDraftAttachments.find((item) => item.id === id);
+    if (!attachment) {
+      this.ui.showToast("录音附件不存在");
+      return null;
+    }
+
+    const record = await loadRecording(id);
+    if (!record?.blob) {
+      this.ui.showToast("录音文件不存在");
+      return null;
+    }
+
+    if (!silent) {
+      this.ui.showToast("正在转录录音...");
+    }
+    await updateRecordingTranscription(id, {
+      provider: this.getTranscriptionSettings().provider,
+      status: TRANSCRIPTION_STATUS.RUNNING,
+      error: "",
+    });
+
+    const result = await this.transcriptionService.transcribeRecording(
+      record,
+      this.getTranscriptionSettings()
+    );
+    const nextRecord = await updateRecordingTranscription(id, result.transcription);
+    this.renderExpandedDraftAttachmentPlayer();
+    if (!silent) {
+      this.ui.showToast(result.message);
+    }
+    return nextRecord?.transcription || result.transcription;
+  }
+
+  async insertDraftAttachmentTranscription(id) {
+    const record = await loadRecording(id);
+    const text = record?.transcription?.text || "";
+    if (!text.trim()) {
+      this.ui.showToast("暂无转录文本");
+      return;
+    }
+    this.insertTextToDraft(text);
+    this.ui.showToast("已插入转录文本");
+  }
+
+  async generateDraftAttachmentSummary(id) {
+    const record = await loadRecording(id);
+    const text = record?.transcription?.text || "";
+    if (!text.trim()) {
+      this.ui.showToast("请先转录录音");
+      return;
+    }
+
+    this.ui.showToast("正在生成摘要...");
+    const result = await this.llmService.generateSummary(this.getLLMSettings(), text);
+    if (!result.ok) {
+      this.ui.showToast(result.message);
+      return;
+    }
+
+    await updateRecordingTranscription(id, {
+      ...record.transcription,
+      summary: result.summary,
+      updatedAt: Date.now(),
+    });
+    this.ui.showToast("摘要已生成");
+  }
+
+  async insertDraftAttachmentSummary(id) {
+    const record = await loadRecording(id);
+    const summary = record?.transcription?.summary || "";
+    if (!summary.trim()) {
+      this.ui.showToast("暂无摘要文本");
+      return;
+    }
+    this.insertTextToDraft(summary);
+    this.ui.showToast("已插入摘要文本");
+  }
+
+  insertTextToDraft(text) {
+    const value = String(text || "").trim();
+    if (!value) return;
+    const draft = this.dom.draft;
+    const current = this.dom.getDraftValue();
+    const start = Number.isFinite(draft.selectionStart) ? draft.selectionStart : current.length;
+    const end = Number.isFinite(draft.selectionEnd) ? draft.selectionEnd : start;
+    const prefix = start > 0 && !current.slice(0, start).endsWith("\n") ? "\n\n" : "";
+    const suffix = end < current.length && !current.slice(end).startsWith("\n") ? "\n\n" : "";
+    const nextValue = `${current.slice(0, start)}${prefix}${value}${suffix}${current.slice(end)}`;
+    const nextCursor = start + prefix.length + value.length;
+    this.dom.setDraftValue(nextValue);
+    draft.selectionStart = nextCursor;
+    draft.selectionEnd = nextCursor;
+    this.onDraftInput();
+    this.ui.updateDraftPreview();
+    this.render();
+  }
+
+  startLiveTranscriptionState() {
+    const settings = this.getTranscriptionSettings();
+    const enabled = settings.realtimeCaptionsEnabled || settings.realtimeDraftEnabled;
+    this.liveTranscription = {
+      enabled,
+      insertToDraft: settings.realtimeDraftEnabled === true,
+      text: "",
+      queue: Promise.resolve(),
+    };
+    this.dom.setDraftInputLocked?.(settings.realtimeDraftEnabled === true);
+    this.dom.setRecordingLiveText?.(enabled ? "实时转录准备中..." : "");
+  }
+
+  stopLiveTranscriptionState() {
+    this.liveTranscription = {
+      enabled: false,
+      insertToDraft: false,
+      text: "",
+      queue: Promise.resolve(),
+    };
+    this.dom.setDraftInputLocked?.(false);
+    this.dom.setRecordingLiveText?.("");
+  }
+
+  handleRecordingChunk(chunk) {
+    if (!this.liveTranscription.enabled || !chunk?.size) return;
+    const settings = this.getTranscriptionSettings();
+    this.liveTranscription.queue = this.liveTranscription.queue
+      .then(async () => {
+        const result = await this.transcriptionService.transcribeBlob(chunk, settings);
+        const text = result.transcription?.text || "";
+        if (!result.ok || !text.trim()) return;
+
+        const nextText = this.liveTranscription.text
+          ? `${this.liveTranscription.text}\n${text.trim()}`
+          : text.trim();
+        this.liveTranscription.text = nextText;
+        this.dom.setRecordingLiveText?.(nextText);
+        if (this.liveTranscription.insertToDraft) {
+          this.insertTextToDraft(text.trim());
+        }
+      })
+      .catch((error) => {
+        console.warn("实时转录分段失败", error);
+      });
   }
 
   getRecordingElapsedMs() {
@@ -963,17 +1214,20 @@ export class AppController {
     this.dom.setRecordingPanelVisible(false);
     this.dom.setRecordingLauncherDisabled(false);
     this.dom.setRecordingPanelState({ state: "recording", timer: "00:00", stopping: false });
+    this.stopLiveTranscriptionState();
   }
 
   async beginDraftRecording() {
     if (this.recordingUi.active) return { ok: false, message: "录音已在进行中" };
 
     this.dom.setRecordingLauncherDisabled(true);
+    this.startLiveTranscriptionState();
 
     try {
       const result = await this.startRecording();
       if (!result?.ok) {
         this.dom.setRecordingLauncherDisabled(false);
+        this.stopLiveTranscriptionState();
         this.ui.showToast(result?.message || "录音启动失败");
         return result;
       }
@@ -1029,6 +1283,28 @@ export class AppController {
 
     try {
       const attachment = await this.stopRecording();
+      const liveText = (this.liveTranscription?.text || "").trim();
+      if (attachment && this.liveTranscription?.enabled) {
+        this.dom.setRecordingLiveText?.(liveText || "正在整理转录...");
+        await this.liveTranscription.queue;
+        const finalLiveText = (this.liveTranscription?.text || "").trim();
+        if (finalLiveText) {
+          await updateRecordingTranscription(attachment.id, {
+            text: finalLiveText,
+            provider: this.getTranscriptionSettings().provider,
+            model: this.getTranscriptionSettings().provider === "openai"
+              ? this.getTranscriptionSettings().openaiFileModel
+              : "Xenova/whisper-tiny",
+            status: TRANSCRIPTION_STATUS.DONE,
+            updatedAt: Date.now(),
+          });
+        } else {
+          const transcription = await this.transcribeDraftAttachment(attachment.id, { silent: true });
+          if (this.liveTranscription.insertToDraft && transcription?.text) {
+            this.insertTextToDraft(transcription.text);
+          }
+        }
+      }
       this.resetRecordingUi();
       this.render();
 

@@ -268,6 +268,54 @@ describe("ItemService", () => {
     expect(events.toasts).toEqual(["请先解密后再生成标签"]);
   });
 
+  it("generates tags for the currently loaded draft item and saves them to the archive item", async () => {
+    const { app, events, service } = createApp({
+      currentLoadedItemId: "item-1",
+      items: [{ id: "item-1", content: "Old body", tags: ["old"], attachments: [], updatedAt: 1000 }],
+    });
+    app.dom = {
+      getDraftValue: vi.fn(() => "Draft body"),
+      setLLMDebugLog: vi.fn(),
+    };
+    app.currentDraftAttachments = [{ id: "rec-1", type: "audio", mimeType: "audio/webm" }];
+    app.getLLMSettings = vi.fn(() => ({
+      id: "default",
+      enabled: true,
+      baseUrl: "https://api.example.com/v1",
+      apiKey: "x",
+      model: "tag-model",
+    }));
+    app.llmService = {
+      generateTags: vi.fn(() =>
+        Promise.resolve({ ok: true, requested: true, message: "标签已生成", tags: ["new"] })
+      ),
+    };
+
+    await service.generateTagsForDraft();
+
+    expect(app.llmService.generateTags).toHaveBeenCalledWith(
+      app.getLLMSettings(),
+      expect.objectContaining({ content: "Draft body", attachments: app.currentDraftAttachments })
+    );
+    expect(app.items[0].tags).toEqual(["old", "new"]);
+    expect(mocks.saveItem).toHaveBeenCalledWith(app.items[0]);
+    expect(events.toasts).toEqual(["正在生成标签...", "已添加 1 个标签"]);
+  });
+
+  it("asks users to archive before generating tags for an unlinked draft", async () => {
+    const { app, events, service } = createApp({
+      currentLoadedItemId: null,
+      items: [{ id: "item-1", content: "Body", updatedAt: 1000 }],
+    });
+    app.llmService = { generateTags: vi.fn() };
+
+    await service.generateTagsForDraft();
+
+    expect(app.llmService.generateTags).not.toHaveBeenCalled();
+    expect(mocks.saveItem).not.toHaveBeenCalled();
+    expect(events.toasts).toEqual(["请先把草稿存档或加载一个存档条目"]);
+  });
+
   it("does not modify tags when AI generation fails", async () => {
     const { app, events, service } = createApp({
       items: [{ id: "item-1", content: "Body", tags: ["old"], updatedAt: 1000 }],

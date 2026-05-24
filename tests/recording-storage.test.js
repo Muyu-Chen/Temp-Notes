@@ -47,6 +47,11 @@ describe("recording storage", () => {
       size: 5,
       durationMs: 100,
       createdAt: 200,
+      transcription: expect.objectContaining({
+        text: "",
+        summary: "",
+        status: "idle",
+      }),
     });
   });
 
@@ -54,7 +59,10 @@ describe("recording storage", () => {
     const record = { id: "rec-1" };
     mocks.getStoreRecord.mockResolvedValue(record);
 
-    await expect(loadRecording("rec-1")).resolves.toBe(record);
+    await expect(loadRecording("rec-1")).resolves.toMatchObject({
+      id: "rec-1",
+      transcription: expect.objectContaining({ status: "idle" }),
+    });
   });
 
   it("deletes only unreferenced recordings", async () => {

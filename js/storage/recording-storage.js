@@ -3,6 +3,7 @@
  */
 
 import { normalizeAttachments } from "../lib/attachment-utils.js";
+import { normalizeTranscription } from "../lib/transcription-utils.js";
 import { deleteStoreRecords, getStoreRecord, putStoreRecord, STORE_RECORDINGS } from "./idb.js";
 
 const collectReferencedIds = (references, ids = new Set()) => {
@@ -38,11 +39,40 @@ export const saveRecording = async (record) => {
     size: Number(record.size || record.blob?.size || 0),
     durationMs: Number(record.durationMs || 0),
     createdAt: Number(record.createdAt || Date.now()),
+    transcription: normalizeTranscription(record.transcription),
   });
 };
 
 export const loadRecording = async (id) =>
-  (await getStoreRecord(STORE_RECORDINGS, String(id))) || null;
+  normalizeRecordingRecord(await getStoreRecord(STORE_RECORDINGS, String(id)));
+
+export const normalizeRecordingRecord = (record) => {
+  if (!record || typeof record !== "object") return null;
+  return {
+    ...record,
+    id: String(record.id),
+    mimeType: String(record.mimeType || record.blob?.type || "audio/webm"),
+    size: Number(record.size || record.blob?.size || 0),
+    durationMs: Number(record.durationMs || 0),
+    createdAt: Number(record.createdAt || Date.now()),
+    transcription: normalizeTranscription(record.transcription),
+  };
+};
+
+export const updateRecordingTranscription = async (id, transcription) => {
+  const record = await loadRecording(id);
+  if (!record) return null;
+  const nextRecord = {
+    ...record,
+    transcription: normalizeTranscription({
+      ...record.transcription,
+      ...transcription,
+      updatedAt: transcription?.updatedAt || Date.now(),
+    }),
+  };
+  await saveRecording(nextRecord);
+  return nextRecord;
+};
 
 export const deleteRecordings = async (ids) => deleteStoreRecords(STORE_RECORDINGS, ids);
 

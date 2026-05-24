@@ -87,15 +87,28 @@
 
       <div class="settings-item settings-item-stack">
         <div class="settings-label">
-          <span class="label-name">大模型配置</span>
-          <span class="label-desc">默认关闭；只有启用后主动测试或使用 AI 功能时才会请求配置的服务。</span>
+          <span class="label-name">文本大模型配置</span>
+          <span class="label-desc">用于 AI 生成标签和摘要；可保存多组 OpenAI-compatible API。</span>
         </div>
 
         <div class="settings-form">
+          <div class="settings-profile-toolbar">
+            <select id="llmProfileSelect" class="settings-select" aria-label="文本模型配置"></select>
+            <button id="llmAddProfileBtn" type="button">新增</button>
+            <button id="llmSetDefaultBtn" type="button">设为默认</button>
+            <button id="llmDeleteProfileBtn" type="button" class="danger">删除</button>
+          </div>
+
           <label class="llm-toggle-row">
             <input type="checkbox" id="llmEnabled">
-            <span>启用大模型功能</span>
+            <span>启用当前模型配置</span>
           </label>
+
+          <div class="settings-field-grid">
+            <label for="llmProfileName">名称</label>
+            <input type="text" id="llmProfileName" class="settings-input" placeholder="例如：OpenAI / DeepSeek"
+              spellcheck="false" autocapitalize="off" autocomplete="off">
+          </div>
 
           <div class="settings-field-grid">
             <label for="llmBaseUrl">Base URL</label>
@@ -131,6 +144,54 @@
             <textarea id="llmDebugLog" class="settings-input llm-debug-log" readonly
               placeholder="暂无失败日志"></textarea>
           </div>
+        </div>
+      </div>
+
+      <div class="settings-item settings-item-stack">
+        <div class="settings-label">
+          <span class="label-name">本地转录</span>
+          <span class="label-desc">默认使用浏览器本地 Whisper tiny；首次使用会下载模型并由浏览器缓存。</span>
+        </div>
+
+        <div class="settings-form">
+          <div class="settings-field-grid">
+            <label for="transcriptionProviderSelect">转录方式</label>
+            <select id="transcriptionProviderSelect" class="settings-select">
+              <option value="local-whisper">本地 Whisper tiny</option>
+              <option value="openai">OpenAI（备用）</option>
+            </select>
+          </div>
+
+          <div class="settings-field-grid">
+            <label for="transcriptionLanguage">语言提示</label>
+            <input type="text" id="transcriptionLanguage" class="settings-input" placeholder="留空自动识别，或填 zh / en"
+              spellcheck="false" autocapitalize="off" autocomplete="off">
+          </div>
+
+          <div class="settings-field-grid">
+            <label for="openaiSttApiKey">OpenAI Key</label>
+            <input type="password" id="openaiSttApiKey" class="settings-input" placeholder="备用在线转录时使用"
+              spellcheck="false" autocapitalize="off" autocomplete="off">
+          </div>
+
+          <div class="settings-field-grid">
+            <label for="openaiSttFileModel">文件模型</label>
+            <select id="openaiSttFileModel" class="settings-select">
+              <option value="gpt-4o-mini-transcribe">gpt-4o-mini-transcribe</option>
+              <option value="gpt-4o-transcribe">gpt-4o-transcribe</option>
+              <option value="whisper-1">whisper-1</option>
+            </select>
+          </div>
+
+          <label class="llm-toggle-row">
+            <input type="checkbox" id="realtimeCaptionsEnabled">
+            <span>录音时显示实时字幕</span>
+          </label>
+
+          <label class="llm-toggle-row">
+            <input type="checkbox" id="realtimeDraftEnabled">
+            <span>录音时实时转录进草稿（会暂时禁止手动输入）</span>
+          </label>
         </div>
       </div>
 

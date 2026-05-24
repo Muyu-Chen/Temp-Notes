@@ -24,16 +24,47 @@ const DEFAULT_DRAFT_MODE = "edit";
 const DEFAULT_RECORDING_FORMAT = "m4a";
 const DEFAULT_LAYOUT_WIDTH = "standard";
 const DEFAULT_COLUMN_LAYOUT = "default";
+const DEFAULT_LLM_PROFILE_ID = "default";
+const DEFAULT_TRANSCRIPTION_PROVIDER = "local-whisper";
+const DEFAULT_OPENAI_STT_FILE_MODEL = "gpt-4o-mini-transcribe";
+const DEFAULT_OPENAI_STT_REALTIME_MODEL = "gpt-realtime-whisper";
+const DEFAULT_REALTIME_TRANSCRIPTION_DELAY = "medium";
 const VALID_DRAFT_MODES = new Set(["edit", "preview"]);
 const VALID_RECORDING_FORMATS = new Set(["m4a", "mp3", "webm"]);
 const VALID_LAYOUT_WIDTHS = new Set(["auto", "standard", "wide", "ultrawide"]);
 const VALID_COLUMN_LAYOUTS = new Set(["default", "editor", "archive"]);
+const VALID_TRANSCRIPTION_PROVIDERS = new Set(["local-whisper", "openai"]);
+const VALID_OPENAI_STT_FILE_MODELS = new Set([
+  "gpt-4o-mini-transcribe",
+  "gpt-4o-transcribe",
+  "whisper-1",
+]);
+const VALID_OPENAI_STT_REALTIME_MODELS = new Set(["gpt-realtime-whisper"]);
+const VALID_REALTIME_TRANSCRIPTION_DELAYS = new Set([
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+]);
 export const RECYCLE_RETENTION_OPTIONS = [0, 7, 30, 90];
 const EMPTY_LLM_SETTINGS = {
+  id: DEFAULT_LLM_PROFILE_ID,
+  name: "默认模型",
   enabled: false,
   baseUrl: "",
   apiKey: "",
   model: "",
+};
+const EMPTY_TRANSCRIPTION_SETTINGS = {
+  provider: DEFAULT_TRANSCRIPTION_PROVIDER,
+  openaiApiKey: "",
+  openaiFileModel: DEFAULT_OPENAI_STT_FILE_MODEL,
+  openaiRealtimeModel: DEFAULT_OPENAI_STT_REALTIME_MODEL,
+  language: "",
+  realtimeDelay: DEFAULT_REALTIME_TRANSCRIPTION_DELAY,
+  realtimeCaptionsEnabled: false,
+  realtimeDraftEnabled: false,
 };
 
 const normalizeFontSize = (size) => {
@@ -54,6 +85,56 @@ const readNumberPreference = (key, validValues, fallback) => {
 const readStringPreference = (key) => getLocalStorageItem(key, "") || "";
 
 const trimStoredText = (value) => String(value || "").trim();
+
+const readBooleanPreference = (key, fallback = false) => {
+  const value = getLocalStorageItem(key);
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
+};
+
+const readJsonPreference = (key) => {
+  const value = getLocalStorageItem(key);
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+const makeProfileId = () => {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `profile-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+};
+
+export const createLLMProfile = (profile = {}) => ({
+  ...EMPTY_LLM_SETTINGS,
+  id: profile.id ? String(profile.id) : makeProfileId(),
+  name: trimStoredText(profile.name) || "未命名模型",
+  enabled: profile.enabled === true,
+  baseUrl: trimStoredText(profile.baseUrl),
+  apiKey: trimStoredText(profile.apiKey),
+  model: trimStoredText(profile.model),
+});
+
+export const normalizeLLMProfilesSettings = (settings = {}) => {
+  const profiles = (Array.isArray(settings.profiles) ? settings.profiles : [])
+    .map(createLLMProfile)
+    .filter((profile) => profile.id);
+  const normalizedProfiles = profiles.length
+    ? profiles
+    : [{ ...EMPTY_LLM_SETTINGS, id: DEFAULT_LLM_PROFILE_ID }];
+  const defaultProfileId = normalizedProfiles.some(
+    (profile) => profile.id === settings.defaultProfileId
+  )
+    ? String(settings.defaultProfileId)
+    : normalizedProfiles[0].id;
+
+  return { profiles: normalizedProfiles, defaultProfileId };
+};
 
 export const getFontSize = () => {
   return normalizeFontSize(getLocalStorageItem(FONT_SIZE_KEY)) ?? DEFAULT_FONT_SIZE;
@@ -164,37 +245,155 @@ export const setColumnLayoutPreference = (value) => {
   return nextValue;
 };
 
-export const getLLMSettings = () => {
-  return {
-    ...EMPTY_LLM_SETTINGS,
-    enabled: getLocalStorageItem(STORAGE_KEYS.LLM_ENABLED) === "true",
-    baseUrl: readStringPreference(STORAGE_KEYS.LLM_BASE_URL),
-    apiKey: readStringPreference(STORAGE_KEYS.LLM_API_KEY),
-    model: readStringPreference(STORAGE_KEYS.LLM_MODEL),
-  };
+export const getLLMProfilesSettings = () => {
+  const stored = readJsonPreference(STORAGE_KEYS.LLM_PROFILES);
+  if (stored) {
+    return normalizeLLMProfilesSettings({
+      profiles: stored.profiles,
+      defaultProfileId:
+        stored.defaultProfileId || getLocalStorageItem(STORAGE_KEYS.LLM_DEFAULT_PROFILE_ID),
+    });
+  }
+
+  return normalizeLLMProfilesSettings({
+    profiles: [{ ...EMPTY_LLM_SETTINGS }],
+    defaultProfileId: DEFAULT_LLM_PROFILE_ID,
+  });
 };
 
+export const saveLLMProfilesSettings = (settings) => {
+  const normalized = normalizeLLMProfilesSettings(settings);
+  setLocalStorageItem(
+    STORAGE_KEYS.LLM_PROFILES,
+    JSON.stringify(normalized),
+    "Failed to save LLM profiles:"
+  );
+  setLocalStorageItem(
+    STORAGE_KEYS.LLM_DEFAULT_PROFILE_ID,
+    normalized.defaultProfileId,
+    "Failed to save LLM profiles:"
+  );
+  return normalized;
+};
+
+export const getDefaultLLMProfile = () => {
+  const settings = getLLMProfilesSettings();
+  return (
+    settings.profiles.find((profile) => profile.id === settings.defaultProfileId) ||
+    settings.profiles[0] ||
+    EMPTY_LLM_SETTINGS
+  );
+};
+
+export const getLLMSettings = () => getDefaultLLMProfile();
+
 export const saveLLMSettings = (settings) => {
+  const current = getLLMProfilesSettings();
+  const defaultId = current.defaultProfileId || DEFAULT_LLM_PROFILE_ID;
+  const nextProfile = createLLMProfile({
+    ...settings,
+    id: defaultId,
+    name: settings.name || getDefaultLLMProfile().name || "默认模型",
+  });
+  const profiles = current.profiles.some((profile) => profile.id === defaultId)
+    ? current.profiles.map((profile) => (profile.id === defaultId ? nextProfile : profile))
+    : [nextProfile, ...current.profiles];
+  return saveLLMProfilesSettings({ profiles, defaultProfileId: defaultId });
+};
+
+export const getTranscriptionSettings = () => ({
+  ...EMPTY_TRANSCRIPTION_SETTINGS,
+  provider: readEnumPreference(
+    STORAGE_KEYS.TRANSCRIPTION_PROVIDER,
+    VALID_TRANSCRIPTION_PROVIDERS,
+    DEFAULT_TRANSCRIPTION_PROVIDER
+  ),
+  openaiApiKey: readStringPreference(STORAGE_KEYS.OPENAI_STT_API_KEY),
+  openaiFileModel: readEnumPreference(
+    STORAGE_KEYS.OPENAI_STT_FILE_MODEL,
+    VALID_OPENAI_STT_FILE_MODELS,
+    DEFAULT_OPENAI_STT_FILE_MODEL
+  ),
+  openaiRealtimeModel: readEnumPreference(
+    STORAGE_KEYS.OPENAI_STT_REALTIME_MODEL,
+    VALID_OPENAI_STT_REALTIME_MODELS,
+    DEFAULT_OPENAI_STT_REALTIME_MODEL
+  ),
+  language: readStringPreference(STORAGE_KEYS.TRANSCRIPTION_LANGUAGE),
+  realtimeDelay: readEnumPreference(
+    STORAGE_KEYS.REALTIME_TRANSCRIPTION_DELAY,
+    VALID_REALTIME_TRANSCRIPTION_DELAYS,
+    DEFAULT_REALTIME_TRANSCRIPTION_DELAY
+  ),
+  realtimeCaptionsEnabled: readBooleanPreference(
+    STORAGE_KEYS.REALTIME_CAPTIONS_ENABLED,
+    false
+  ),
+  realtimeDraftEnabled: readBooleanPreference(STORAGE_KEYS.REALTIME_DRAFT_ENABLED, false),
+});
+
+export const saveTranscriptionSettings = (settings = {}) => {
+  const nextSettings = {
+    ...EMPTY_TRANSCRIPTION_SETTINGS,
+    provider: VALID_TRANSCRIPTION_PROVIDERS.has(settings.provider)
+      ? settings.provider
+      : DEFAULT_TRANSCRIPTION_PROVIDER,
+    openaiApiKey: trimStoredText(settings.openaiApiKey),
+    openaiFileModel: VALID_OPENAI_STT_FILE_MODELS.has(settings.openaiFileModel)
+      ? settings.openaiFileModel
+      : DEFAULT_OPENAI_STT_FILE_MODEL,
+    openaiRealtimeModel: VALID_OPENAI_STT_REALTIME_MODELS.has(settings.openaiRealtimeModel)
+      ? settings.openaiRealtimeModel
+      : DEFAULT_OPENAI_STT_REALTIME_MODEL,
+    language: trimStoredText(settings.language),
+    realtimeDelay: VALID_REALTIME_TRANSCRIPTION_DELAYS.has(settings.realtimeDelay)
+      ? settings.realtimeDelay
+      : DEFAULT_REALTIME_TRANSCRIPTION_DELAY,
+    realtimeCaptionsEnabled: settings.realtimeCaptionsEnabled === true,
+    realtimeDraftEnabled: settings.realtimeDraftEnabled === true,
+  };
+
   setLocalStorageItem(
-    STORAGE_KEYS.LLM_ENABLED,
-    settings.enabled ? "true" : "false",
-    "Failed to save LLM settings:"
+    STORAGE_KEYS.TRANSCRIPTION_PROVIDER,
+    nextSettings.provider,
+    "Failed to save transcription settings:"
   );
   setLocalStorageItem(
-    STORAGE_KEYS.LLM_BASE_URL,
-    trimStoredText(settings.baseUrl),
-    "Failed to save LLM settings:"
+    STORAGE_KEYS.OPENAI_STT_API_KEY,
+    nextSettings.openaiApiKey,
+    "Failed to save transcription settings:"
   );
   setLocalStorageItem(
-    STORAGE_KEYS.LLM_API_KEY,
-    trimStoredText(settings.apiKey),
-    "Failed to save LLM settings:"
+    STORAGE_KEYS.OPENAI_STT_FILE_MODEL,
+    nextSettings.openaiFileModel,
+    "Failed to save transcription settings:"
   );
   setLocalStorageItem(
-    STORAGE_KEYS.LLM_MODEL,
-    trimStoredText(settings.model),
-    "Failed to save LLM settings:"
+    STORAGE_KEYS.OPENAI_STT_REALTIME_MODEL,
+    nextSettings.openaiRealtimeModel,
+    "Failed to save transcription settings:"
   );
+  setLocalStorageItem(
+    STORAGE_KEYS.TRANSCRIPTION_LANGUAGE,
+    nextSettings.language,
+    "Failed to save transcription settings:"
+  );
+  setLocalStorageItem(
+    STORAGE_KEYS.REALTIME_TRANSCRIPTION_DELAY,
+    nextSettings.realtimeDelay,
+    "Failed to save transcription settings:"
+  );
+  setLocalStorageItem(
+    STORAGE_KEYS.REALTIME_CAPTIONS_ENABLED,
+    String(nextSettings.realtimeCaptionsEnabled),
+    "Failed to save transcription settings:"
+  );
+  setLocalStorageItem(
+    STORAGE_KEYS.REALTIME_DRAFT_ENABLED,
+    String(nextSettings.realtimeDraftEnabled),
+    "Failed to save transcription settings:"
+  );
+  return nextSettings;
 };
 
 export const getLLMDebugLog = () => readStringPreference(STORAGE_KEYS.LLM_DEBUG_LOG);
@@ -218,12 +417,18 @@ export const clearPersistentData = async () => {
     FONT_SIZE_KEY,
     STORAGE_KEYS.DRAFT_MODE,
     STORAGE_KEYS.RECYCLE_RETENTION_DAYS,
-    STORAGE_KEYS.LLM_ENABLED,
-    STORAGE_KEYS.LLM_BASE_URL,
-    STORAGE_KEYS.LLM_API_KEY,
-    STORAGE_KEYS.LLM_MODEL,
+    STORAGE_KEYS.LLM_PROFILES,
+    STORAGE_KEYS.LLM_DEFAULT_PROFILE_ID,
     STORAGE_KEYS.LLM_DEBUG_LOG,
     STORAGE_KEYS.RECORDING_FORMAT,
+    STORAGE_KEYS.TRANSCRIPTION_PROVIDER,
+    STORAGE_KEYS.OPENAI_STT_API_KEY,
+    STORAGE_KEYS.OPENAI_STT_FILE_MODEL,
+    STORAGE_KEYS.OPENAI_STT_REALTIME_MODEL,
+    STORAGE_KEYS.TRANSCRIPTION_LANGUAGE,
+    STORAGE_KEYS.REALTIME_TRANSCRIPTION_DELAY,
+    STORAGE_KEYS.REALTIME_CAPTIONS_ENABLED,
+    STORAGE_KEYS.REALTIME_DRAFT_ENABLED,
     STORAGE_KEYS.LAYOUT_WIDTH,
     STORAGE_KEYS.COLUMN_LAYOUT,
     "draft",

@@ -72,6 +72,11 @@ textarea {
   min-height: 220px;
 }
 
+textarea.draft-locked {
+  cursor: wait;
+  opacity: 0.82;
+}
+
 .mode-toggle {
   position: relative;
   display: inline-grid;
@@ -463,6 +468,23 @@ textarea {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   padding: 10px 12px 12px;
+}
+
+.recording-live-text {
+  margin: 10px 12px 0;
+  max-height: 96px;
+  overflow: auto;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.recording-live-text[hidden] {
+  display: none;
 }
 
 .recording-actions button {
@@ -1936,6 +1958,19 @@ textarea {
   width: 100%;
 }
 
+.settings-profile-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-profile-toolbar button {
+  min-height: 38px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
 .settings-field-grid {
   display: grid;
   grid-template-columns: 86px minmax(0, 1fr);
@@ -2083,6 +2118,14 @@ textarea {
   .settings-field-grid {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .settings-profile-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .settings-profile-toolbar .settings-select {
+    grid-column: 1 / -1;
   }
 
   .settings-danger-action {

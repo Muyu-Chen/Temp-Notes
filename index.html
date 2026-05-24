@@ -104,6 +104,13 @@
                 <button id="btnMarkdownPreview" type="button">预览</button>
               </div>
               <button
+                id="btnDraftGenerateTags"
+                type="button"
+                title="为当前加载的存档条目生成标签"
+              >
+                生成标签
+              </button>
+              <button
                 id="btnRecordDraft"
                 class="record-draft-btn"
                 type="button"
@@ -209,6 +216,7 @@
         </div>
         <div id="recordingTimer" class="recording-timer">00:00</div>
       </div>
+      <div id="recordingLiveText" class="recording-live-text" hidden></div>
       <div class="recording-actions">
         <button id="btnRecordingPause" type="button">暂停</button>
         <button id="btnRecordingStop" class="danger" type="button">结束</button>
