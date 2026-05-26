@@ -17,6 +17,7 @@ export const STORAGE_KEYS = {
   LLM_DEBUG_LOG: "tempnotes:llm-debug-log:v1",
   RECORDING_FORMAT: "tempnotes:recording-format:v1",
   TRANSCRIPTION_PROVIDER: "tempnotes:transcription-provider:v1",
+  LOCAL_WHISPER_MODEL: "tempnotes:local-whisper-model:v1",
   OPENAI_STT_API_KEY: "tempnotes:openai-stt-api-key:v1",
   OPENAI_STT_FILE_MODEL: "tempnotes:openai-stt-file-model:v1",
   OPENAI_STT_REALTIME_MODEL: "tempnotes:openai-stt-realtime-model:v1",
