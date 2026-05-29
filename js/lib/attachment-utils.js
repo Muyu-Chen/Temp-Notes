@@ -11,6 +11,16 @@ export const getAudioExtension = (mimeType) => {
   return "webm";
 };
 
+export const getTypedAudioBlob = (record) => {
+  const blob = record?.blob;
+  if (!blob) return null;
+
+  const mimeType = String(record?.mimeType || blob.type || "").trim();
+  if (!mimeType || blob.type === mimeType) return blob;
+
+  return new Blob([blob], { type: mimeType });
+};
+
 export const normalizeAttachment = (attachment) => {
   if (!attachment || typeof attachment !== "object") return null;
   if (!attachment.id) return null;
