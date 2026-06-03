@@ -26,14 +26,30 @@ const DEFAULT_LAYOUT_WIDTH = "standard";
 const DEFAULT_COLUMN_LAYOUT = "default";
 const DEFAULT_LLM_PROFILE_ID = "default";
 const DEFAULT_TRANSCRIPTION_PROVIDER = "local-whisper";
+const DEFAULT_LOCAL_WHISPER_MODEL = "Xenova/whisper-base";
 const DEFAULT_OPENAI_STT_FILE_MODEL = "gpt-4o-mini-transcribe";
 const DEFAULT_OPENAI_STT_REALTIME_MODEL = "gpt-realtime-whisper";
+const DEFAULT_TRANSCRIPTION_LANGUAGE = "zh";
 const DEFAULT_REALTIME_TRANSCRIPTION_DELAY = "medium";
+export const TRANSCRIPTION_LANGUAGE_OPTIONS = [
+  { value: "zh", label: "中文" },
+  { value: "en", label: "英语" },
+  { value: "ja", label: "日语" },
+  { value: "ko", label: "韩语" },
+  { value: "fr", label: "法语" },
+  { value: "de", label: "德语" },
+  { value: "es", label: "西班牙语" },
+];
 const VALID_DRAFT_MODES = new Set(["edit", "preview"]);
 const VALID_RECORDING_FORMATS = new Set(["m4a", "mp3", "webm"]);
 const VALID_LAYOUT_WIDTHS = new Set(["auto", "standard", "wide", "ultrawide"]);
 const VALID_COLUMN_LAYOUTS = new Set(["default", "editor", "archive"]);
 const VALID_TRANSCRIPTION_PROVIDERS = new Set(["local-whisper", "openai"]);
+const VALID_LOCAL_WHISPER_MODELS = new Set([
+  "Xenova/whisper-tiny",
+  "Xenova/whisper-base",
+  "Xenova/whisper-small",
+]);
 const VALID_OPENAI_STT_FILE_MODELS = new Set([
   "gpt-4o-mini-transcribe",
   "gpt-4o-transcribe",
@@ -47,6 +63,29 @@ const VALID_REALTIME_TRANSCRIPTION_DELAYS = new Set([
   "high",
   "xhigh",
 ]);
+const VALID_TRANSCRIPTION_LANGUAGES = new Set(
+  TRANSCRIPTION_LANGUAGE_OPTIONS.map((option) => option.value)
+);
+const TRANSCRIPTION_LANGUAGE_ALIASES = new Map([
+  ["zh", "zh"],
+  ["zh-cn", "zh"],
+  ["zh-hans", "zh"],
+  ["zh-tw", "zh"],
+  ["zh-hk", "zh"],
+  ["zh-hant", "zh"],
+  ["cn", "zh"],
+  ["chinese", "zh"],
+  ["中文", "zh"],
+  ["简体中文", "zh"],
+  ["繁体中文", "zh"],
+  ["en-us", "en"],
+  ["en-gb", "en"],
+  ["english", "en"],
+  ["jp", "ja"],
+  ["japanese", "ja"],
+  ["kr", "ko"],
+  ["korean", "ko"],
+]);
 export const RECYCLE_RETENTION_OPTIONS = [0, 7, 30, 90];
 const EMPTY_LLM_SETTINGS = {
   id: DEFAULT_LLM_PROFILE_ID,
@@ -58,10 +97,11 @@ const EMPTY_LLM_SETTINGS = {
 };
 const EMPTY_TRANSCRIPTION_SETTINGS = {
   provider: DEFAULT_TRANSCRIPTION_PROVIDER,
+  localWhisperModel: DEFAULT_LOCAL_WHISPER_MODEL,
   openaiApiKey: "",
   openaiFileModel: DEFAULT_OPENAI_STT_FILE_MODEL,
   openaiRealtimeModel: DEFAULT_OPENAI_STT_REALTIME_MODEL,
-  language: "",
+  language: DEFAULT_TRANSCRIPTION_LANGUAGE,
   realtimeDelay: DEFAULT_REALTIME_TRANSCRIPTION_DELAY,
   realtimeCaptionsEnabled: false,
   realtimeDraftEnabled: false,
@@ -91,6 +131,12 @@ const readBooleanPreference = (key, fallback = false) => {
   if (value === "true") return true;
   if (value === "false") return false;
   return fallback;
+};
+
+const normalizeTranscriptionLanguage = (value) => {
+  const trimmed = trimStoredText(value);
+  if (VALID_TRANSCRIPTION_LANGUAGES.has(trimmed)) return trimmed;
+  return TRANSCRIPTION_LANGUAGE_ALIASES.get(trimmed.toLowerCase()) || DEFAULT_TRANSCRIPTION_LANGUAGE;
 };
 
 const readJsonPreference = (key) => {
@@ -308,6 +354,11 @@ export const getTranscriptionSettings = () => ({
     VALID_TRANSCRIPTION_PROVIDERS,
     DEFAULT_TRANSCRIPTION_PROVIDER
   ),
+  localWhisperModel: readEnumPreference(
+    STORAGE_KEYS.LOCAL_WHISPER_MODEL,
+    VALID_LOCAL_WHISPER_MODELS,
+    DEFAULT_LOCAL_WHISPER_MODEL
+  ),
   openaiApiKey: readStringPreference(STORAGE_KEYS.OPENAI_STT_API_KEY),
   openaiFileModel: readEnumPreference(
     STORAGE_KEYS.OPENAI_STT_FILE_MODEL,
@@ -319,7 +370,7 @@ export const getTranscriptionSettings = () => ({
     VALID_OPENAI_STT_REALTIME_MODELS,
     DEFAULT_OPENAI_STT_REALTIME_MODEL
   ),
-  language: readStringPreference(STORAGE_KEYS.TRANSCRIPTION_LANGUAGE),
+  language: normalizeTranscriptionLanguage(readStringPreference(STORAGE_KEYS.TRANSCRIPTION_LANGUAGE)),
   realtimeDelay: readEnumPreference(
     STORAGE_KEYS.REALTIME_TRANSCRIPTION_DELAY,
     VALID_REALTIME_TRANSCRIPTION_DELAYS,
@@ -338,6 +389,9 @@ export const saveTranscriptionSettings = (settings = {}) => {
     provider: VALID_TRANSCRIPTION_PROVIDERS.has(settings.provider)
       ? settings.provider
       : DEFAULT_TRANSCRIPTION_PROVIDER,
+    localWhisperModel: VALID_LOCAL_WHISPER_MODELS.has(settings.localWhisperModel)
+      ? settings.localWhisperModel
+      : DEFAULT_LOCAL_WHISPER_MODEL,
     openaiApiKey: trimStoredText(settings.openaiApiKey),
     openaiFileModel: VALID_OPENAI_STT_FILE_MODELS.has(settings.openaiFileModel)
       ? settings.openaiFileModel
@@ -345,7 +399,7 @@ export const saveTranscriptionSettings = (settings = {}) => {
     openaiRealtimeModel: VALID_OPENAI_STT_REALTIME_MODELS.has(settings.openaiRealtimeModel)
       ? settings.openaiRealtimeModel
       : DEFAULT_OPENAI_STT_REALTIME_MODEL,
-    language: trimStoredText(settings.language),
+    language: normalizeTranscriptionLanguage(settings.language),
     realtimeDelay: VALID_REALTIME_TRANSCRIPTION_DELAYS.has(settings.realtimeDelay)
       ? settings.realtimeDelay
       : DEFAULT_REALTIME_TRANSCRIPTION_DELAY,
@@ -356,6 +410,11 @@ export const saveTranscriptionSettings = (settings = {}) => {
   setLocalStorageItem(
     STORAGE_KEYS.TRANSCRIPTION_PROVIDER,
     nextSettings.provider,
+    "Failed to save transcription settings:"
+  );
+  setLocalStorageItem(
+    STORAGE_KEYS.LOCAL_WHISPER_MODEL,
+    nextSettings.localWhisperModel,
     "Failed to save transcription settings:"
   );
   setLocalStorageItem(
@@ -422,6 +481,7 @@ export const clearPersistentData = async () => {
     STORAGE_KEYS.LLM_DEBUG_LOG,
     STORAGE_KEYS.RECORDING_FORMAT,
     STORAGE_KEYS.TRANSCRIPTION_PROVIDER,
+    STORAGE_KEYS.LOCAL_WHISPER_MODEL,
     STORAGE_KEYS.OPENAI_STT_API_KEY,
     STORAGE_KEYS.OPENAI_STT_FILE_MODEL,
     STORAGE_KEYS.OPENAI_STT_REALTIME_MODEL,
