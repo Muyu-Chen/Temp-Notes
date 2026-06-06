@@ -25,6 +25,7 @@ export class RecordingService {
   }
 
   reset() {
+    this.clearChunkTimer();
     this.recorder = null;
     this.stream = null;
     this.chunks = [];
@@ -33,6 +34,13 @@ export class RecordingService {
     this.pausedMs = 0;
     this.cancelled = false;
     this.mimeType = "";
+  }
+
+  clearChunkTimer() {
+    if (this.chunkTimerId) {
+      clearInterval(this.chunkTimerId);
+      this.chunkTimerId = null;
+    }
   }
 
   isSupported() {
@@ -80,7 +88,17 @@ export class RecordingService {
       }
     };
 
-    this.recorder.start(Number(timesliceMs || 0) > 0 ? Number(timesliceMs) : undefined);
+    const chunkIntervalMs = Number(timesliceMs || 0);
+    if (chunkIntervalMs > 0 && typeof this.recorder.requestData === "function") {
+      this.recorder.start();
+      this.chunkTimerId = setInterval(() => {
+        if (this.recorder?.state === "recording") {
+          this.recorder.requestData();
+        }
+      }, chunkIntervalMs);
+    } else {
+      this.recorder.start(chunkIntervalMs > 0 ? chunkIntervalMs : undefined);
+    }
     return { ok: true, message: "录音已开始" };
   }
 
@@ -116,8 +134,10 @@ export class RecordingService {
       const stream = this.stream;
       const mimeType = this.mimeType || recorder.mimeType || "audio/webm";
       const durationMs = Math.max(0, Date.now() - this.startedAt - this.pausedMs);
+      this.clearChunkTimer();
 
       recorder.onerror = () => {
+        this.clearChunkTimer();
         stopStream(stream);
         this.reset();
         reject(recorder.error || new Error("录音失败"));
