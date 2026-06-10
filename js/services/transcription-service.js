@@ -1,13 +1,54 @@
 /**
- * 录音转文字服务：默认浏览器本地 Whisper tiny，OpenAI 作为备用 provider。
+ * 录音转文字服务：默认浏览器本地 Whisper Base，OpenAI 作为备用 provider。
  */
 
 import { normalizeTranscription, TRANSCRIPTION_STATUS } from "../lib/transcription-utils.js";
 
 const TRANSFORMERS_CDN =
   "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
-const LOCAL_WHISPER_MODEL = "Xenova/whisper-tiny";
+const LOCAL_WHISPER_MODEL = "Xenova/whisper-base";
 const OPENAI_TRANSCRIPTION_URL = "https://api.openai.com/v1/audio/transcriptions";
+const LOCAL_WHISPER_MODELS = new Set([
+  "Xenova/whisper-tiny",
+  "Xenova/whisper-base",
+  "Xenova/whisper-small",
+]);
+const DEFAULT_LOCAL_TRANSCRIPTION_LANGUAGE = "zh";
+const LOCAL_WHISPER_LANGUAGE_ALIASES = new Map([
+  ["zh", "chinese"],
+  ["zh-cn", "chinese"],
+  ["zh-hans", "chinese"],
+  ["zh-hant", "chinese"],
+  ["cn", "chinese"],
+  ["chinese", "chinese"],
+  ["中文", "chinese"],
+  ["en", "english"],
+  ["en-us", "english"],
+  ["en-gb", "english"],
+  ["english", "english"],
+  ["ja", "japanese"],
+  ["jp", "japanese"],
+  ["japanese", "japanese"],
+  ["日本語", "japanese"],
+  ["ko", "korean"],
+  ["kr", "korean"],
+  ["korean", "korean"],
+  ["한국어", "korean"],
+  ["fr", "french"],
+  ["de", "german"],
+  ["es", "spanish"],
+  ["it", "italian"],
+  ["pt", "portuguese"],
+  ["ru", "russian"],
+]);
+const OPENAI_LANGUAGE_ALIASES = new Map([
+  ["zh-hans", "zh"],
+  ["zh-hant", "zh"],
+  ["zh-cn", "zh"],
+  ["zh-tw", "zh"],
+  ["zh-hk", "zh"],
+  ["chinese", "zh"],
+]);
 
 const getBlobUrl = (blob) => {
   if (typeof URL?.createObjectURL !== "function") return "";
@@ -39,6 +80,16 @@ const getResultSegments = (result) => {
     .filter((segment) => segment.text);
 };
 
+const getLocalWhisperLanguage = (language) => {
+  const value = String(language || DEFAULT_LOCAL_TRANSCRIPTION_LANGUAGE).trim().toLowerCase();
+  return LOCAL_WHISPER_LANGUAGE_ALIASES.get(value) || value || "chinese";
+};
+
+const getOpenAITranscriptionLanguage = (language) => {
+  const value = String(language || DEFAULT_LOCAL_TRANSCRIPTION_LANGUAGE).trim().toLowerCase();
+  return OPENAI_LANGUAGE_ALIASES.get(value) || value || DEFAULT_LOCAL_TRANSCRIPTION_LANGUAGE;
+};
+
 export class TranscriptionService {
   constructor({
     fetchImpl = globalThis.fetch,
@@ -48,7 +99,7 @@ export class TranscriptionService {
     this.fetchImpl = fetchImpl;
     this.importModule = importModule;
     this.localModel = localModel;
-    this.localPipelinePromise = null;
+    this.localPipelinePromises = new Map();
   }
 
   async transcribeRecording(record, settings = {}, options = {}) {
@@ -80,14 +131,20 @@ export class TranscriptionService {
     return "webm";
   }
 
-  async getLocalPipeline() {
-    if (!this.localPipelinePromise) {
-      this.localPipelinePromise = this.loadLocalPipeline();
-    }
-    return this.localPipelinePromise;
+  getLocalModel(settings = {}) {
+    return LOCAL_WHISPER_MODELS.has(settings.localWhisperModel)
+      ? settings.localWhisperModel
+      : this.localModel;
   }
 
-  async loadLocalPipeline() {
+  async getLocalPipeline(model = this.localModel) {
+    if (!this.localPipelinePromises.has(model)) {
+      this.localPipelinePromises.set(model, this.loadLocalPipeline(model));
+    }
+    return this.localPipelinePromises.get(model);
+  }
+
+  async loadLocalPipeline(model = this.localModel) {
     const module = await this.importModule(TRANSFORMERS_CDN);
     const { env, pipeline } = module;
     if (env) {
@@ -96,12 +153,12 @@ export class TranscriptionService {
     }
 
     try {
-      return await pipeline("automatic-speech-recognition", this.localModel, {
+      return await pipeline("automatic-speech-recognition", model, {
         device: "webgpu",
       });
     } catch (error) {
       console.warn("WebGPU Whisper 加载失败，回退到 WASM", error);
-      return pipeline("automatic-speech-recognition", this.localModel);
+      return pipeline("automatic-speech-recognition", model);
     }
   }
 
@@ -116,12 +173,14 @@ export class TranscriptionService {
     }
 
     try {
-      const transcriber = await this.getLocalPipeline();
+      const localModel = this.getLocalModel(settings);
+      const transcriber = await this.getLocalPipeline(localModel);
       const result = await transcriber(url, {
         chunk_length_s: 30,
         stride_length_s: 5,
         return_timestamps: true,
-        language: settings.language || undefined,
+        task: "transcribe",
+        language: getLocalWhisperLanguage(settings.language),
       });
       const text = getResultText(result);
       return {
@@ -131,7 +190,7 @@ export class TranscriptionService {
           text,
           segments: getResultSegments(result),
           provider: "local-whisper",
-          model: this.localModel,
+          model: localModel,
           status: text ? TRANSCRIPTION_STATUS.DONE : TRANSCRIPTION_STATUS.FAILED,
           error: text ? "" : "未识别到文字",
           updatedAt: Date.now(),
@@ -143,7 +202,7 @@ export class TranscriptionService {
         message: `本地转录失败：${error?.message || "模型加载或识别异常"}`,
         transcription: normalizeTranscription({
           provider: "local-whisper",
-          model: this.localModel,
+          model: this.getLocalModel(settings),
           status: TRANSCRIPTION_STATUS.FAILED,
           error: error?.message || "模型加载或识别异常",
           updatedAt: Date.now(),
@@ -170,7 +229,7 @@ export class TranscriptionService {
     );
     formData.append("model", settings.openaiFileModel || "gpt-4o-mini-transcribe");
     if (settings.language) {
-      formData.append("language", settings.language);
+      formData.append("language", getOpenAITranscriptionLanguage(settings.language));
     }
 
     try {
