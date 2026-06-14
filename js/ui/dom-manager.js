@@ -100,9 +100,11 @@ export class DOMManager {
     this.llmCopyLogBtn = document.getElementById("llmCopyLogBtn");
     this.llmClearLogBtn = document.getElementById("llmClearLogBtn");
     this.transcriptionProviderSelect = document.getElementById("transcriptionProviderSelect");
+    this.localWhisperModelSelect = document.getElementById("localWhisperModelSelect");
     this.transcriptionLanguage = document.getElementById("transcriptionLanguage");
     this.openaiSttApiKey = document.getElementById("openaiSttApiKey");
     this.openaiSttFileModel = document.getElementById("openaiSttFileModel");
+    this.realtimeDelaySelect = document.getElementById("realtimeDelaySelect");
     this.realtimeCaptionsEnabled = document.getElementById("realtimeCaptionsEnabled");
     this.realtimeDraftEnabled = document.getElementById("realtimeDraftEnabled");
     this.btnForceRefresh = document.getElementById("btnForceRefresh");
@@ -361,11 +363,12 @@ export class DOMManager {
   getTranscriptionSettings() {
     return {
       provider: this.transcriptionProviderSelect.value || "local-whisper",
-      language: this.transcriptionLanguage.value || "",
+      localWhisperModel: this.localWhisperModelSelect.value || "Xenova/whisper-base",
+      language: this.transcriptionLanguage.value || "zh",
       openaiApiKey: this.openaiSttApiKey.value || "",
       openaiFileModel: this.openaiSttFileModel.value || "gpt-4o-mini-transcribe",
       openaiRealtimeModel: "gpt-realtime-whisper",
-      realtimeDelay: "medium",
+      realtimeDelay: this.realtimeDelaySelect.value || "medium",
       realtimeCaptionsEnabled: this.realtimeCaptionsEnabled.checked,
       realtimeDraftEnabled: this.realtimeDraftEnabled.checked,
     };
@@ -375,7 +378,24 @@ export class DOMManager {
     this.transcriptionProviderSelect.value = ["local-whisper", "openai"].includes(settings.provider)
       ? settings.provider
       : "local-whisper";
-    this.transcriptionLanguage.value = settings.language || "";
+    this.localWhisperModelSelect.value = [
+      "Xenova/whisper-tiny",
+      "Xenova/whisper-base",
+      "Xenova/whisper-small",
+    ].includes(settings.localWhisperModel)
+      ? settings.localWhisperModel
+      : "Xenova/whisper-base";
+    this.transcriptionLanguage.value = [
+      "zh",
+      "en",
+      "ja",
+      "ko",
+      "fr",
+      "de",
+      "es",
+    ].includes(settings.language)
+      ? settings.language
+      : "zh";
     this.openaiSttApiKey.value = settings.openaiApiKey || "";
     this.openaiSttFileModel.value = [
       "gpt-4o-mini-transcribe",
@@ -384,6 +404,15 @@ export class DOMManager {
     ].includes(settings.openaiFileModel)
       ? settings.openaiFileModel
       : "gpt-4o-mini-transcribe";
+    this.realtimeDelaySelect.value = [
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+    ].includes(settings.realtimeDelay)
+      ? settings.realtimeDelay
+      : "medium";
     this.realtimeCaptionsEnabled.checked = settings.realtimeCaptionsEnabled === true;
     this.realtimeDraftEnabled.checked = settings.realtimeDraftEnabled === true;
   }
