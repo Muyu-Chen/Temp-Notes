@@ -54,10 +54,19 @@ export class Modal {
         group.appendChild(label);
       }
 
-      const input = document.createElement("input");
-      input.className = "modal-input";
-      input.type = inputSpec.type || "text";
-      input.placeholder = inputSpec.placeholder || "";
+      const input = document.createElement(inputSpec.type === "select" ? "select" : "input");
+      input.className = inputSpec.type === "select" ? "modal-input modal-select" : "modal-input";
+      if (inputSpec.type === "select") {
+        (inputSpec.options || []).forEach((optionSpec) => {
+          const option = document.createElement("option");
+          option.value = optionSpec.value;
+          option.textContent = optionSpec.label;
+          input.appendChild(option);
+        });
+      } else {
+        input.type = inputSpec.type || "text";
+        input.placeholder = inputSpec.placeholder || "";
+      }
       input.value = inputSpec.value || "";
       input.required = inputSpec.required !== false;
       group.appendChild(input);
