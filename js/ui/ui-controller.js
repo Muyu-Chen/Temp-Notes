@@ -244,8 +244,14 @@ export class UIController {
 
     const rect = buttonElement.getBoundingClientRect();
     const menuRect = menu.getBoundingClientRect();
-    menu.style.left = `${Math.min(rect.right - menuRect.width, window.innerWidth - menuRect.width - 8)}px`;
-    menu.style.top = `${Math.min(rect.bottom + 6, window.innerHeight - menuRect.height - 8)}px`;
+    menu.style.left = `${Math.max(
+      8,
+      Math.min(rect.right - menuRect.width, window.innerWidth - menuRect.width - 8)
+    )}px`;
+    menu.style.top = `${Math.max(
+      8,
+      Math.min(rect.bottom + 6, window.innerHeight - menuRect.height - 8)
+    )}px`;
 
     setTimeout(() => {
       const closeOnOutside = (e) => {
@@ -294,8 +300,14 @@ export class UIController {
 
     const rect = buttonElement.getBoundingClientRect();
     const menuRect = menu.getBoundingClientRect();
-    menu.style.left = `${Math.min(rect.right - menuRect.width, window.innerWidth - menuRect.width - 8)}px`;
-    menu.style.top = `${Math.min(rect.bottom + 6, window.innerHeight - menuRect.height - 8)}px`;
+    menu.style.left = `${Math.max(
+      8,
+      Math.min(rect.right - menuRect.width, window.innerWidth - menuRect.width - 8)
+    )}px`;
+    menu.style.top = `${Math.max(
+      8,
+      Math.min(rect.bottom + 6, window.innerHeight - menuRect.height - 8)
+    )}px`;
 
     setTimeout(() => {
       const closeOnOutside = (e) => {
