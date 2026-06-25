@@ -150,22 +150,38 @@
       <div class="settings-item settings-item-stack">
         <div class="settings-label">
           <span class="label-name">本地转录</span>
-          <span class="label-desc">默认使用浏览器本地 Whisper tiny；首次使用会下载模型并由浏览器缓存。</span>
+          <span class="label-desc">默认使用浏览器本地 Whisper Base；首次使用会下载模型并由浏览器缓存。</span>
         </div>
 
         <div class="settings-form">
           <div class="settings-field-grid">
             <label for="transcriptionProviderSelect">转录方式</label>
             <select id="transcriptionProviderSelect" class="settings-select">
-              <option value="local-whisper">本地 Whisper tiny</option>
+              <option value="local-whisper">本地 Whisper</option>
               <option value="openai">OpenAI（备用）</option>
             </select>
           </div>
 
           <div class="settings-field-grid">
+            <label for="localWhisperModelSelect">本地模型</label>
+            <select id="localWhisperModelSelect" class="settings-select">
+              <option value="Xenova/whisper-tiny">Tiny（最快）</option>
+              <option value="Xenova/whisper-base">Base（默认）</option>
+              <option value="Xenova/whisper-small">Small（更准，较慢）</option>
+            </select>
+          </div>
+
+          <div class="settings-field-grid">
             <label for="transcriptionLanguage">语言提示</label>
-            <input type="text" id="transcriptionLanguage" class="settings-input" placeholder="留空自动识别，或填 zh / en"
-              spellcheck="false" autocapitalize="off" autocomplete="off">
+            <select id="transcriptionLanguage" class="settings-select">
+              <option value="zh">中文</option>
+              <option value="en">英语</option>
+              <option value="ja">日语</option>
+              <option value="ko">韩语</option>
+              <option value="fr">法语</option>
+              <option value="de">德语</option>
+              <option value="es">西班牙语</option>
+            </select>
           </div>
 
           <div class="settings-field-grid">
@@ -180,6 +196,17 @@
               <option value="gpt-4o-mini-transcribe">gpt-4o-mini-transcribe</option>
               <option value="gpt-4o-transcribe">gpt-4o-transcribe</option>
               <option value="whisper-1">whisper-1</option>
+            </select>
+          </div>
+
+          <div class="settings-field-grid">
+            <label for="realtimeDelaySelect">实时延迟</label>
+            <select id="realtimeDelaySelect" class="settings-select">
+              <option value="minimal">较快（约 3 秒）</option>
+              <option value="low">均衡（约 5 秒）</option>
+              <option value="medium">默认（约 7 秒）</option>
+              <option value="high">较稳（约 10 秒）</option>
+              <option value="xhigh">最稳（约 15 秒）</option>
             </select>
           </div>
 
