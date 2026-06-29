@@ -184,10 +184,25 @@ textarea.draft-locked {
 
 .draft-attachments {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  padding: 8px 12px 12px;
+  padding: 8px 12px 18px;
   border-top: 1px solid var(--line);
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.draft-attachments::-webkit-scrollbar {
+  height: 6px;
+}
+
+.draft-attachments::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(127, 127, 127, 0.28);
 }
 
 .draft-attachments[hidden] {
@@ -195,8 +210,10 @@ textarea.draft-locked {
 }
 
 .draft-attachment {
+  flex: 0 0 auto;
   min-width: 190px;
-  max-width: 100%;
+  max-width: min(320px, calc(100vw - 56px));
+  min-height: 58px;
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
   align-items: center;
@@ -205,6 +222,7 @@ textarea.draft-locked {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
+  scroll-snap-align: start;
 }
 
 [data-theme="light"] .draft-attachment {
@@ -355,7 +373,12 @@ textarea.draft-locked {
 .draft-attachment-menu {
   position: fixed;
   z-index: 1002;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
   min-width: 112px;
+  max-width: calc(100vw - 16px);
   padding: 5px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -364,14 +387,22 @@ textarea.draft-locked {
 }
 
 .draft-attachment-menu-item {
-  width: 100%;
+  width: auto;
+  max-width: calc(100vw - 28px);
   min-height: 32px;
   padding: 7px 10px;
   border: 0;
   border-radius: 8px;
   background: transparent;
+  color: var(--text);
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--sans);
   font-size: 12.5px;
+  line-height: 1.2;
+  opacity: 1;
 }
 
 .draft-attachment-menu-item:hover,
@@ -682,8 +713,16 @@ textarea.draft-locked {
   white-space: nowrap;
 }
 
-.attachment-player-actions .attachment-player-more {
+#attachmentPlayerMore {
   flex: 0 0 58px;
+  width: 58px;
+  min-width: 58px;
+  max-width: 58px;
+  padding: 0 9px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 .archive-panel {
@@ -1410,8 +1449,25 @@ textarea.draft-locked {
   color: var(--muted);
 }
 
+.modal-select {
+  appearance: none;
+  padding-right: 34px;
+  cursor: pointer;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 18px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 13px) 50% / 6px 6px no-repeat,
+    var(--panel);
+}
+
 [data-theme="light"] .modal-input {
   background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .modal-select {
+  background:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 18px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 13px) 50% / 6px 6px no-repeat,
+    rgba(0, 0, 0, 0.03);
 }
 
 [data-theme="light"] .modal-input:focus {
