@@ -201,9 +201,11 @@ export const bindAppEvents = ({ domManager, uiController, appController }) => {
 
   [
     domManager.transcriptionProviderSelect,
+    domManager.localWhisperModelSelect,
     domManager.transcriptionLanguage,
     domManager.openaiSttApiKey,
     domManager.openaiSttFileModel,
+    domManager.realtimeDelaySelect,
     domManager.realtimeCaptionsEnabled,
     domManager.realtimeDraftEnabled,
   ].forEach((input) => {
