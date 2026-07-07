@@ -13,7 +13,7 @@ import {
   loadRecording,
   updateRecordingTranscription,
 } from "./storage/recording-storage.js";
-import { normalizeAttachments } from "./lib/attachment-utils.js";
+import { getTypedAudioBlob, normalizeAttachments } from "./lib/attachment-utils.js";
 import { buildWaveformBuckets, cyclePlaybackRate } from "./lib/audio-waveform-utils.js";
 import { downloadBlobFile, getRecordingExportFilename } from "./lib/download-utils.js";
 import { sortItemsForDisplay } from "./lib/item-utils.js";
@@ -48,6 +48,7 @@ import {
   getRecordingFormatPreference as readRecordingFormatPreference,
   getTranscriptionSettings as readTranscriptionSettings,
   getRecycleRetentionText,
+  TRANSCRIPTION_LANGUAGE_OPTIONS,
   clearLLMDebugLog as removeLLMDebugLog,
   createLLMProfile,
   saveLLMProfilesSettings as persistLLMProfilesSettings,
@@ -67,6 +68,18 @@ const formatRecordingTimer = (durationMs = 0) => {
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 };
+
+const REALTIME_TRANSCRIPTION_INTERVALS = {
+  minimal: 3000,
+  low: 5000,
+  medium: 7000,
+  high: 10000,
+  xhigh: 15000,
+};
+
+const getRealtimeTranscriptionInterval = (settings = {}) =>
+  REALTIME_TRANSCRIPTION_INTERVALS[settings.realtimeDelay] ||
+  REALTIME_TRANSCRIPTION_INTERVALS.medium;
 
 export class AppController {
   constructor(uiController, domManager) {
@@ -481,6 +494,33 @@ export class AppController {
   saveTranscriptionSettings(settings) {
     const nextSettings = persistTranscriptionSettings(settings);
     this.dom.setTranscriptionSettings(nextSettings);
+    return nextSettings;
+  }
+
+  async promptTranscriptionLanguage({
+    title = "选择转录语言",
+    message = "请选择录音主要语言。",
+    okText = "开始转录",
+  } = {}) {
+    const currentSettings = this.getTranscriptionSettings();
+    const result = await this.modal.show({
+      title,
+      message,
+      inputs: [
+        {
+          type: "select",
+          label: "语言",
+          value: currentSettings.language || "zh",
+          options: TRANSCRIPTION_LANGUAGE_OPTIONS,
+        },
+      ],
+      okText,
+      cancelText: "取消",
+    });
+
+    if (!result.ok) return null;
+    const language = String(result.values?.[0] || "zh").trim() || "zh";
+    return this.saveTranscriptionSettings({ ...currentSettings, language });
   }
 
   async testLLMConnection() {
@@ -625,7 +665,7 @@ export class AppController {
       transcriptionSettings.realtimeCaptionsEnabled || transcriptionSettings.realtimeDraftEnabled;
     return this.recordingService.start({
       preferredFormat: this.getRecordingFormatPreference(),
-      timesliceMs: realtimeEnabled ? 15000 : 0,
+      timesliceMs: realtimeEnabled ? getRealtimeTranscriptionInterval(transcriptionSettings) : 0,
       onChunk: realtimeEnabled ? (chunk) => this.handleRecordingChunk(chunk) : null,
     });
   }
@@ -766,6 +806,9 @@ export class AppController {
     playback.audio.pause();
     playback.audio.removeAttribute?.("src");
     playback.audio.load?.();
+    if (playback.audio.dataset?.tempnotesPlaybackAudio === "true") {
+      playback.audio.remove?.();
+    }
     if (playback.url) {
       URL.revokeObjectURL(playback.url);
     }
@@ -802,6 +845,33 @@ export class AppController {
     this.draftAttachmentPlaybackFrame = requestAnimationFrame(tick);
   }
 
+  createDraftAttachmentAudio(url) {
+    const audio =
+      typeof document !== "undefined" && document.createElement
+        ? document.createElement("audio")
+        : new Audio();
+
+    audio.preload = "auto";
+    audio.playsInline = true;
+    audio.setAttribute?.("playsinline", "");
+    audio.setAttribute?.("webkit-playsinline", "");
+    audio.src = url;
+
+    if (typeof document !== "undefined" && document.body && !audio.isConnected) {
+      audio.dataset.tempnotesPlaybackAudio = "true";
+      audio.style.position = "fixed";
+      audio.style.left = "-9999px";
+      audio.style.width = "1px";
+      audio.style.height = "1px";
+      audio.style.opacity = "0";
+      audio.style.pointerEvents = "none";
+      document.body.appendChild(audio);
+    }
+
+    audio.load?.();
+    return audio;
+  }
+
   updateDraftAttachmentPlaybackProgress(id) {
     const playback = this.draftAttachmentPlayback?.id === id ? this.draftAttachmentPlayback : null;
     if (!playback) return;
@@ -834,8 +904,9 @@ export class AppController {
       return null;
     }
 
-    const url = URL.createObjectURL(record.blob);
-    const audio = new Audio(url);
+    const blob = getTypedAudioBlob(record);
+    const url = URL.createObjectURL(blob);
+    const audio = this.createDraftAttachmentAudio(url);
     audio.playbackRate = this.draftAttachmentPlaybackRate;
     this.draftAttachmentPlayback = { id, audio, url };
 
@@ -850,7 +921,7 @@ export class AppController {
     };
     audio.onerror = () => {
       this.stopDraftAttachmentPlayback(id, { render: true });
-      this.ui.showToast("播放录音失败");
+      this.ui.showToast("播放录音失败，可尝试导出到本地播放");
     };
 
     return audio;
@@ -868,8 +939,15 @@ export class AppController {
             this.startDraftAttachmentProgressLoop(id);
           } catch (error) {
             console.error("播放录音失败", error);
+            if (error?.name === "NotAllowedError") {
+              this.playingDraftAttachmentId = null;
+              this.updateDraftAttachmentPlaybackProgress(id);
+              this.render();
+              this.ui.showToast("录音已准备好，请再点一次播放");
+              return;
+            }
             this.stopDraftAttachmentPlayback(id);
-            this.ui.showToast("播放录音失败");
+            this.ui.showToast("播放录音失败，可尝试导出到本地播放");
           }
         } else {
           playback.audio.pause();
@@ -890,8 +968,15 @@ export class AppController {
       this.render();
     } catch (error) {
       console.error("播放录音失败", error);
+      if (error?.name === "NotAllowedError") {
+        this.playingDraftAttachmentId = null;
+        this.updateDraftAttachmentPlaybackProgress(id);
+        this.render();
+        this.ui.showToast("录音已准备好，请再点一次播放");
+        return;
+      }
       this.stopDraftAttachmentPlayback(id);
-      this.ui.showToast("播放录音失败");
+      this.ui.showToast("播放录音失败，可尝试导出到本地播放");
     }
   }
 
@@ -1005,10 +1090,7 @@ export class AppController {
         return;
       }
 
-      const blob =
-        record.blob.type || !record.mimeType
-          ? record.blob
-          : new Blob([record.blob], { type: record.mimeType });
+      const blob = getTypedAudioBlob(record);
       const filename = getRecordingExportFilename(attachment, Date.now(), {
         record,
         preferredFormat: this.getRecordingFormatPreference(),
@@ -1037,19 +1119,21 @@ export class AppController {
       return null;
     }
 
+    const transcriptionSettings = silent
+      ? this.getTranscriptionSettings()
+      : await this.promptTranscriptionLanguage();
+    if (!transcriptionSettings) return null;
+
     if (!silent) {
       this.ui.showToast("正在转录录音...");
     }
     await updateRecordingTranscription(id, {
-      provider: this.getTranscriptionSettings().provider,
+      provider: transcriptionSettings.provider,
       status: TRANSCRIPTION_STATUS.RUNNING,
       error: "",
     });
 
-    const result = await this.transcriptionService.transcribeRecording(
-      record,
-      this.getTranscriptionSettings()
-    );
+    const result = await this.transcriptionService.transcribeRecording(record, transcriptionSettings);
     const nextRecord = await updateRecordingTranscription(id, result.transcription);
     this.renderExpandedDraftAttachmentPlayer();
     if (!silent) {
@@ -1129,10 +1213,13 @@ export class AppController {
       enabled,
       insertToDraft: settings.realtimeDraftEnabled === true,
       text: "",
+      chunkCount: 0,
       queue: Promise.resolve(),
     };
     this.dom.setDraftInputLocked?.(settings.realtimeDraftEnabled === true);
-    this.dom.setRecordingLiveText?.(enabled ? "实时转录准备中..." : "");
+    this.dom.setRecordingLiveText?.(
+      enabled ? "实时转录已开启，正在等待第一段录音..." : ""
+    );
   }
 
   stopLiveTranscriptionState() {
@@ -1140,6 +1227,7 @@ export class AppController {
       enabled: false,
       insertToDraft: false,
       text: "",
+      chunkCount: 0,
       queue: Promise.resolve(),
     };
     this.dom.setDraftInputLocked?.(false);
@@ -1149,11 +1237,27 @@ export class AppController {
   handleRecordingChunk(chunk) {
     if (!this.liveTranscription.enabled || !chunk?.size) return;
     const settings = this.getTranscriptionSettings();
+    this.liveTranscription.chunkCount = (this.liveTranscription.chunkCount || 0) + 1;
+    const chunkCount = this.liveTranscription.chunkCount;
+    this.dom.setRecordingLiveText?.(
+      this.liveTranscription.text ||
+        `正在识别第 ${chunkCount} 段录音，首次加载模型可能较慢...`
+    );
     this.liveTranscription.queue = this.liveTranscription.queue
       .then(async () => {
+        this.dom.setRecordingLiveText?.(
+          this.liveTranscription.text ||
+            `正在识别第 ${chunkCount} 段录音，首次加载模型可能较慢...`
+        );
         const result = await this.transcriptionService.transcribeBlob(chunk, settings);
         const text = result.transcription?.text || "";
-        if (!result.ok || !text.trim()) return;
+        if (!result.ok || !text.trim()) {
+          this.dom.setRecordingLiveText?.(
+            this.liveTranscription.text ||
+              `${result.message || "暂未识别到稳定文字"}，继续录音中...`
+          );
+          return;
+        }
 
         const nextText = this.liveTranscription.text
           ? `${this.liveTranscription.text}\n${text.trim()}`
@@ -1166,6 +1270,9 @@ export class AppController {
       })
       .catch((error) => {
         console.warn("实时转录分段失败", error);
+        this.dom.setRecordingLiveText?.(
+          this.liveTranscription.text || "实时转录暂时失败，录音仍在继续..."
+        );
       });
   }
 
@@ -1221,6 +1328,20 @@ export class AppController {
     if (this.recordingUi.active) return { ok: false, message: "录音已在进行中" };
 
     this.dom.setRecordingLauncherDisabled(true);
+    const transcriptionSettings = this.getTranscriptionSettings();
+    const realtimeEnabled =
+      transcriptionSettings.realtimeCaptionsEnabled || transcriptionSettings.realtimeDraftEnabled;
+    if (realtimeEnabled) {
+      const selectedSettings = await this.promptTranscriptionLanguage({
+        title: "选择实时字幕语言",
+        message: "请选择录音主要语言。",
+        okText: "开始录音",
+      });
+      if (!selectedSettings) {
+        this.dom.setRecordingLauncherDisabled(false);
+        return { ok: false, message: "已取消录音" };
+      }
+    }
     this.startLiveTranscriptionState();
 
     try {
@@ -1289,12 +1410,13 @@ export class AppController {
         await this.liveTranscription.queue;
         const finalLiveText = (this.liveTranscription?.text || "").trim();
         if (finalLiveText) {
+          const transcriptionSettings = this.getTranscriptionSettings();
           await updateRecordingTranscription(attachment.id, {
             text: finalLiveText,
-            provider: this.getTranscriptionSettings().provider,
-            model: this.getTranscriptionSettings().provider === "openai"
-              ? this.getTranscriptionSettings().openaiFileModel
-              : "Xenova/whisper-tiny",
+            provider: transcriptionSettings.provider,
+            model: transcriptionSettings.provider === "openai"
+              ? transcriptionSettings.openaiFileModel
+              : transcriptionSettings.localWhisperModel,
             status: TRANSCRIPTION_STATUS.DONE,
             updatedAt: Date.now(),
           });
