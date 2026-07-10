@@ -147,13 +147,16 @@ describe("settings service", () => {
   it("persists transcription settings with local whisper as the default", () => {
     expect(getTranscriptionSettings()).toMatchObject({
       provider: "local-whisper",
+      localWhisperModel: "Xenova/whisper-base",
       openaiFileModel: "gpt-4o-mini-transcribe",
+      language: "zh",
       realtimeCaptionsEnabled: false,
       realtimeDraftEnabled: false,
     });
 
     saveTranscriptionSettings({
       provider: "openai",
+      localWhisperModel: "Xenova/whisper-small",
       openaiApiKey: " sk-test ",
       openaiFileModel: "whisper-1",
       language: " zh ",
@@ -163,6 +166,7 @@ describe("settings service", () => {
 
     expect(getTranscriptionSettings()).toMatchObject({
       provider: "openai",
+      localWhisperModel: "Xenova/whisper-small",
       openaiApiKey: "sk-test",
       openaiFileModel: "whisper-1",
       language: "zh",
