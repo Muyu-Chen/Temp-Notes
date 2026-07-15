@@ -52,6 +52,12 @@ class MockMediaRecorder {
   }
 }
 
+class ChunkingMediaRecorder extends MockMediaRecorder {
+  requestData = vi.fn(() => {
+    this.ondataavailable?.({ data: new Blob(["chunk"], { type: this.mimeType }) });
+  });
+}
+
 const createStream = () => ({
   tracks: [{ stop: vi.fn() }],
   getTracks() {
@@ -60,6 +66,7 @@ const createStream = () => ({
 });
 
 beforeEach(() => {
+  vi.useRealTimers();
   vi.clearAllMocks();
   mocks.now.mockReturnValue(5000);
   mocks.uid.mockReturnValue("rec-id");
@@ -178,6 +185,25 @@ describe("RecordingService", () => {
       mimeType: "audio/mpeg",
       ext: "mp3",
     });
+  });
+
+  it("requests realtime chunks on the configured interval", async () => {
+    vi.useFakeTimers();
+    const stream = createStream();
+    const onChunk = vi.fn();
+    const service = new RecordingService({
+      navigatorRef: { mediaDevices: { getUserMedia: vi.fn(() => Promise.resolve(stream)) } },
+      MediaRecorderCtor: ChunkingMediaRecorder,
+    });
+
+    await service.start({ timesliceMs: 3000, onChunk });
+    vi.advanceTimersByTime(3000);
+
+    expect(service.recorder.requestData).toHaveBeenCalled();
+    expect(onChunk).toHaveBeenCalledWith(expect.any(Blob));
+
+    await service.cancel();
+    vi.useRealTimers();
   });
 
   it("cancels an active recording without saving a blob", async () => {
