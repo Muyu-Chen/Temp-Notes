@@ -56,6 +56,34 @@ const createRecordingController = ({
   controller.currentDraftAttachments = [];
   controller.currentLoadedItemId = null;
   controller.items = [];
+  const transcriptionSettings = {
+    provider: "local-whisper",
+    localWhisperModel: "Xenova/whisper-base",
+    language: "zh",
+    realtimeDelay: "medium",
+    realtimeCaptionsEnabled: false,
+    realtimeDraftEnabled: false,
+  };
+  controller.getTranscriptionSettings = vi.fn(() => transcriptionSettings);
+  controller.saveTranscriptionSettings = vi.fn((settings) => settings);
+  controller.modal = {
+    show: vi.fn(() => Promise.resolve({ ok: true, values: ["zh"] })),
+  };
+  controller.transcriptionService = {
+    transcribeRecording: vi.fn(() =>
+      Promise.resolve({
+        message: "转录完成",
+        transcription: { text: "你好", status: "done", provider: "local-whisper" },
+      })
+    ),
+    transcribeBlob: vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        message: "转录完成",
+        transcription: { text: "你好", status: "done", provider: "local-whisper" },
+      })
+    ),
+  };
   controller.recycleService = {
     addRecordingToRecycle: vi.fn(() => Promise.resolve()),
     getRecycleItems: vi.fn(() => []),
@@ -343,6 +371,65 @@ describe("AppController recording UI flow", () => {
     expect(controller.draftAttachmentPlayback).toBeNull();
   });
 
+  it("restores the stored mime type before creating a playback url", async () => {
+    const createObjectURL = vi.fn(() => "blob:rec-1");
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL: vi.fn() });
+    vi.stubGlobal(
+      "Audio",
+      class {
+        constructor() {
+          this.paused = true;
+          this.play = vi.fn(() => Promise.resolve());
+          this.pause = vi.fn();
+          this.removeAttribute = vi.fn();
+          this.load = vi.fn();
+        }
+      }
+    );
+    mocks.loadRecording.mockResolvedValue({
+      id: "rec-1",
+      blob: new Blob(["audio"]),
+      mimeType: "audio/mp4",
+    });
+
+    const controller = createRecordingController();
+    await controller.toggleDraftAttachmentPlayback("rec-1");
+
+    expect(createObjectURL.mock.calls[0][0].type).toBe("audio/mp4");
+  });
+
+  it("keeps prepared audio after mobile browsers reject async playback", async () => {
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:rec-1"), revokeObjectURL });
+    vi.stubGlobal(
+      "Audio",
+      class {
+        constructor() {
+          this.paused = true;
+          this.play = vi.fn(() =>
+            Promise.reject(Object.assign(new Error("blocked"), { name: "NotAllowedError" }))
+          );
+          this.pause = vi.fn();
+          this.removeAttribute = vi.fn();
+          this.load = vi.fn();
+        }
+      }
+    );
+    mocks.loadRecording.mockResolvedValue({
+      id: "rec-1",
+      blob: new Blob(["audio"], { type: "audio/mp4" }),
+      mimeType: "audio/mp4",
+    });
+
+    const controller = createRecordingController();
+    await controller.toggleDraftAttachmentPlayback("rec-1");
+
+    expect(controller.draftAttachmentPlayback).toBeTruthy();
+    expect(controller.playingDraftAttachmentId).toBeNull();
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    expect(controller.ui.showToast).toHaveBeenCalledWith("录音已准备好，请再点一次播放");
+  });
+
   it("stops playback when deleting the active draft attachment", async () => {
     const audio = {
       pause: vi.fn(),
@@ -464,6 +551,78 @@ describe("AppController recording UI flow", () => {
     await controller.transcribeDraftAttachment("rec-1");
 
     expect(controller.ui.showToast).toHaveBeenCalledWith("录音附件不存在");
+  });
+
+  it("asks for language before manual transcription", async () => {
+    const controller = createRecordingController();
+    controller.currentDraftAttachments = [{ id: "rec-1", type: "audio", name: "录音" }];
+    const blob = new Blob(["audio"], { type: "audio/webm" });
+    mocks.loadRecording.mockResolvedValue({ id: "rec-1", blob, mimeType: "audio/webm" });
+    controller.modal.show.mockResolvedValueOnce({ ok: true, values: ["ja"] });
+
+    await controller.transcribeDraftAttachment("rec-1");
+
+    expect(controller.modal.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "选择转录语言",
+        okText: "开始转录",
+      })
+    );
+    expect(controller.saveTranscriptionSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ language: "ja" })
+    );
+    expect(mocks.updateRecordingTranscription).toHaveBeenCalledWith(
+      "rec-1",
+      expect.objectContaining({ status: "running" })
+    );
+    expect(controller.transcriptionService.transcribeRecording).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "rec-1", blob }),
+      expect.objectContaining({ language: "ja" })
+    );
+  });
+
+  it("asks for language before starting realtime captions", async () => {
+    const controller = createRecordingController();
+    controller.getTranscriptionSettings.mockReturnValue({
+      provider: "local-whisper",
+      localWhisperModel: "Xenova/whisper-base",
+      language: "zh",
+      realtimeDelay: "medium",
+      realtimeCaptionsEnabled: true,
+      realtimeDraftEnabled: false,
+    });
+    controller.modal.show.mockResolvedValueOnce({ ok: true, values: ["zh"] });
+
+    await controller.beginDraftRecording();
+
+    expect(controller.modal.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "选择实时字幕语言",
+        okText: "开始录音",
+      })
+    );
+    expect(controller.startRecording).toHaveBeenCalled();
+  });
+
+  it("shows realtime transcription progress before chunk text is ready", async () => {
+    const controller = createRecordingController();
+    controller.liveTranscription.enabled = true;
+    const pending = Promise.resolve({
+      ok: false,
+      message: "未识别到文字",
+      transcription: { text: "" },
+    });
+    controller.transcriptionService.transcribeBlob.mockReturnValueOnce(pending);
+
+    controller.handleRecordingChunk(new Blob(["audio"], { type: "audio/webm" }));
+    await controller.liveTranscription.queue;
+
+    expect(controller.dom.setRecordingLiveText).toHaveBeenCalledWith(
+      expect.stringContaining("正在识别第 1 段录音")
+    );
+    expect(controller.dom.setRecordingLiveText).toHaveBeenLastCalledWith(
+      "未识别到文字，继续录音中..."
+    );
   });
 
   it("clears archive search and filter state together", () => {
